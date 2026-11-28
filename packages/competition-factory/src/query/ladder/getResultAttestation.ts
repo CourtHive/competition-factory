@@ -4,7 +4,7 @@ import { itemDateIso } from '@Query/ladder/getChallengeState';
 
 // constants and types
 import type { LadderPolicy } from '@Types/ladderTypes';
-import type { MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 import {
   EITHER,
   OPERATOR,
@@ -15,14 +15,14 @@ import {
 } from '@Constants/ladderConstants';
 
 type AttestationArgs = {
-  matchUp?: any;
+  matchUp?: MatchUp;
   /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
   policy?: LadderPolicy;
   matchUpId?: string;
-  tournamentRecord?: any;
-  drawDefinition?: any;
-  structure?: any;
-  event?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  structure?: Structure;
+  event?: Event;
 };
 
 export type Attestation = {

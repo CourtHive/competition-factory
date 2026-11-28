@@ -14,7 +14,18 @@ import {
   MISSING_DRAW_ID,
   EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
 } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 
+type RemoveDrawEntriesArgs = {
+  autoEntryPositions?: boolean;
+  tournamentRecord: Tournament;
+  participantIds: string[];
+  drawDefinition: DrawDefinition;
+  disableNotice?: boolean;
+  drawId: string;
+  stages?: StageTypeUnion[];
+  event: Event;
+};
 export function removeDrawEntries({
   autoEntryPositions = true,
   tournamentRecord,
@@ -24,7 +35,7 @@ export function removeDrawEntries({
   drawId,
   stages,
   event,
-}) {
+}: RemoveDrawEntriesArgs) {
   if (!event) return { error: MISSING_EVENT };
   if (!drawId) return { error: MISSING_DRAW_ID };
   if (!participantIds?.length) return { error: MISSING_PARTICIPANT_IDS };

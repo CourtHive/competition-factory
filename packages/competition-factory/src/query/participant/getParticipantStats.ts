@@ -23,6 +23,7 @@ import {
   MISSING_TOURNAMENT_RECORD,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 
 export type StatCounters = {
   participantName: string;
@@ -62,7 +63,7 @@ type GetTeamStatistics = {
   matchUps?: HydratedMatchUp[];
   teamParticipantId?: string;
   withScaleValues?: boolean;
-  tallyPolicy?: any;
+  tallyPolicy?: RoundRobinTallyPolicy;
 };
 
 type TeamStatsResults = {

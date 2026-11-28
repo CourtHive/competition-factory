@@ -8,6 +8,8 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, OfficialCertification } from '@Types/officiatingTypes';
+import type { DocumentReference } from '@Types/sanctioningTypes';
+import type { Extension } from '@Types/tournamentTypes';
 
 type AddCertificationArgs = {
   officialRecord: OfficialRecord;
@@ -19,9 +21,9 @@ type AddCertificationArgs = {
   status?: string;
   validFrom?: string;
   validUntil?: string;
-  documentReferences?: any[];
+  documentReferences?: DocumentReference[];
   notes?: string;
-  extensions?: any[];
+  extensions?: Extension[];
 };
 
 export function addCertification({

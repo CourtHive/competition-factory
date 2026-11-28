@@ -6,7 +6,16 @@ import { refreshEntryPositions } from './refreshEntryPositions';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
+type SetEntryPositionArgs = {
+  tournamentRecord: Tournament;
+  drawDefinition?: DrawDefinition;
+  participantId: string;
+  entryPosition?: number;
+  skipRefresh?: boolean;
+  event?: Event;
+};
 export function setEntryPosition({
   tournamentRecord,
   drawDefinition,
@@ -14,7 +23,7 @@ export function setEntryPosition({
   entryPosition,
   skipRefresh,
   event,
-}) {
+}: SetEntryPositionArgs) {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -63,7 +72,13 @@ export function setEntryPosition({
   return { ...SUCCESS };
 }
 
-export function setEntryPositions({ tournamentRecord, entryPositions, drawDefinition, event }) {
+type SetEntryPositionsArgs = {
+  tournamentRecord: Tournament;
+  entryPositions: { participantId: string; entryPosition?: number }[];
+  drawDefinition?: DrawDefinition;
+  event?: Event;
+};
+export function setEntryPositions({ tournamentRecord, entryPositions, drawDefinition, event }: SetEntryPositionsArgs) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;
   if (!Array.isArray(entryPositions)) return { error: INVALID_VALUES };

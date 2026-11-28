@@ -128,7 +128,7 @@ export function matchUpScheduleLocked({
   matchUp,
 }: {
   attributes?: ScheduleLockAttribute[];
-  matchUp?: any;
+  matchUp?: MatchUp;
 }): boolean {
   const lock = matchUp?.schedule?.lock;
   if (!isObject(lock)) return false;
@@ -136,7 +136,7 @@ export function matchUpScheduleLocked({
   if (SCHEDULE_LOCK_ATTRIBUTES.every((attribute) => isEmpty(currentValue(matchUp, attribute)))) return false;
   if (!attributes?.length) return true;
 
-  const lockedAttributes = lock.attributes;
+  const lockedAttributes = lock!.attributes;
   if (!Array.isArray(lockedAttributes) || !lockedAttributes.length) return true;
 
   const lockedSet = new Set<string>(lockedAttributes);

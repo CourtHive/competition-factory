@@ -5,12 +5,12 @@ import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants and types
 import { ErrorType, INVALID_TOURNAMENT_RECORD, NOT_FOUND } from '@Constants/errorConditionConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { Tournament, ScheduleProfileDate } from '@Types/tournamentTypes';
 
 type GetProfileRoundsArgs = {
   tournamentRecords?: { [key: string]: Tournament };
   tournamentRecord?: Tournament;
-  schedulingProfile?: any;
+  schedulingProfile?: ScheduleProfileDate[];
   withRoundId?: boolean;
 };
 export function getProfileRounds({
@@ -52,8 +52,8 @@ export function getProfileRounds({
 
   const profileRounds = schedulingProfile
     .map(({ venues, scheduleDate }) =>
-      venues.map(({ rounds }) =>
-        rounds.map((round) => {
+      venues!.map(({ rounds }) =>
+        rounds!.map((round) => {
           const roundRef = getRoundId(round);
           if (roundRef.roundSegment?.segmentsCount) {
             segmentedRounds[roundRef.id] = roundRef.roundSegment.segmentsCount;

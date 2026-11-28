@@ -8,6 +8,7 @@ import { collectionGroupUpdate } from './collectionGroupUpdate';
 
 // constants
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import type { CollectionGroup, DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 
 // A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
 // shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
@@ -18,6 +19,19 @@ export function addCollectionGroup(params: Parameters<typeof addGroup>[0]) {
   return withEventChangeNotice(params, () => addGroup(params));
 }
 
+type AddCollectionGroupArgs = {
+  updateInProgressMatchUps?: boolean;
+  tournamentRecord?: Tournament;
+  groupDefinition: CollectionGroup;
+  drawDefinition?: DrawDefinition;
+  collectionIds: string[];
+  tieFormatName?: string;
+  structureId?: string;
+  matchUpId?: string;
+  matchUp?: MatchUp;
+  eventId?: string;
+  event?: Event;
+};
 function addGroup({
   updateInProgressMatchUps = true,
   tournamentRecord,
@@ -30,7 +44,7 @@ function addGroup({
   matchUp,
   eventId,
   event,
-}) {
+}: AddCollectionGroupArgs) {
   const stack = 'addCollectionGroup';
   if (!Array.isArray(collectionIds)) return decorateResult({ result: { error: MISSING_VALUE }, stack });
 
@@ -97,5 +111,5 @@ function addGroup({
     matchUp,
     eventId,
     event,
-  });
+  } as Parameters<typeof collectionGroupUpdate>[0]);
 }

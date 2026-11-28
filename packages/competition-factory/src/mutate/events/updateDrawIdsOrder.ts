@@ -6,6 +6,7 @@ import { intersection, unique } from '@Tools/arrays';
 // constants
 import { INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
 
 export function updateDrawIdsOrder({
   event,
@@ -13,10 +14,10 @@ export function updateDrawIdsOrder({
   disableNotice,
   orderedDrawIdsMap,
 }: {
-  event?: any;
-  tournamentRecord?: any;
+  event?: Event;
+  tournamentRecord?: Tournament;
   disableNotice?: boolean;
-  orderedDrawIdsMap?: any;
+  orderedDrawIdsMap?: { [drawId: string]: number };
 }) {
   if (typeof event !== 'object') return { error: MISSING_EVENT };
   if (!orderedDrawIdsMap) return { error: MISSING_VALUE, info: 'Missing drawIdsOrderMap' };

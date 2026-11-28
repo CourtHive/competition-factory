@@ -9,7 +9,17 @@ import { PUBLISH_EVENT_SEEDING, UNPUBLISH_EVENT_SEEDING } from '@Constants/topic
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 
+type PublishEventSeedingArgs = {
+  removePriorValues?: boolean;
+  stageSeedingScaleNames?: { [stage: string]: string };
+  seedingScaleNames?: { [key: string]: string };
+  tournamentRecord: Tournament;
+  status?: string;
+  drawIds?: string[];
+  event: Event;
+};
 export function publishEventSeeding({
   removePriorValues = true,
   stageSeedingScaleNames,
@@ -18,7 +28,7 @@ export function publishEventSeeding({
   status = PUBLIC,
   drawIds = [],
   event,
-}) {
+}: PublishEventSeedingArgs) {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -60,6 +70,15 @@ export function publishEventSeeding({
   return { ...SUCCESS };
 }
 
+type UnPublishEventSeedingArgs = {
+  removePriorValues?: boolean;
+  seedingScaleNames?: string[];
+  tournamentRecord: Tournament;
+  status?: string;
+  drawIds?: string[];
+  stages?: StageTypeUnion[];
+  event: Event;
+};
 export function unPublishEventSeeding({
   removePriorValues = true,
   seedingScaleNames,
@@ -68,7 +87,7 @@ export function unPublishEventSeeding({
   drawIds,
   stages,
   event,
-}) {
+}: UnPublishEventSeedingArgs) {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 

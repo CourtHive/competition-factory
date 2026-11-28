@@ -2,7 +2,7 @@ import { findStructure, getDrawStructures } from '@Acquire/findStructure';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, MISSING_EVENT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Structure } from '@Types/tournamentTypes';
+import { DrawDefinition, Structure, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 
 type GetPlayoffStructuresArgs = {
   drawDefinition: DrawDefinition;
@@ -25,6 +25,15 @@ export function getPlayoffStructures({ drawDefinition, structureId }: GetPlayoff
   return { playoffStructures, structure };
 }
 
+type GetEventStructuresArgs = {
+  withStageGrouping?: boolean;
+  stageSequences?: string[];
+  stageSequence?: number;
+  roundTarget?: number;
+  stages?: StageTypeUnion[];
+  event: Event;
+  stage?: StageTypeUnion;
+};
 export function getEventStructures({
   withStageGrouping,
   stageSequences,
@@ -33,7 +42,7 @@ export function getEventStructures({
   stages,
   event,
   stage,
-}) {
+}: GetEventStructuresArgs) {
   if (!event) return { error: MISSING_EVENT };
   const stageStructures = {};
   const structures: Structure[] = [];
@@ -61,6 +70,15 @@ export function getEventStructures({
   return { structures, stageStructures };
 }
 
+type GetTournamentStructuresArgs = {
+  withStageGrouping?: boolean;
+  tournamentRecord: Tournament;
+  stageSequences?: string[];
+  stageSequence?: number;
+  roundTarget?: number;
+  stages?: StageTypeUnion[];
+  stage?: StageTypeUnion;
+};
 export function getTournamentStructures({
   withStageGrouping,
   tournamentRecord,
@@ -69,7 +87,7 @@ export function getTournamentStructures({
   roundTarget,
   stages,
   stage,
-}) {
+}: GetTournamentStructuresArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   const stageStructures = {};
   const structures: Structure[] = [];

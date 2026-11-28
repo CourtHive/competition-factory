@@ -42,7 +42,7 @@ type GenerateLineUpsArgs = {
   exclusiveSingles?: boolean;
   tournamentRecord: Tournament;
   drawDefinition?: DrawDefinition;
-  scaleAccessor: any;
+  scaleAccessor: { scaleType?: string; scaleName?: string; accessor?: string; sortOrder?: string };
   singlesOnly?: boolean;
   tieFormat?: TieFormat;
   /** @deprecated in 8.0.0 the generator only returns line-ups; store them with `applyLineUps` (see the 8.0.0 migration guide) */

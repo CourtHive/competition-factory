@@ -19,7 +19,12 @@ import { Event, Tournament, WeekdayUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
-export function setEventStartDate({ tournamentRecord, event, startDate }) {
+type SetEventStartDateArgs = {
+  tournamentRecord?: Tournament;
+  event?: Event;
+  startDate: string;
+};
+export function setEventStartDate({ tournamentRecord, event, startDate }: SetEventStartDateArgs) {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
   if (!canonicalDate(startDate)) return { error: INVALID_DATE };
@@ -43,13 +48,13 @@ export function setEventStartDate({ tournamentRecord, event, startDate }) {
     });
 
   // use extractDate() to ensure that only the YYYY-MM-DD part of date is used for comparison
-  const eventEndDate = event.endDate && new Date(extractDate(event.endDate)).getTime();
+  const eventEndDate = event!.endDate && new Date(extractDate(event!.endDate)).getTime();
   if (eventEndDate && newEventStartDate > eventEndDate) {
     // if the new startDate is after an existing endDate set the endDate to the startDate
-    event.endDate = startDate;
+    event!.endDate = startDate;
   }
 
-  event.startDate = startDate;
+  event!.startDate = startDate;
 
   // event dates are first-class + projected (read-model events row); the standalone
   // setter must dispatch its own MODIFY_EVENT (setEventDates only fires it from the

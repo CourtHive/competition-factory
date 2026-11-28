@@ -43,7 +43,7 @@ type VenueModifications = Omit<Partial<Venue>, 'courts'> & { courts?: Partial<Co
 type ModifyVenueArgs = {
   tournamentRecords?: TournamentRecords;
   tournamentRecord?: Tournament;
-  modifications: any;
+  modifications: Partial<Venue>;
   venueId: string;
   force?: boolean;
 };

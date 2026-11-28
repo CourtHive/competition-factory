@@ -32,7 +32,7 @@ export function attachPlayoffStructures(params) {
 type AttachStructuresArgs = {
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
-  matchUpModifications?: any[];
+  matchUpModifications?: { matchUp?: Partial<MatchUp> }[];
   structures: Structure[];
   links?: DrawLink[];
   itemType?: string;

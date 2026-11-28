@@ -5,7 +5,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 // constants and types
 import { DRAW_DEFINITION, ERROR, MATCHUP_ID } from '@Constants/attributeConstants';
 import { ErrorType, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
-import type { Event, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { PresenceAttestation } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -27,7 +27,7 @@ import { SUCCESS } from '@Constants/resultConstants';
  */
 export function getMatchUpCheckInHistory(params: {
   tournamentRecord?: Tournament;
-  drawDefinition?: any;
+  drawDefinition?: DrawDefinition;
   matchUpId: string;
   event?: Event;
 }): { checkIns?: PresenceAttestation[]; success?: boolean; error?: ErrorType } {
@@ -35,7 +35,7 @@ export function getMatchUpCheckInHistory(params: {
   if (paramCheck[ERROR]) return paramCheck;
 
   const { drawDefinition, matchUpId, event } = params;
-  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId } as Parameters<typeof findDrawMatchUp>[0]);
   if (!matchUp) return { [ERROR]: MATCHUP_NOT_FOUND };
 
   return { ...SUCCESS, checkIns: getMatchUpPresence(matchUp) };

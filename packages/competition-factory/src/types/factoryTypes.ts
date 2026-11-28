@@ -52,6 +52,7 @@ import {
   POLICY_TYPE_RATINGS,
 } from '@Constants/policyConstants';
 import type { DrawPublishingDetails } from './publishingTypes';
+import type { MockQualifyingProfile } from './mocksTypes';
 
 export type FactoryEngine = {
   [key: string]: any;
@@ -610,6 +611,12 @@ export type MatchUpScheduleDetail = {
   schedule?: MatchUpScheduleRequest;
 };
 
+/**
+ * One round target's qualifying structures, as the draw generators read it: `roundTarget` names the main-draw round the
+ * qualifiers enter, and each structure profile one qualifying stage (the mocks' `drawProfiles[].qualifyingProfiles`).
+ */
+export type QualifyingProfile = MockQualifyingProfile;
+
 /** A matchUp named by the ids that locate it, as `getMatchUpContextIds` returns them. */
 export type MatchUpContextIds = {
   matchUpId: string;
@@ -897,7 +904,7 @@ export type GenerateDrawDefinitionArgs = {
   pairingProfile?: PairingProfile;
   drawTypeCoercion?: boolean;
   ignoreStageSpace?: boolean;
-  qualifyingProfiles?: any[];
+  qualifyingProfiles?: QualifyingProfile[];
   drawMatic?: DrawMaticArgs;
   qualifyingOnly?: boolean;
   drawType?: DrawTypeUnion;
@@ -1026,5 +1033,5 @@ export type ScheduledMatchUpArgs = {
   visibilityThreshold?: string;
   timeStamp?: string;
   schedule?: MatchUpSchedule;
-  matchUp: any;
+  matchUp?: MatchUp;
 };

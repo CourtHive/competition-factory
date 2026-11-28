@@ -7,8 +7,14 @@ import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
+import type { PolicyDefinitions } from '@Types/factoryTypes';
 
-export function getAllEventData({ tournamentRecord, policyDefinitions }) {
+type GetAllEventDataArgs = {
+  tournamentRecord?: Tournament;
+  policyDefinitions?: PolicyDefinitions;
+};
+export function getAllEventData({ tournamentRecord, policyDefinitions }: GetAllEventDataArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   const events = tournamentRecord.events ?? [];

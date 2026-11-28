@@ -4,8 +4,13 @@ import { nowIso } from '@Tools/clock';
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_TIME_ITEM, MISSING_TIME_ITEM } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { DrawDefinition, TimeItem } from '@Types/tournamentTypes';
 
-export function addDrawDefinitionTimeItem({ drawDefinition, timeItem }) {
+type AddDrawDefinitionTimeItemArgs = {
+  drawDefinition?: DrawDefinition;
+  timeItem?: TimeItem;
+};
+export function addDrawDefinitionTimeItem({ drawDefinition, timeItem }: AddDrawDefinitionTimeItemArgs) {
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
   if (!timeItem) return { error: MISSING_TIME_ITEM };
 

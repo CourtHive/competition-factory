@@ -7,8 +7,18 @@ import { refreshEventDrawOrder } from './refreshEventDrawOrder';
 // constants
 import { TOURNAMENT_RECORD, DRAW_ID, EVENT } from '@Constants/attributeConstants';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
 
-export function deleteFlightAndFlightDraw({ autoPublish = true, tournamentRecord, auditData, drawId, event, force }) {
+type DeleteFlightAndFlightDrawArgs = {
+  autoPublish?: boolean;
+  tournamentRecord: Tournament;
+  auditData?: object;
+  drawId: string;
+  event: Event;
+  force?: boolean;
+};
+// prettier-ignore
+export function deleteFlightAndFlightDraw({ autoPublish = true, tournamentRecord, auditData, drawId, event, force }: DeleteFlightAndFlightDrawArgs) {
   const paramsCheck = requireParams({ tournamentRecord, drawId, event }, [TOURNAMENT_RECORD, DRAW_ID, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 

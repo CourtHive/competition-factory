@@ -9,7 +9,7 @@ import { ensureInt } from '@Tools/ensureInt';
 
 // constants
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type DrawsAnalysis = {
@@ -20,7 +20,10 @@ type DrawsAnalysis = {
   drawAnalysis: Record<string, unknown>;
 };
 
-export function analyzeDraws({ tournamentRecord }): {
+type AnalyzeDrawsArgs = {
+  tournamentRecord: Tournament;
+};
+export function analyzeDraws({ tournamentRecord }: AnalyzeDrawsArgs): {
   error?: ErrorType;
   drawsAnalysis?: any;
   success?: boolean;
@@ -62,7 +65,7 @@ export function analyzeDraws({ tournamentRecord }): {
     const structures = drawDefinition?.structures ?? [];
     const structuresData = structures.map((structure) => {
       const { stage, stageSequence, structureId } = structure;
-      const orderNumber = stageOrder[stage];
+      const orderNumber = stageOrder[stage!];
       const { inContextStructureMatchUps } = getStructureDrawPositionProfiles({
         drawDefinition,
         structureId,
@@ -133,26 +136,26 @@ export function analyzeDraws({ tournamentRecord }): {
     const activeStructuresCount = structuresData.filter(({ inactiveStructure }) => !inactiveStructure).length;
 
     const { links } = getStructureLinks({
-      structureId: mainStructure.structureId,
+      structureId: mainStructure!.structureId,
       drawDefinition,
     });
 
     const isMatchPlay =
-      ensureInt(mainStructure.activeRounds[0]) === 1 &&
-      mainStructure.activeRounds.length === 1 &&
+      ensureInt(mainStructure!.activeRounds![0]) === 1 &&
+      mainStructure!.activeRounds!.length === 1 &&
       activeStructuresCount === 1;
 
     const inactiveDraw = structuresData?.every(({ inactiveStructure }) => inactiveStructure);
 
     // a round robin MAIN is a CONTAINER of groups: it has no draw size to reduce, so it is never prunable
     const mainIsRoundRobin = !!structuresOf(
-      structures.find((structure: Structure) => structure.structureId === mainStructure.structureId),
+      structures.find((structure: Structure) => structure.structureId === mainStructure!.structureId),
     );
     const canBePruned =
       !mainIsRoundRobin &&
       !links.length &&
-      mainStructure.activeRounds.length &&
-      (mainStructure.roundProfile[1].inactiveCount || mainStructure.inactiveRounds.length);
+      mainStructure!.activeRounds!.length &&
+      (mainStructure!.roundProfile![1].inactiveCount || mainStructure!.inactiveRounds!.length);
 
     const drawId = drawDefinition.drawId;
 

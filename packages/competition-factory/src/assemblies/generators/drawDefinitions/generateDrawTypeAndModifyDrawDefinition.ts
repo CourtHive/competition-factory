@@ -48,11 +48,11 @@ type GenerateDrawTypeAndModify = {
   qualifiersCount?: number;
   stageSequence?: number;
   matchUpFormat?: string;
-  structureOptions?: any;
+  structureOptions?: { groupSize?: number; [key: string]: unknown };
   tieFormat?: TieFormat;
   drawType?: string;
   drawSize?: number;
-  feedPolicy?: any;
+  feedPolicy?: PolicyDefinitions['feedIn'];
   isMock?: boolean;
   event?: Event;
 };

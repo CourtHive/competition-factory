@@ -7,10 +7,11 @@ import { savePersonRequests } from './savePersonRequests';
 import { ARRAY, INVALID, OF_TYPE, PERSON_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
+import type { ClockRequest } from './canonicalRequest';
 
 type AddPersonRequestsArgs = {
   tournamentRecords: TournamentRecords;
-  requests: Request[];
+  requests: ClockRequest[];
   personId: string;
 };
 export function addPersonRequests(params: AddPersonRequestsArgs) {

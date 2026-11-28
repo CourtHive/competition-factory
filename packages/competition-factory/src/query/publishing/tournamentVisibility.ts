@@ -2,6 +2,7 @@ import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPubl
 import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { isISODateString } from '@Tools/dateTime';
 import { asOfTime } from './asOfTime';
+import type { Tournament } from '@Types/tournamentTypes';
 
 /**
  * WHEN a published tournament becomes publicly visible — the read-time half of the publish model.
@@ -40,7 +41,7 @@ import { asOfTime } from './asOfTime';
  */
 
 interface VisibilityArgs {
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   /** The instant to judge against. Defaults to now; pass it to make a test independent of the clock. */
   asOf?: Date | string;
 }

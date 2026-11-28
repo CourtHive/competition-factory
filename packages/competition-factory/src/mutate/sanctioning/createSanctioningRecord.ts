@@ -9,7 +9,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { SanctioningRecord, TournamentProposal, Applicant } from '@Types/sanctioningTypes';
-import type { TierClassification } from '@Types/tournamentTypes';
+import type { Extension, TierClassification } from '@Types/tournamentTypes';
 
 type CreateSanctioningRecordArgs = {
   sanctioningId?: string;
@@ -19,7 +19,7 @@ type CreateSanctioningRecordArgs = {
   proposal: TournamentProposal;
   sanctioningTier?: TierClassification;
   sanctioningPolicy?: string;
-  extensions?: any[];
+  extensions?: Extension[];
 };
 
 export function createSanctioningRecord({

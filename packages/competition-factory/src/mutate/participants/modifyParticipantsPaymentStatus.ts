@@ -9,11 +9,11 @@ import { PAYMENT_STATUS, paymentStatusValues, PaymentStatusUnion } from '@Consta
 import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant } from '@Types/tournamentTypes';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
 
 type ModifyParticipantsPaymentStatusArgs = {
-  tournamentRecord: any;
+  tournamentRecord?: Tournament;
   participantIds: string[];
   paymentState: PaymentStatusUnion;
   /**
@@ -37,7 +37,7 @@ export function modifyParticipantsPaymentStatus({
 
   if (!paymentStatusValues.includes(paymentState)) return { error: INVALID_VALUES, paymentState };
 
-  const participants = tournamentRecord.participants ?? [];
+  const participants = tournamentRecord!.participants ?? [];
   if (!participants.length) return { error: MISSING_PARTICIPANTS };
 
   const allParticipantIds = new Set(participants.map(getParticipantId));
@@ -60,7 +60,7 @@ export function modifyParticipantsPaymentStatus({
         tournamentRecord,
         participantId,
         timeItem,
-      });
+      } as Parameters<typeof addParticipantTimeItem>[0]);
       if (result.error) return result;
       modifiedParticipants.push(participant);
     }
@@ -70,7 +70,7 @@ export function modifyParticipantsPaymentStatus({
   // record depended on who was listening
   if (modifiedParticipants.length) {
     modifyParticipantsNotice({
-      tournamentId: tournamentRecord.tournamentId,
+      tournamentId: tournamentRecord!.tournamentId,
       participants: modifiedParticipants,
     });
   }

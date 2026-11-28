@@ -7,8 +7,12 @@ import { checkIsDual } from '@Query/tournaments/checkIsDual';
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
-export function analyzeTournament({ tournamentRecord }) {
+type AnalyzeTournamentArgs = {
+  tournamentRecord?: Tournament;
+};
+export function analyzeTournament({ tournamentRecord }: AnalyzeTournamentArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   const { drawsAnalysis } = analyzeDraws({ tournamentRecord });

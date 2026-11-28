@@ -349,7 +349,7 @@ type IsValidSeedPositionArgs = {
   appliedPolicies?: PolicyDefinitions;
   drawDefinition: DrawDefinition;
   drawPosition: number;
-  seedBlockInfo?: any;
+  seedBlockInfo?: SeedBlockInfo;
   structureId: string;
   seedNumber?: number;
 };

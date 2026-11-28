@@ -26,7 +26,8 @@ const ladder = () => {
       { drawPosition: 9, participantId: 'p9' },
     ],
   };
-  return { drawId: 'd1', drawType: LADDER, structures: [structure] };
+  const drawDefinition: any = { drawId: 'd1', drawType: LADDER, structures: [structure] };
+  return drawDefinition;
 };
 
 const issue = (drawDefinition: any, challenger: string, defender: string) =>

@@ -12,7 +12,13 @@ import {
   MISSING_VALUE,
   PARTICIPANT_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
+type ModifyIndividualParticipantIdsArgs = {
+  individualParticipantIds?: string[];
+  groupingParticipantId?: string;
+  tournamentRecord?: Tournament;
+};
 /**
  *
  * @param {object} tournamentRecord - passed in automatically by tournamentEngine
@@ -20,7 +26,8 @@ import {
  * @param {string[]} individualParticipantIds - new value for individualParticipantIds array
  *
  */
-export function modifyIndividualParticipantIds({ individualParticipantIds, groupingParticipantId, tournamentRecord }) {
+// prettier-ignore
+export function modifyIndividualParticipantIds({ individualParticipantIds, groupingParticipantId, tournamentRecord }: ModifyIndividualParticipantIdsArgs) {
   const stack = 'modifyIndividualParticipantIds';
   if (!tournamentRecord)
     return decorateResult({
@@ -37,7 +44,7 @@ export function modifyIndividualParticipantIds({ individualParticipantIds, group
   });
   if (!groupingParticipant) return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND }, stack });
 
-  if (![TEAM, GROUP].includes(groupingParticipant.participantType)) {
+  if (![TEAM, GROUP].includes(groupingParticipant.participantType!)) {
     return decorateResult({
       result: { error: INVALID_PARTICIPANT_TYPE },
       context: {

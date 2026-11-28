@@ -43,7 +43,7 @@ export function addTournamentOtherId({
   uniqueOrganisationName?: string;
   // the OTHER organisation's id for this tournament — NOT the carrying record's
   otherTournamentId: string;
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   organisationId: string;
   isOrigin?: boolean;
 }) {
@@ -89,7 +89,7 @@ export function setTournamentOtherIds({
   tournamentRecord,
 }: {
   tournamentOtherIds: UnifiedTournamentID[] | null;
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
 }) {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;

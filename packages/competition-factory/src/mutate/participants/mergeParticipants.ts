@@ -10,13 +10,18 @@ import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorCondi
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant } from '@Types/tournamentTypes';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 
+type MergeParticipantsArgs = {
+  participants?: Participant[];
+  tournamentRecord: Tournament;
+  arraysToMerge?: string[];
+};
 export function mergeParticipants({
   participants: incomingParticipants = [] as Participant[],
   tournamentRecord,
   arraysToMerge,
-}) {
+}: MergeParticipantsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   const retired = retiredParticipantCheck(
     tournamentRecord,

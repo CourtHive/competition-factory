@@ -6,8 +6,13 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { SIGNED_IN } from '@Constants/participantConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
-export function getParticipantSignInStatus({ tournamentRecord, participantId }) {
+type GetParticipantSignInStatusArgs = {
+  tournamentRecord: Tournament;
+  participantId: string;
+};
+export function getParticipantSignInStatus({ tournamentRecord, participantId }: GetParticipantSignInStatusArgs) {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
   if (paramsCheck.error) return paramsCheck;
 

@@ -44,7 +44,7 @@ export function transitionToPostEvent({ sanctioningRecord, transitionedBy }: Tra
 type SubmitComplianceItemArgs = {
   sanctioningRecord: SanctioningRecord;
   itemId: string;
-  value?: any;
+  value?: unknown;
 };
 
 export function submitComplianceItem({ sanctioningRecord, itemId, value }: SubmitComplianceItemArgs) {

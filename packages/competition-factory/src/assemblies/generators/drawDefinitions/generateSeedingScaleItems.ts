@@ -1,5 +1,5 @@
 import { ErrorType, MISSING_VALUE } from '@Constants/errorConditionConstants';
-import { ScaleAttributes } from '@Types/factoryTypes';
+import { ScaleAttributes, ScaledEntry } from '@Types/factoryTypes';
 import { SEEDING } from '@Constants/scaleConstants';
 import { Entry } from '@Types/tournamentTypes';
 import { nowIso } from '@Tools/clock';
@@ -10,7 +10,7 @@ type ScaleItemsWithParticipantId = {
 };
 type GenerateSeedingScaleItemsArgs = {
   scaleAttributes?: ScaleAttributes;
-  scaledEntries: any[] | null;
+  scaledEntries: ScaledEntry[] | null;
   stageEntries: Entry[];
   seedsCount: number;
   scaleName?: string;

@@ -540,13 +540,17 @@ describe('categoryValidation helpers', () => {
 // ----------------------------------------------------------------
 describe('setEventDates guard paths', () => {
   it('setEventStartDate returns MISSING_TOURNAMENT_RECORD', () => {
-    const result = setEventStartDate({ tournamentRecord: undefined, event: {}, startDate: '2024-01-01' });
+    const result = setEventStartDate({
+      tournamentRecord: undefined,
+      event: { eventId: 'e1' },
+      startDate: '2024-01-01',
+    });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('setEventStartDate returns MISSING_EVENT', () => {
     const result = setEventStartDate({
-      tournamentRecord: { startDate: '2024-01-01', endDate: '2024-01-07' },
+      tournamentRecord: { tournamentId: 't1', startDate: '2024-01-01', endDate: '2024-01-07' },
       event: undefined,
       startDate: '2024-01-01',
     });
@@ -555,8 +559,8 @@ describe('setEventDates guard paths', () => {
 
   it('setEventStartDate returns INVALID_DATE for bad format', () => {
     const result = setEventStartDate({
-      tournamentRecord: { startDate: '2024-01-01', endDate: '2024-01-07' },
-      event: {},
+      tournamentRecord: { tournamentId: 't1', startDate: '2024-01-01', endDate: '2024-01-07' },
+      event: { eventId: 'e1' },
       startDate: 'bad-date',
     });
     expect(result.error).toEqual(INVALID_DATE);
@@ -569,7 +573,7 @@ describe('setEventDates guard paths', () => {
 
   it('setEventEndDate returns MISSING_EVENT', () => {
     const result = setEventEndDate({
-      tournamentRecord: { startDate: '2024-01-01', endDate: '2024-01-07' },
+      tournamentRecord: { tournamentId: 't1', startDate: '2024-01-01', endDate: '2024-01-07' },
       event: undefined,
       endDate: '2024-01-07',
     });
@@ -579,7 +583,7 @@ describe('setEventDates guard paths', () => {
   it('setEventEndDate updates startDate when new endDate is before it', () => {
     const event: any = { startDate: '2024-01-05', endDate: '2024-01-07' };
     const result: any = setEventEndDate({
-      tournamentRecord: { startDate: '2024-01-01', endDate: '2024-01-07' },
+      tournamentRecord: { tournamentId: 't1', startDate: '2024-01-01', endDate: '2024-01-07' },
       event,
       endDate: '2024-01-03',
     });
@@ -590,7 +594,7 @@ describe('setEventDates guard paths', () => {
   it('setEventStartDate updates endDate when new startDate is after it', () => {
     const event: any = { startDate: '2024-01-01', endDate: '2024-01-03' };
     const result: any = setEventStartDate({
-      tournamentRecord: { startDate: '2024-01-01', endDate: '2024-01-07' },
+      tournamentRecord: { tournamentId: 't1', startDate: '2024-01-01', endDate: '2024-01-07' },
       event,
       startDate: '2024-01-05',
     });

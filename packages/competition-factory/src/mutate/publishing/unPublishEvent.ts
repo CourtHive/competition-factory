@@ -10,8 +10,15 @@ import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { PUBLIC, PUBLISH, STATUS } from '@Constants/timeItemConstants';
 import { UNPUBLISH_EVENT } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
 
-export function unPublishEvent({ removePriorValues = true, tournamentRecord, status = PUBLIC, event }) {
+type UnPublishArgs = {
+  removePriorValues?: boolean;
+  tournamentRecord: Tournament;
+  status?: string;
+  event: Event;
+};
+export function unPublishEvent({ removePriorValues = true, tournamentRecord, status = PUBLIC, event }: UnPublishArgs) {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 
