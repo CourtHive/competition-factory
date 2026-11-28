@@ -19,7 +19,7 @@ import {
 import { BYE, RETIRED, COMPLETED, TO_BE_PLAYED, DEFAULTED, SUSPENDED } from '@Constants/matchUpStatusConstants';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
-import { EntryStatusUnion, StageTypeUnion } from '@Types/tournamentTypes';
+import { EntryStatusUnion, Score, StageTypeUnion } from '@Types/tournamentTypes';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -579,7 +579,7 @@ it('can change a FMLC first round matchUp winner and update consolation', () => 
   ({ error } = setMatchUpState({
     matchUpStatus: BYE,
     drawDefinition,
-    score: '6-1',
+    score: '6-1' as unknown as Score,
     matchUpId,
   }));
   expect(error).not.toBeUndefined();
@@ -606,7 +606,7 @@ it('can change a FMLC first round matchUp winner and update consolation', () => 
   result = setMatchUpState({
     matchUpStatus: RETIRED,
     drawDefinition,
-    score: '6-1',
+    score: '6-1' as unknown as Score,
     matchUpId,
   });
   expect(result.error).toEqual(INVALID_VALUES);

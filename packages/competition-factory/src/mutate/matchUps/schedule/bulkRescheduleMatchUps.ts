@@ -32,7 +32,7 @@ type BulkRescheduleMatchUpsArgs = {
   tournamentRecord: Tournament;
   matchUpIds: string[];
   overrideScheduleLock?: boolean;
-  scheduleChange: any;
+  scheduleChange: { minutesChange?: number; daysChange?: number };
   dryRun?: boolean;
 };
 export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): ResultType & {

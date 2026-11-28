@@ -533,7 +533,7 @@ function addParticipantId2Pair({ side, tournamentRecord, participantId }) {
   let deletedParticipantId;
 
   if (!side.participant) {
-    const newPairParticipant = {
+    const newPairParticipant: Parameters<typeof addParticipant>[0]['participant'] = {
       individualParticipantIds: [participantId],
       participantRole: COMPETITOR,
       participantType: PAIR,

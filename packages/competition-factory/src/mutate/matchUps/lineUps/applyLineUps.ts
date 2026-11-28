@@ -236,7 +236,7 @@ function ensureDoublesPairParticipants({
         participantIds,
       });
       if (!pairedParticipant) {
-        const newPairParticipant = {
+        const newPairParticipant: Parameters<typeof addParticipant>[0]['participant'] = {
           participantType: PAIR,
           participantRole: COMPETITOR,
           individualParticipantIds: participantIds,

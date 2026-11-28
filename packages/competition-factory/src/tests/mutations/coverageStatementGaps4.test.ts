@@ -32,7 +32,7 @@ import {
 // constants and fixtures
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import type { DrawDefinition, Participant } from '@Types/tournamentTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { GEM_SCORE } from '@Constants/tallyConstants';
 import { SINGLES } from '@Constants/eventConstants';
@@ -653,7 +653,11 @@ describe('addParticipant guard paths', () => {
   it('returns INVALID_PARTICIPANT_TYPE for unknown type', () => {
     const result = addParticipant({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      participant: { participantId: 'p2', participantType: 'INVALID_TYPE', participantRole: COMPETITOR },
+      participant: {
+        participantId: 'p2',
+        participantType: 'INVALID_TYPE',
+        participantRole: COMPETITOR,
+      } as unknown as Participant,
     });
     expect(result.error).toEqual(INVALID_PARTICIPANT_TYPE);
   });
@@ -669,7 +673,12 @@ describe('addParticipant guard paths', () => {
   it('returns INVALID_VALUES when non-INDIVIDUAL has person', () => {
     const result = addParticipant({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      participant: { participantId: 'p4', participantType: PAIR, participantRole: COMPETITOR, person: { name: 'x' } },
+      participant: {
+        participantId: 'p4',
+        participantType: PAIR,
+        participantRole: COMPETITOR,
+        person: { name: 'x' },
+      } as unknown as Participant,
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });
@@ -677,7 +686,12 @@ describe('addParticipant guard paths', () => {
   it('returns MISSING_PERSON_DETAILS for INDIVIDUAL without full name', () => {
     const result = addParticipant({
       tournamentRecord: { tournamentId: 't1', participants: [] } as any,
-      participant: { participantId: 'p5', participantType: INDIVIDUAL, participantRole: COMPETITOR, person: {} },
+      participant: {
+        participantId: 'p5',
+        participantType: INDIVIDUAL,
+        participantRole: COMPETITOR,
+        person: {},
+      } as unknown as Participant,
     });
     expect(result.error).toEqual(MISSING_PERSON_DETAILS);
   });
@@ -930,7 +944,7 @@ describe('bulkRescheduleMatchUps guard paths', () => {
     const result = bulkReschedule({
       tournamentRecord: { tournamentId: 't1' },
       matchUpIds: ['m1'],
-      scheduleChange: { minutesChange: 'bad' },
+      scheduleChange: { minutesChange: 'bad' } as unknown as { minutesChange: number },
       dryRun: false,
     });
     expect(result.error).toEqual(INVALID_VALUES);
@@ -940,7 +954,7 @@ describe('bulkRescheduleMatchUps guard paths', () => {
     const result = bulkReschedule({
       tournamentRecord: { tournamentId: 't1' },
       matchUpIds: ['m1'],
-      scheduleChange: { daysChange: 'bad' },
+      scheduleChange: { daysChange: 'bad' } as unknown as { daysChange: number },
       dryRun: false,
     });
     expect(result.error).toEqual(INVALID_VALUES);
@@ -964,7 +978,7 @@ describe('orderCollectionDefinitions guard paths', () => {
     const result = orderCollectionDefinitions({
       tournamentRecord: {} as any,
       drawDefinition: {} as any,
-      orderMap: { col1: 'abc' },
+      orderMap: { col1: 'abc' } as unknown as { [collectionId: string]: number },
     });
     expect(result.error).toEqual(INVALID_VALUES);
   });

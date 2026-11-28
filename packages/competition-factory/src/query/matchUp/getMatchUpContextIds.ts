@@ -2,9 +2,10 @@ import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 type GetMatchUpContextIdsArgs = {
-  matchUps: any;
+  matchUps: HydratedMatchUp[];
   matchUpId: string;
 };
 export function getMatchUpContextIds({ matchUps, matchUpId }: GetMatchUpContextIdsArgs) {

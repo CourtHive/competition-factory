@@ -40,6 +40,7 @@ import {
   INVALID_TIE_FORMAT,
   MISSING_MATCHUP,
 } from '@Constants/errorConditionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 // ----------------------------------------------------------------
 // GROUP 1 — 0% coverage files
@@ -425,13 +426,13 @@ describe('getDrawParticipantRepresentativeIds branch coverage', () => {
 
 describe('getMatchUpContextIds branch coverage', () => {
   it('returns error for invalid matchUps', () => {
-    const result: any = getMatchUpContextIds({ matchUps: 'bad', matchUpId: 'm1' });
+    const result: any = getMatchUpContextIds({ matchUps: 'bad' as unknown as HydratedMatchUp[], matchUpId: 'm1' });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns undefined fields when matchUp not found', () => {
     const result: any = getMatchUpContextIds({
-      matchUps: [{ matchUpId: 'm2', drawId: 'd1' }],
+      matchUps: [{ matchUpId: 'm2', drawId: 'd1' }] as unknown as HydratedMatchUp[],
       matchUpId: 'm-missing',
     });
     expect(result.matchUpId).toBe('m-missing');

@@ -15,6 +15,11 @@ import {
   DOUBLE_WALKOVER,
   DOUBLE_DEFAULT,
 } from '@Constants/matchUpStatusConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
+
+type MatchUpsToScheduleMap = {
+  matchUpMap: { [tournamentId: string]: { [drawId: string]: (HydratedMatchUp | undefined)[] } };
+};
 
 type GetMatchUpsToScheduleArgs = {
   matchUpScheduleTimes?: { [key: string]: string };
@@ -22,7 +27,7 @@ type GetMatchUpsToScheduleArgs = {
   dateScheduledMatchUpIds?: string[];
   orderedMatchUpIds?: string[];
   clearDate?: boolean;
-  matchUps: any;
+  matchUps: HydratedMatchUp[];
 };
 
 export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
@@ -50,10 +55,11 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
     .filter((matchUp) => {
       // only a matchUp already timed is left where it is: one dated on the day without a time is to be timed
       // (scheduling-pipeline.md § 4 step 2)
-      const timedOnDate = !!matchUp.schedule?.scheduledTime && dateScheduledMatchUpIds.includes(matchUp.matchUpId);
-      const alreadyScheduled = !clearDate && (timedOnDate || alreadyScheduledMatchUpIds.includes(matchUp.matchUpId));
+      const timedOnDate = !!matchUp!.schedule?.scheduledTime && dateScheduledMatchUpIds.includes(matchUp!.matchUpId);
+      const alreadyScheduled = !clearDate && (timedOnDate || alreadyScheduledMatchUpIds.includes(matchUp!.matchUpId));
 
-      const doNotSchedule = [
+      // prettier-ignore
+      const doNotSchedule = ([
         BYE,
         DEFAULTED,
         COMPLETED,
@@ -62,10 +68,10 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
         WALKOVER,
         DOUBLE_WALKOVER,
         DOUBLE_DEFAULT,
-      ].includes(matchUp?.matchUpStatus);
+      ] as (string | undefined)[]).includes(matchUp?.matchUpStatus);
 
       // a completed matchUp is never scheduled again; nor is a line of a BYE dual, which has a BYE side
-      return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
+      return !alreadyScheduled && !matchUp!.winningSide && !doNotSchedule && !hasByeSide(matchUp);
     });
 
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps
@@ -73,7 +79,7 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
   const matchUpMap = matchUpNotBeforeTimes
     ? matchUpsToSchedule.reduce(
         (aggregator, matchUp) => {
-          const { drawId, tournamentId } = matchUp;
+          const { drawId, tournamentId } = matchUp!;
 
           if (!aggregator.matchUpMap[tournamentId]) aggregator.matchUpMap[tournamentId] = {};
           if (!aggregator.matchUpMap[tournamentId][drawId]) {
@@ -87,12 +93,12 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
             matchUpNotBeforeTimes,
             // a matchUp about to be (re)scheduled raises no not-before time from where it was timed before, which may
             // be another date: its targets wait only for where it is placed now (§ 4 step 2)
-            matchUp: { ...matchUp, schedule: { ...matchUp.schedule, timeAfterRecovery: undefined } },
+            matchUp: { ...matchUp!, schedule: { ...matchUp!.schedule, timeAfterRecovery: undefined } },
           });
 
           return aggregator;
         },
-        { matchUpMap: {} },
+        { matchUpMap: {} } as MatchUpsToScheduleMap,
       ).matchUpMap
     : {};
 

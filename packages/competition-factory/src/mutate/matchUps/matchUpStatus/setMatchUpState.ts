@@ -162,7 +162,7 @@ type SetMatchUpStateArgs = {
   notes?: string;
   outcome?: MatchUpOutcome;
   event?: Event;
-  score?: any;
+  score?: Score;
 };
 
 /**
