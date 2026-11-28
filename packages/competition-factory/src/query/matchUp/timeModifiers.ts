@@ -11,7 +11,7 @@ import { ScheduledMatchUpArgs } from '@Types/factoryTypes';
 export function matchUpTimeModifiers({ timeStamp, schedule, matchUp }: ScheduledMatchUpArgs) {
   const firstClassTimeModifiers = matchUp?.schedule?.timeModifiers;
 
-  const { itemValue: legacyTimeModifiers, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue({
+  const { itemValue: legacyTimeModifiers, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue<string[]>({
     timeItems: matchUp?.timeItems ?? [],
     itemType: TIME_MODIFIERS,
   });
