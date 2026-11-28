@@ -15,7 +15,7 @@ import { UUID } from '@Tools/UUID';
 
 // constants and types
 import { GROUP, INDIVIDUAL, PAIR, participantTypes, TEAM } from '@Constants/participantConstants';
-import { Participant, Tournament } from '@Types/tournamentTypes';
+import { Participant, Person, Tournament } from '@Types/tournamentTypes';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -39,8 +39,11 @@ type AddParticipantType = {
   disableNotice?: boolean;
   pairOverride?: boolean;
   tournamentId?: string;
-  /** participantId may be missing: the method mints one */
-  participant: Omit<Participant, 'participantId'> & { participantId?: string };
+  /** participantId may be missing: the method mints one. A person is stored as given, with or without a personId */
+  participant: Omit<Participant, 'participantId' | 'person'> & {
+    person?: Omit<Person, 'personId'> & { personId?: string };
+    participantId?: string;
+  };
   /** the record's participants indexed by a caller adding a batch (addParticipants); else the record is scanned */
   participantsIndex?: ParticipantsIndex;
 };
