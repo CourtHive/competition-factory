@@ -7,9 +7,6 @@
     "`methodParams` enumerates the engine-method parameter keys (`method.key`) still typed bare any, each with a code from `methodParamReasons`. It may only shrink: a typed key that regresses is not on it and fails."
   ],
   "allow": {
-    "GetDrawDataArgs.status": "Genuinely OPEN by design \u2014 a publish-state channel key, PUBLIC unless a provider uses a private one. The guard's registry infers from the field NAME, and `status` is polysemous across the domain (Person.status is a bare string, PracticeRegistration.status is PracticeRegistrationStatusUnion); the union it suggests here is the wrong one. This entry records a deliberate non-fix, not deferred work.",
-    "GetEventDataArgs.status": "The same publish-state channel key as GetDrawDataArgs.status, and the same deliberate non-fix.",
-    "PublishEventArgs.status": "The same publish-state channel key as GetDrawDataArgs.status, and the same deliberate non-fix.",
     "GenerateDrawDefinitionArgs.qualifyingProfiles": "Archaeology, not typing. The shape is assembled across generateEventWithDraw.ts, generateDrawStructuresAndLinks.ts and qualifyingGeneration.ts with roundTarget/structureProfiles nesting that no single site declares. Needs a reading pass before a type can be honest.",
     "ScheduledMatchUpArgs.matchUp": "Called with STORED matchUps from mutate paths (scheduleItems.ts:579,871,956,1023) and with hydrated ones from query paths, and only `.schedule` and `.timeItems` are ever read off it. `MatchUp | HydratedMatchUp` is the likely type but is unverified against every call site. An earlier reason here asserted callers pass 'partially-assembled records mid-hydration'; the call sites do not show that, so it is removed rather than repeated.",
     "TransitionRecordStatusArgs.record": "Deliberately generic \u2014 the function transitions a status on ANY record in ANY collection, keyed by collectionKey/idKey. A narrower type would defeat its purpose.",

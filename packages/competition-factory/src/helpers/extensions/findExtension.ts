@@ -19,6 +19,7 @@ type FindExtensionType = {
 type ExtensionResult<V> = ResultType & {
   extension?: Extension & { value: V };
 };
+type Found<V> = ExtensionResult<V>['extension'];
 
 export function findExtension<V = unknown>({
   discover, // boolean or array of keys to discover extensions on specified params
@@ -53,7 +54,7 @@ export function findExtension<V = unknown>({
 
   if (!Array.isArray(element.extensions)) return { info: 'no extensions' };
 
-  const extension = element.extensions.find((extension) => extension?.name === name);
+  const extension = element.extensions.find((extension) => extension?.name === name) as Found<V>;
 
   const info = !extension ? NOT_FOUND : undefined;
 

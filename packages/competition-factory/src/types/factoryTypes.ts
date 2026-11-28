@@ -620,7 +620,7 @@ export type MatchUpContextIds = {
 };
 
 /** An entry with its participant's scale item spread onto it, as `getScaledEntries` returns it. */
-export type ScaledEntry = Partial<Entry> & Partial<ScaleItem> & { participantId: string };
+export type ScaledEntry = Omit<Partial<Entry>, 'scaleValue'> & Partial<ScaleItem> & { participantId: string };
 
 /** Orders scaled entries, as an `Array.prototype.sort` comparator does. */
 export type ScaleSortMethod = (a: ScaledEntry, b: ScaledEntry) => number;
