@@ -24,7 +24,7 @@ test('recognizes scheduling conflicts', () => {
   ];
   const startDate = '2022-01-01';
   const endDate = '2022-01-07';
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     participantsProfile: { idPrefix: 'xyz' },
     venueProfiles,
     eventProfiles,

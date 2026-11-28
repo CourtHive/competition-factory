@@ -1,4 +1,5 @@
 import { getTournamentRecord } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -59,16 +60,27 @@ test('withdrawing a PAIR with destroyPair is refused before the seat is cleared 
   // Hand-built: the pair at drawPosition 1 also holds a seat in the second draw. Dissolving it would
   // be refused by removeEventEntries (EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT) — after the seat
   // had been emptied and the entries rewritten.
-  const [firstEvent, secondEvent] = tournamentRecord.events;
-  const drawDefinition = firstEvent.drawDefinitions.find((d) => d.drawId === drawId);
-  const otherDraw = secondEvent.drawDefinitions.find((d) => d.drawId === otherDrawId);
-  const { structureId, positionAssignments } = drawDefinition.structures[0];
-  const { participantId } = positionAssignments.find((assignment) => assignment.drawPosition === 1);
+  const [firstEvent, secondEvent] = defined(tournamentRecord.events, 'events');
+  const drawDefinition = defined(firstEvent.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === drawId);
+  const otherDraw = defined(secondEvent.drawDefinitions, 'drawDefinitions').find((d) => d.drawId === otherDrawId);
+  const { structureId, positionAssignments } = defined(
+    defined(drawDefinition, 'drawDefinition').structures,
+    'structures',
+  )[0];
+  const { participantId } = defined(
+    defined(positionAssignments, 'positionAssignments').find((assignment) => assignment.drawPosition === 1),
+    'assignment',
+  );
   // the second draw is moved into the first event so both draws share the pair's event entry
-  firstEvent.drawDefinitions.push(otherDraw);
+  defined(firstEvent.drawDefinitions, 'drawDefinitions').push(defined(otherDraw, 'otherDraw'));
   secondEvent.drawDefinitions = [];
-  otherDraw.structures[0].positionAssignments.find((assignment) => assignment.drawPosition === 1).participantId =
-    participantId;
+  defined(
+    defined(
+      defined(defined(otherDraw, 'otherDraw').structures, 'structures')[0].positionAssignments,
+      'positionAssignments',
+    ).find((assignment) => assignment.drawPosition === 1),
+    'value',
+  ).participantId = participantId;
   tournamentEngine.setState(tournamentRecord);
 
   const before = recordCopy();
@@ -94,10 +106,13 @@ test('a draw with a malformed LOSER link refuses the removal before the seat is 
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const { structureId } = drawDefinition.structures.find(({ stage }) => stage === MAIN);
-  const link = drawDefinition.links.find((candidate) => candidate.linkType === LOSER);
-  Reflect.deleteProperty(link.source, 'roundNumber');
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const { structureId } = defined(
+    defined(drawDefinition.structures, 'structures').find(({ stage }) => stage === MAIN),
+    'main structure',
+  );
+  const link = defined(drawDefinition.links, 'links').find((candidate) => candidate.linkType === LOSER);
+  Reflect.deleteProperty(defined(link, 'link').source, 'roundNumber');
   tournamentEngine.setState(tournamentRecord);
 
   const before = recordCopy();

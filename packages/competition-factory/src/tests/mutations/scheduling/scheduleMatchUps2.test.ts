@@ -1,4 +1,5 @@
 import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
+import { defined } from '@Tests/helpers/defined';
 import { getScheduleTimes } from '@Helpers/scheduling/getScheduleTimes';
 import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import { getMatchUpIds } from '@Functions/global/extractors';
@@ -76,7 +77,7 @@ writeModeMatrix(
       const { eventId } = eventResult;
       expect(success).toEqual(true);
 
-      const participantIds = participants.map((p) => p.participantId);
+      const participantIds = defined(participants, 'participants').map((p) => p.participantId);
       result = tournamentEngine.addEventEntries({ eventId, participantIds });
       expect(result.success).toEqual(true);
 
@@ -479,7 +480,7 @@ it('adds venueId to matchUp.schedule when court is assigned', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

@@ -1,4 +1,5 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -53,7 +54,7 @@ const inRound = (matchUps, roundNumber: number) =>
 /** the consolation seats of two first-round losers exchanged, and the stored edges with them: placed by another feed */
 function placedByAnotherFeed() {
   const { tournamentRecord, drawId } = generate(true);
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   // the first and third: the losers of the first and second share a consolation matchUp
   const [first, , second] = inRound(structureOf(drawDefinition, MAIN).matchUps, 1);
   const assignments = structureOf(drawDefinition, CONSOLATION).positionAssignments;
@@ -77,7 +78,7 @@ function placedByAnotherFeed() {
 /** the loser's consolation seat stored as a BYE, their opponent sent on past it: the loser was never placed */
 function neverPlaced() {
   const { tournamentRecord, drawId } = generate(true);
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   const [first] = inRound(structureOf(drawDefinition, MAIN).matchUps, 1);
   const loserPosition = first.drawPositions[2 - first.winningSide];
   const loserId = structureOf(drawDefinition, MAIN).positionAssignments.find(

@@ -1,4 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import { defined } from '@Tests/helpers/defined';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
@@ -89,7 +90,7 @@ describe('ADAPTIVE draw structure generation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { drawDefinition } = tournamentEngine.getEvent({
-      drawId: tournamentRecord.events[0].drawDefinitions[0].drawId,
+      drawId: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId,
     });
 
     const stages = [MAIN, PLAY_OFF];
@@ -129,7 +130,7 @@ describe('ADAPTIVE draw structure generation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { drawDefinition } = tournamentEngine.getEvent({
-      drawId: tournamentRecord.events[0].drawDefinitions[0].drawId,
+      drawId: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId,
     });
 
     const stages = [MAIN, PLAY_OFF];

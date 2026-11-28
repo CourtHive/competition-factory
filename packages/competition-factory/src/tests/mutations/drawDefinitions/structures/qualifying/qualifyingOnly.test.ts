@@ -58,7 +58,7 @@ it('can generate QUALIFYING structures when no MAIN structure is specified', () 
 
   setSubscriptions({ subscriptions });
 
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     setState: true,
     drawProfiles: [
       {
@@ -184,7 +184,7 @@ it.each([
 ])(
   'can generate QUALIFYING structures followed by various MAIN drawTypes',
   ({ drawType, linksCount, structuresCount }) => {
-    let result = mocksEngine.generateTournamentRecord({
+    let result: any = mocksEngine.generateTournamentRecord({
       drawProfiles: [
         {
           ignoreDefaults: true,

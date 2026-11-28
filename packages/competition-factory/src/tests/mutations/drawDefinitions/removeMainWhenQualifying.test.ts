@@ -8,7 +8,7 @@ import { DRAW, MAIN, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstan
 import { CANNOT_REMOVE_MAIN_STRUCTURE } from '@Constants/errorConditionConstants';
 
 it('allows deletion of non-qualifying structures', () => {
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         ignoreDefaults: true,

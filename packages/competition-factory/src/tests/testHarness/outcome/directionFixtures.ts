@@ -522,11 +522,13 @@ export const SOUTH_FINAL_CARRY: Step[] = [
   { target: R1(3, 'East'), outcome: exited(DEFAULTED, 1), params: CARRIED },
 ];
 
+const CARRIED_OUTCOMES: [string, Record<string, unknown>][] = [
+  ['given a winner', won(1)],
+  ['cleared', cleared],
+];
+
 export const CARRIED_BESIDE_BYE: [string, Scenario][] = [
-  ...[
-    ['given a winner', won(1)],
-    ['cleared', cleared],
-  ].flatMap(([label, outcome]): [string, Scenario][] => [
+  ...CARRIED_OUTCOMES.flatMap(([label, outcome]): [string, Scenario][] => [
     [
       `${COMPASS} 8 (seed 20318646): East 1/1 a double walkover, a default carried into South's final beside its BYE, ${label}`,
       {

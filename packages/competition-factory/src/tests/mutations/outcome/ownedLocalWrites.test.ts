@@ -1,4 +1,5 @@
 import { deleteNotices, setOutcomePipeline, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -320,16 +321,20 @@ it('a winner on a matchUp stored with no drawPositions: v2 refuses it as v1 does
       nonRandom: 1,
     });
     // a record the factory did not produce: a first-round matchUp stored without its drawPositions
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps.find(
-      (candidate: any) => candidate.roundNumber === 1 && candidate.roundPosition === 1,
-    );
-    Reflect.deleteProperty(matchUp, 'drawPositions');
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    ).find((candidate: any) => candidate.roundNumber === 1 && candidate.roundPosition === 1);
+    Reflect.deleteProperty(defined(matchUp, 'matchUp'), 'drawPositions');
     tournamentEngine.setState(tournamentRecord);
     setOutcomePipeline(mode);
     v1Writes.count = 0;
     const result: any = tournamentEngine.setMatchUpStatus({
       policyDefinitions: { scoring: { requireParticipantsForScoring: false } },
-      matchUpId: matchUp.matchUpId,
+      matchUpId: defined(matchUp, 'matchUp').matchUpId,
       outcome: { winningSide: 1 },
       drawId: 'd',
     });

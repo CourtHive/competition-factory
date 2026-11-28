@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { processLeagueProfiles } from '@Generators/mocks/processLeagueProfiles';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -49,22 +50,24 @@ describe('processLeagueProfiles basic generation', () => {
     expect(result?.error).toBeUndefined();
     expect(eventIds.length).toEqual(1);
     expect(drawIds.length).toEqual(1);
-    expect(tournamentRecord.events.length).toEqual(1);
+    expect(defined(tournamentRecord.events, 'events').length).toEqual(1);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     expect(event.eventName).toEqual('Test League');
     expect(event.eventType).toEqual(TEAM);
-    expect(event.entries.length).toEqual(4);
-    expect(event.entries.every((e) => e.entryStatus === DIRECT_ACCEPTANCE)).toBe(true);
-    expect(event.entries.every((e) => e.entryStage === MAIN)).toBe(true);
+    expect(defined(event.entries, 'entries').length).toEqual(4);
+    expect(defined(event.entries, 'entries').every((e) => e.entryStatus === DIRECT_ACCEPTANCE)).toBe(true);
+    expect(defined(event.entries, 'entries').every((e) => e.entryStage === MAIN)).toBe(true);
 
     // Team participants should have been created
-    const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM);
+    const teamParticipants = defined(tournamentRecord.participants, 'participants').filter(
+      (p) => p.participantType === TEAM,
+    );
     expect(teamParticipants.length).toEqual(4);
 
     // Each team should have individual participants derived from tieFormat
     for (const team of teamParticipants) {
-      expect(team.individualParticipantIds.length).toBeGreaterThan(0);
+      expect(defined(team.individualParticipantIds, 'individualParticipantIds').length).toBeGreaterThan(0);
     }
   });
 
@@ -96,7 +99,9 @@ describe('processLeagueProfiles basic generation', () => {
 
     expect(result?.error).toBeUndefined();
 
-    const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM);
+    const teamParticipants = defined(tournamentRecord.participants, 'participants').filter(
+      (p) => p.participantType === TEAM,
+    );
     const teamNames = teamParticipants.map((t) => t.participantName);
     expect(teamNames).toContain('Eagles');
     expect(teamNames).toContain('Hawks');
@@ -131,7 +136,9 @@ describe('processLeagueProfiles basic generation', () => {
     });
 
     expect(result?.error).toBeUndefined();
-    const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM);
+    const teamParticipants = defined(tournamentRecord.participants, 'participants').filter(
+      (p) => p.participantType === TEAM,
+    );
     expect(teamParticipants.length).toEqual(3);
     expect(teamParticipants[0].participantName).toEqual('Team 1');
     expect(teamParticipants[1].participantName).toEqual('Team 2');
@@ -166,7 +173,7 @@ describe('processLeagueProfiles draw generation', () => {
     expect(result?.error).toBeUndefined();
     expect(drawIds.length).toEqual(1);
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     expect(drawDefinition.drawType).toEqual(AD_HOC);
   });
 
@@ -221,7 +228,9 @@ describe('processLeagueProfiles draw generation', () => {
     });
 
     expect(result?.error).toBeUndefined();
-    const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM);
+    const teamParticipants = defined(tournamentRecord.participants, 'participants').filter(
+      (p) => p.participantType === TEAM,
+    );
     expect(teamParticipants.length).toEqual(5);
   });
 });
@@ -259,9 +268,9 @@ describe('processLeagueProfiles multiple leagues', () => {
     expect(result?.error).toBeUndefined();
     expect(eventIds.length).toEqual(2);
     expect(drawIds.length).toEqual(2);
-    expect(tournamentRecord.events.length).toEqual(2);
-    expect(tournamentRecord.events[0].eventName).toEqual('League A');
-    expect(tournamentRecord.events[1].eventName).toEqual('League B');
+    expect(defined(tournamentRecord.events, 'events').length).toEqual(2);
+    expect(defined(tournamentRecord.events, 'events')[0].eventName).toEqual('League A');
+    expect(defined(tournamentRecord.events, 'events')[1].eventName).toEqual('League B');
   });
 });
 
@@ -292,8 +301,8 @@ describe('processLeagueProfiles naming and IDs', () => {
 
     expect(result?.error).toBeUndefined();
     expect(eventIds[0]).toEqual('custom-league-id');
-    expect(tournamentRecord.events[0].eventId).toEqual('custom-league-id');
-    expect(tournamentRecord.events[0].eventName).toEqual('My League');
+    expect(defined(tournamentRecord.events, 'events')[0].eventId).toEqual('custom-league-id');
+    expect(defined(tournamentRecord.events, 'events')[0].eventName).toEqual('My League');
   });
 
   it('falls back to eventName and eventId when league-specific names not provided', () => {
@@ -322,7 +331,7 @@ describe('processLeagueProfiles naming and IDs', () => {
 
     expect(result?.error).toBeUndefined();
     expect(eventIds[0]).toEqual('fallback-id');
-    expect(tournamentRecord.events[0].eventName).toEqual('Fallback Name');
+    expect(defined(tournamentRecord.events, 'events')[0].eventName).toEqual('Fallback Name');
   });
 
   it('generates default league names when none provided', () => {
@@ -345,8 +354,8 @@ describe('processLeagueProfiles naming and IDs', () => {
     });
 
     expect(result?.error).toBeUndefined();
-    expect(tournamentRecord.events[0].eventName).toEqual('League 1');
-    expect(tournamentRecord.events[1].eventName).toEqual('League 2');
+    expect(defined(tournamentRecord.events, 'events')[0].eventName).toEqual('League 1');
+    expect(defined(tournamentRecord.events, 'events')[1].eventName).toEqual('League 2');
   });
 });
 
@@ -373,9 +382,9 @@ describe('processLeagueProfiles tieFormat resolution', () => {
     });
 
     expect(result?.error).toBeUndefined();
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     expect(event.tieFormat).toBeDefined();
-    expect(event.tieFormat.collectionDefinitions.length).toBeGreaterThan(0);
+    expect(defined(event.tieFormat, 'tieFormat').collectionDefinitions.length).toBeGreaterThan(0);
   });
 
   it('uses the provided tieFormat object', () => {
@@ -417,8 +426,8 @@ describe('processLeagueProfiles tieFormat resolution', () => {
     });
 
     expect(result?.error).toBeUndefined();
-    const event = tournamentRecord.events[0];
-    expect(event.tieFormat.tieFormatName).toEqual('Custom');
+    const event = defined(tournamentRecord.events, 'events')[0];
+    expect(defined(event.tieFormat, 'tieFormat').tieFormatName).toEqual('Custom');
   });
 });
 

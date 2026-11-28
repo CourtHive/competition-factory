@@ -50,8 +50,9 @@ import { COMPETITOR } from '@Constants/participantRoles';
 import { OBJECT } from '@Constants/attributeConstants';
 import { SEEDING } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant } from '@Types/tournamentTypes';
+import { Participant, DrawDefinition, Event } from '@Types/tournamentTypes';
 import { nameMocks } from './nameMocks';
+import type { ResultType } from '@Types/factoryTypes';
 
 /** A TEAM draw's team size, and the individuals it needs, by gender (written into `gendersCount`). */
 function teamParticipantsShape({
@@ -123,7 +124,7 @@ function generateEventParticipants({
   gender,
   random,
   uuids,
-}) {
+}): ResultType & { uniqueParticipantIds?: string[]; targetParticipants?: Participant[] } {
   let individualParticipantCount = drawParticipantsCount;
   const gendersCount = { [MALE]: 0, [FEMALE]: 0 };
   let teamSize, genders;
@@ -212,7 +213,7 @@ function generateEventParticipants({
       random,
     });
     if (teamResult.error) return teamResult;
-    targetParticipants = teamResult.teamParticipants;
+    targetParticipants = teamResult.teamParticipants!;
   }
 
   if (isHybrid) {
@@ -223,7 +224,7 @@ function generateEventParticipants({
       random,
     });
     if (hybridResult.error) return hybridResult;
-    targetParticipants = hybridResult.targetParticipants;
+    targetParticipants = hybridResult.targetParticipants!;
   }
 
   return { uniqueParticipantIds, targetParticipants };
@@ -238,7 +239,7 @@ function buildTeamParticipants({
   teamSize,
   unique,
   random,
-}) {
+}): ResultType & { teamParticipants?: Participant[] } {
   const maleIndividualParticipantIds = genders[MALE]
     ? unique
         .filter(({ participantType: pt, person }) => pt === INDIVIDUAL && person?.sex === MALE)
@@ -264,7 +265,7 @@ function buildTeamParticipants({
   let fIndex = 0,
     mIndex = 0,
     rIndex = 0;
-  const teamParticipants = generateRange(0, drawParticipantsCount).map((teamIndex) => {
+  const teamParticipants: Participant[] = generateRange(0, drawParticipantsCount).map((teamIndex) => {
     const fPIDs = femaleIndividualParticipantIds.slice(fIndex, fIndex + genders[FEMALE]);
     const mPIDs = maleIndividualParticipantIds.slice(mIndex, mIndex + genders[MALE]);
     const rIDs = remainingParticipantIds.slice(rIndex, rIndex + mixedCount);
@@ -315,7 +316,9 @@ function buildTeamParticipants({
   return { teamParticipants };
 }
 
-function buildHybridParticipants({ drawParticipantsCount, tournamentRecord, unique, random }) {
+type HybridResult = ResultType & { targetParticipants?: Participant[] };
+
+function buildHybridParticipants({ drawParticipantsCount, tournamentRecord, unique, random }): HybridResult {
   const individuals = unique.filter(({ participantType: pt }) => pt === INDIVIDUAL);
   const soloCount = drawParticipantsCount - Math.floor(drawParticipantsCount / 2);
   const pairMemberIndividuals = individuals.slice(soloCount);
@@ -761,9 +764,19 @@ function generateAndAttachDraw({
   return { drawDefinition, drawId };
 }
 
-export function generateEventWithDraw(params) {
+/** Typed as succeeding, like `generateTournamentRecord`: a refusal still returns `{ error }` at runtime. */
+export type GenerateEventWithDrawResult = ResultType & {
+  targetParticipants: Participant[];
+  drawDefinition?: DrawDefinition;
+  uniqueParticipantIds: string[];
+  eventId: string;
+  drawId?: string;
+  event: Event;
+};
+
+export function generateEventWithDraw(params): GenerateEventWithDrawResult {
   const paramsCheck = checkRequiredParameters(params, [{ drawProfile: true, _ofType: OBJECT }]);
-  if (paramsCheck.error) return paramsCheck;
+  if (paramsCheck.error) return paramsCheck as GenerateEventWithDrawResult;
 
   const {
     allUniqueParticipantIds = [],
@@ -818,7 +831,7 @@ export function generateEventWithDraw(params) {
   const eventType = drawProfile.eventType || drawProfile.matchUpType || SINGLES;
   // a tieFormat, tieFormatName or tieFormatId on a profile that is not TEAM is refused before anything is generated
   const tieFormatRefusal = nonTeamTieFormatRefusal(drawProfile, eventType);
-  if (tieFormatRefusal) return tieFormatRefusal;
+  if (tieFormatRefusal) return tieFormatRefusal as GenerateEventWithDrawResult;
   const isHybrid = eventType === HYBRID;
   const participantType = eventType === DOUBLES ? PAIR : INDIVIDUAL;
 
@@ -862,7 +875,7 @@ export function generateEventWithDraw(params) {
   // in a client's order: the event is added (public addEvent, no bypass) before it has entries or a draw, and
   // everything after is written to the stored event. Without a record to add it to it is built off the record
   const added = addToRecord ? addEventRecorded({ tournamentRecord, event: mockEvent }) : undefined;
-  if (added?.error) return added;
+  if (added?.error) return added as GenerateEventWithDrawResult;
   const event = added
     ? tournamentRecord.events.find((stored: { eventId: string }) => stored.eventId === eventId)
     : mockEvent;
@@ -910,9 +923,9 @@ export function generateEventWithDraw(params) {
       random,
       uuids,
     });
-    if (genResult.error) return genResult;
+    if (genResult.error) return genResult as GenerateEventWithDrawResult;
 
-    genResult.uniqueParticipantIds.forEach((id) => uniqueParticipantIds.push(id));
+    genResult.uniqueParticipantIds!.forEach((id) => uniqueParticipantIds.push(id));
     targetParticipants = genResult.targetParticipants;
   }
 

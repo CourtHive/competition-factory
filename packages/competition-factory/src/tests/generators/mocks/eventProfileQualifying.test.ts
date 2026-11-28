@@ -1,4 +1,5 @@
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -65,9 +66,11 @@ describe('eventProfile drawProfile with qualifyingProfiles', () => {
     expect(result.error).toBeUndefined();
     expectQualifyingDraw(result.tournamentRecord);
     // nothing generated: the 20 supplied fill QUALIFYING 8 and MAIN 12
-    expect(result.tournamentRecord.participants.length).toEqual(20);
+    expect(defined(result.tournamentRecord.participants, 'participants').length).toEqual(20);
     expect(
-      result.tournamentRecord.events[0].entries.every(({ participantId }) => presetIds.has(participantId)),
+      defined(defined(result.tournamentRecord.events, 'events')[0].entries, 'entries').every(({ participantId }) =>
+        presetIds.has(participantId),
+      ),
     ).toEqual(true);
   });
 

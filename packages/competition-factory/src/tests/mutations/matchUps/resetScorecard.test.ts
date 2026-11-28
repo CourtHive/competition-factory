@@ -1,4 +1,5 @@
 import { resetScorecard } from '@Mutate/matchUps/resetScorecard';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -46,7 +47,7 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -62,7 +63,7 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -78,7 +79,7 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -94,7 +95,7 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -112,8 +113,8 @@ describe('resetScorecard', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const matchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const matchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -132,9 +133,9 @@ describe('resetScorecard', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     // Add a score first
     if (teamMatchUp.tieMatchUps?.length) {
@@ -163,9 +164,9 @@ describe('resetScorecard', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     if (teamMatchUp.tieMatchUps?.length) {
       // Score multiple tie matchUps
@@ -187,7 +188,9 @@ describe('resetScorecard', () => {
       expect(result.success).toBe(true);
 
       // Verify scores are cleared
-      const updatedMatchUp = drawDefinition.structures[0].matchUps.find((m) => m.matchUpId === teamMatchUp.matchUpId);
+      const updatedMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps').find(
+        (m) => m.matchUpId === teamMatchUp.matchUpId,
+      );
 
       updatedMatchUp?.tieMatchUps?.forEach((tieMatchUp) => {
         expect(tieMatchUp.winningSide).toBeUndefined();
@@ -200,8 +203,8 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     // Remove tieMatchUps
     delete teamMatchUp.tieMatchUps;
@@ -220,8 +223,8 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     teamMatchUp.tieMatchUps = [];
 
@@ -241,9 +244,11 @@ describe('resetScorecard', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const firstRoundMatchUp = drawDefinition.structures[0].matchUps.find((m) => m.roundNumber === 1);
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const firstRoundMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps').find(
+      (m) => m.roundNumber === 1,
+    );
 
     if (firstRoundMatchUp) {
       // Complete the matchUp
@@ -255,7 +260,9 @@ describe('resetScorecard', () => {
       });
 
       // Try to reset - should fail if downstream matchUp is active
-      const secondRoundMatchUp = drawDefinition.structures[0].matchUps.find((m) => m.roundNumber === 2);
+      const secondRoundMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps').find(
+        (m) => m.roundNumber === 2,
+      );
 
       if (secondRoundMatchUp?.sides?.some((s) => s.participantId)) {
         const result = resetScorecard({
@@ -275,8 +282,8 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -293,8 +300,8 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -311,9 +318,9 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = resetScorecard({
       tournamentRecord,
@@ -330,8 +337,8 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = resetScorecard({
       tournamentRecord: undefined as any,
@@ -350,9 +357,9 @@ describe('resetScorecard', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp: any = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
     const originalMatchUpId = teamMatchUp.matchUpId;
     const originalStructureId = teamMatchUp.structureId;
 
@@ -365,7 +372,9 @@ describe('resetScorecard', () => {
 
     expect(result.success).toBe(true);
 
-    const resetMatchUp = drawDefinition.structures[0].matchUps.find((m) => m.matchUpId === originalMatchUpId);
+    const resetMatchUp: any = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps').find(
+      (m) => m.matchUpId === originalMatchUpId,
+    );
 
     expect(resetMatchUp).toBeDefined();
     expect(resetMatchUp?.matchUpId).toBe(originalMatchUpId);
@@ -377,9 +386,9 @@ describe('resetScorecard', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     // Reset once
     let result = resetScorecard({
@@ -409,9 +418,9 @@ describe('resetScorecard', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const teamMatchUp = drawDefinition.structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const teamMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = resetScorecard({
       tournamentRecord,

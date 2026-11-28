@@ -26,6 +26,7 @@ import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import type { MockLeagueProfile } from '@Types/mocksTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM } from '@Constants/participantConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 /**
  * A leagueProfile expresses rounds either as an explicit count, or as DOUBLE_ROUND_ROBIN, or not at all
@@ -38,7 +39,7 @@ function deriveLeagueRoundsCount({ roundsCount, drawSize }): number {
   return drawSize - 1;
 }
 
-export function processLeagueProfiles(params) {
+export function processLeagueProfiles(params): ResultType | void {
   const { tournamentRecord, leagueProfiles, eventIds, venueIds, drawIds, allUniqueParticipantIds, random, uuids } =
     params;
 

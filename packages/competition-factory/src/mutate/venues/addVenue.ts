@@ -18,8 +18,9 @@ import { Tournament, Venue } from '@Types/tournamentTypes';
 import { CONTEXT } from '@Constants/extensionConstants';
 import { ADD_VENUE } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
-export function addVenue(params) {
+export function addVenue(params): ResultType & { venue?: Venue } {
   const { disableNotice, venue, context } = params;
   if (typeof venue !== 'object') return { error: INVALID_VALUES };
   const tournamentRecords = resolveTournamentRecords(params);

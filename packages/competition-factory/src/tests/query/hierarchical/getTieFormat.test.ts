@@ -1,4 +1,5 @@
 import { getTieFormat } from '@Query/hierarchical/getTieFormat';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -62,7 +63,7 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -95,9 +96,9 @@ describe('getTieFormat', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const matchUp = drawDefinition.structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const matchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -113,12 +114,12 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = getTieFormat({
       tournamentRecord,
       drawId: drawDefinition.drawId,
-      matchUpId: drawDefinition.structures[0].matchUps[0].matchUpId,
+      matchUpId: defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0].matchUpId,
     });
 
     expect(result.success).toBe(true);
@@ -129,12 +130,15 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = getTieFormat({
       tournamentRecord,
       eventId: event.eventId,
-      matchUpId: event.drawDefinitions[0].structures[0].matchUps[0].matchUpId,
+      matchUpId: defined(
+        defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].matchUps,
+        'matchUps',
+      )[0].matchUpId,
     });
 
     expect(result.success).toBe(true);
@@ -145,8 +149,11 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
-    const matchUp = event.drawDefinitions[0].structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const matchUp = defined(
+      defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -163,8 +170,8 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const structure = drawDefinition.structures[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const structure = defined(drawDefinition.structures, 'structures')[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -181,9 +188,9 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const structure = drawDefinition.structures[0];
-    const matchUp = structure.matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const structure = defined(drawDefinition.structures, 'structures')[0];
+    const matchUp = defined(structure.matchUps, 'matchUps')[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -199,8 +206,8 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const matchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const matchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -217,8 +224,11 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
-    const matchUp = structure.matchUps[0];
+    const structure = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0];
+    const matchUp = defined(structure.matchUps, 'matchUps')[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -235,7 +245,13 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -251,7 +267,13 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -278,8 +300,11 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const event = tournamentRecord.events[0];
-    const matchUp = event.drawDefinitions[0].structures[0].matchUps[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const matchUp = defined(
+      defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -296,7 +321,13 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -313,7 +344,13 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
 
     // Not providing drawDefinition - should resolve internally
     const result = getTieFormat({
@@ -330,8 +367,8 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const matchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const matchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = getTieFormat({
       tournamentRecord,
@@ -351,8 +388,20 @@ describe('getTieFormat', () => {
       ],
     });
 
-    const matchUp1 = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
-    const matchUp2 = tournamentRecord.events[1].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp1 = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
+    const matchUp2 = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[1].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result1 = getTieFormat({
       tournamentRecord,
@@ -375,8 +424,8 @@ describe('getTieFormat', () => {
       drawProfiles: [{ eventType: TEAM_EVENT, drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const structureId = drawDefinition.structures[0].structureId;
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
     const result = getTieFormat({
       tournamentRecord,
@@ -394,7 +443,13 @@ describe('getTieFormat', () => {
       drawProfiles: [{ drawSize: 4 }], // Non-team event
     });
 
-    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+    const matchUp = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0];
 
     const result = getTieFormat({
       tournamentRecord,

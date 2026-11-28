@@ -134,7 +134,7 @@ function prepare(recipe: Recipe) {
     matchUps: [],
     positionAssignments: [],
   });
-  let outcome = targetOutcome();
+  let outcome: any = targetOutcome();
   if (recipe.action === 'clear') outcome = { matchUpStatus: TO_BE_PLAYED };
   if (recipe.action === 'correct') outcome = { matchUpStatus: WALKOVER, winningSide: 2 };
   return { prepared, matchUpId, outcome };

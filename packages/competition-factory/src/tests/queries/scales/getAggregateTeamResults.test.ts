@@ -40,7 +40,7 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
   });
   expect(result.success).toBe(true);
 
-  for (const event of result.events) {
+  for (const event of defined(result.events, 'events')) {
     const { eventId, eventType } = event;
     if (eventType === SINGLES_EVENT) {
       const result = tournamentEngine.generateDrawDefinition({
@@ -83,13 +83,13 @@ it.each([
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4 }],
   });
-  const event = tournamentRecord.events[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
   delete event.matchUpFormat;
-  for (const drawDefinition of event.drawDefinitions) {
+  for (const drawDefinition of defined(event.drawDefinitions, 'drawDefinitions')) {
     delete drawDefinition.matchUpFormat;
-    for (const structure of drawDefinition.structures) {
+    for (const structure of defined(drawDefinition.structures, 'structures')) {
       delete structure.matchUpFormat;
-      for (const matchUp of structure.matchUps) {
+      for (const matchUp of defined(structure.matchUps, 'matchUps')) {
         if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
         else delete matchUp.matchUpFormat;
       }

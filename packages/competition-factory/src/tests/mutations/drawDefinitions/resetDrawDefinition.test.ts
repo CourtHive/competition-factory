@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
@@ -282,8 +283,8 @@ it('clears matchUp extensions and notes on reset', () => {
   });
 
   // directly inject extensions and notes onto raw matchUps before setting state
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const rawMatchUp = drawDefinition.structures[0].matchUps[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const rawMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
   const matchUpId = rawMatchUp.matchUpId;
   rawMatchUp.extensions = [{ name: 'testExtension', value: { test: true } }];
   rawMatchUp.notes = 'test notes';
@@ -455,12 +456,12 @@ it('resets AD_HOC voluntary consolation by clearing all matchUps', () => {
   });
 
   // Directly inject matchUps onto the VC structure to simulate AD_HOC consolation play
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const vcStructure = drawDefinition.structures.find((s) => s.stage === VOLUNTARY_CONSOLATION);
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const vcStructure = defined(drawDefinition.structures, 'structures').find((s) => s.stage === VOLUNTARY_CONSOLATION);
   expect(vcStructure).toBeDefined();
 
   // AD_HOC VC structures have finishingPosition: WIN_RATIO and no roundPosition on matchUps
-  vcStructure.matchUps = [
+  defined(vcStructure, 'vcStructure').matchUps = [
     { matchUpId: 'vc-m1', roundNumber: 1, matchUpStatus: COMPLETED, winningSide: 1 },
     { matchUpId: 'vc-m2', roundNumber: 1, matchUpStatus: COMPLETED, winningSide: 2 },
   ];

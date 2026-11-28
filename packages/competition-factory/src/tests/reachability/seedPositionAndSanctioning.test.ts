@@ -1,4 +1,5 @@
 import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { describe, expect, test } from 'vitest';
 
 import mocksEngine from '@Assemblies/engines/mock';
@@ -29,7 +30,7 @@ describe('seed-position validity is reachable through the engine', () => {
       drawProfiles: [{ drawSize: 32, participantsCount: 32, seedsCount: 8 }],
       setState: true,
     });
-    const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+    const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const result: any = tournamentEngine.getEvent({ drawId });
     const drawDefinition = result.drawDefinition;
     return { drawDefinition, structureId: drawDefinition.structures[0].structureId };

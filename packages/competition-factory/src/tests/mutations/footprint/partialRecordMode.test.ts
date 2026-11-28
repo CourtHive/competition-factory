@@ -1,4 +1,5 @@
 import { reduceRecordToFootprint } from '@Query/footprint/reduceRecordToFootprint';
+import { defined } from '@Tests/helpers/defined';
 import { getMutationFootprint } from '@Query/footprint/getMutationFootprint';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -110,7 +111,10 @@ describe('partial-record mode', () => {
 
     // the event's draws and the participants, which the record cannot show missing, are checked against the mark
     result = tournamentEngine.removeDrawPositionAssignment({
-      structureId: tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId,
+      structureId: defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].structureId,
       entryStatus: WITHDRAWN,
       drawPosition: 1,
       drawId: 'D1',
@@ -142,7 +146,10 @@ describe('partial-record mode', () => {
 
   it('accepts a whole-event load for a withdrawal', () => {
     const params = {
-      structureId: tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId,
+      structureId: defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].structureId,
       entryStatus: WITHDRAWN,
       drawPosition: 1,
       drawId: 'D1',

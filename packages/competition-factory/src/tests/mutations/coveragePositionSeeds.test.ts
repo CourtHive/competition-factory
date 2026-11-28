@@ -1,4 +1,5 @@
 import { positionSeedBlocks } from '@Mutate/matchUps/drawPositions/positionSeeds';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { createSeededRandom } from '@Tools/prng';
@@ -9,6 +10,9 @@ import { POLICY_AVOIDANCE_COUNTRY } from '@Fixtures/policies/POLICY_AVOIDANCE_CO
 import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
+
+// the stored participants, handed to the internal positioning call as the test always has
+const storedParticipantsOf = (record: { participants?: unknown }): any => record.participants;
 
 // Targets the uncovered regions of positionSeeds.ts:
 //   - reorderSeedsForAvoidance swap loop (conflict-group seeds in same section
@@ -44,7 +48,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
     // Two nationalities concentrated across seed slots → guaranteed conflict
     // groups. Non-seed participants stay unique.
     const participants = tournamentRecord.participants;
-    participants.forEach((p, i) => {
+    defined(participants, 'participants').forEach((p, i) => {
       if (!p.person) return;
       if (i >= seedsCount) {
         p.person.nationalityCode = `Z${String(i).padStart(2, '0')}`;
@@ -59,7 +63,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
 
     // Direct call bypasses the engine's "one function arg" wrapper limit.
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       random: createSeededRandom(seed),
       structureId: structure.structureId,
       drawDefinition,
@@ -81,7 +85,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
     // All participants share a nationality → conflict group is the entire
     // block, leaving nonGroupIndices empty. The section-already-occupied
     // branch fires with swapIdx === undefined.
-    tournamentRecord.participants.forEach((p) => {
+    defined(tournamentRecord.participants, 'participants').forEach((p) => {
       if (p.person) p.person.nationalityCode = 'USA';
     });
 
@@ -90,7 +94,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
     const structure = drawDefinition.structures.find((s) => s.stage === MAIN);
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       structureId: structure.structureId,
       drawDefinition,
       structure,
@@ -126,7 +130,7 @@ describe('reorderSeedsForAvoidance early returns', () => {
     });
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       structureId: structure.structureId,
       drawDefinition,
       structure,
@@ -161,14 +165,16 @@ describe('positionSeedBlocks error aggregation', () => {
     // will try to place). This blocks positionSeedBlocks from finding
     // any unfilled position for the seeds.
     const seededIds = new Set(structure.seedAssignments.map((a) => a.participantId).filter(Boolean));
-    const nonSeedParticipants = tournamentRecord.participants.filter((p) => !seededIds.has(p.participantId));
+    const nonSeedParticipants = defined(tournamentRecord.participants, 'participants').filter(
+      (p) => !seededIds.has(p.participantId),
+    );
     structure.positionAssignments = structure.positionAssignments.map((pa, i) => ({
       ...pa,
       participantId: nonSeedParticipants[i % nonSeedParticipants.length]?.participantId ?? pa.participantId,
     }));
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       structureId: structure.structureId,
       drawDefinition,
       groupsCount: seedsCount,

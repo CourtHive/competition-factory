@@ -13,6 +13,7 @@ import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DRAFT_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { nowIso } from '@Tools/clock';
+import type { ResultType } from '@Types/factoryTypes';
 
 type ResolveDraftPositionsArgs = {
   tournamentRecord?: Tournament;
@@ -30,7 +31,11 @@ export function resolveDraftPositions({
   tierIndex: targetTierIndex,
   random,
   event,
-}: ResolveDraftPositionsArgs) {
+}: ResolveDraftPositionsArgs): ResultType & {
+  transparencyReport?: ReturnType<typeof buildTransparencyReport>;
+  drawPositionResolutions?: Record<number, string>;
+  tierReports?: unknown[];
+} {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const storedDraftState = firstClassOrExtension({

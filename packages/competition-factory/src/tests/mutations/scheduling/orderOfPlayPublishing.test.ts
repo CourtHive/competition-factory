@@ -97,7 +97,7 @@ it('can publish order of play for specified days', () => {
     },
   ];
 
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     policyDefinitions: POLICY_SCHEDULING_NO_DAILY_LIMITS,
     autoSchedule: true,
     schedulingProfile,

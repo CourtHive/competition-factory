@@ -9,6 +9,14 @@ import { withCapturedClock } from '@Tools/clock';
 
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { FactoryEngine } from '@Types/factoryTypes';
+import type { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
+import type { GenerateTournamentRecordResult } from '@Generators/mocks/generateTournamentRecord';
+import type { ModifyTournamentRecordResult } from '@Generators/mocks/modifyTournamentRecord';
+import type { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import type { generateEventWithDraw } from '@Generators/mocks/generateEventWithDraw';
+import type { HydratedParticipant } from '@Types/hydrated';
+import type { ResultType } from '@Types/factoryTypes';
+import type { generateSeason } from '@Generators/mocks/generateSeason';
 import type {
   AnonymizeTournamentRecordArgs,
   GenerateTournamentRecordArgs,
@@ -21,17 +29,31 @@ import type {
 
 let devContextSet = false;
 
+/** A generated participant: its person may carry the country details `withIOC` / `withISO2` add. */
+type GeneratedParticipant = HydratedParticipant & {
+  person?: HydratedParticipant['person'] & {
+    iso2NationalityCode?: string;
+    iocNationalityCode?: string;
+    countryName?: string;
+  };
+};
+
+type GenerateParticipantsResult = ResultType & { participants: GeneratedParticipant[] };
+
 /**
  * The typed surface: each generation method's params are a closed type, so a misplaced or misspelled
- * option is a compile error at the call site. Results stay untyped for now (a result is a success or an
- * error envelope, and every existing caller destructures it directly).
+ * option is a compile error at the call site. Results are typed as succeeding: the mocks engine is test and
+ * development tooling, so a generated record, its ids and an outcome are declared present. A refusal still returns
+ * `{ error }` at runtime, and `error` stays readable on every result.
  */
 export type MocksEngine = FactoryEngine & {
-  generateTournamentRecord: (params?: GenerateTournamentRecordArgs) => any;
-  generateSeason: (params: { seasonProfile: MockSeasonProfile }) => any;
-  modifyTournamentRecord: (params?: ModifyTournamentRecordArgs) => any;
-  completeDrawMatchUps: (params: CompleteDrawMatchUpsArgs) => any;
-  generateParticipants: (params?: GenerateParticipantsArgs) => any;
+  generateTournamentRecord: (params?: GenerateTournamentRecordArgs) => GenerateTournamentRecordResult;
+  generateSeason: (params: { seasonProfile: MockSeasonProfile }) => ReturnType<typeof generateSeason>;
+  modifyTournamentRecord: (params?: ModifyTournamentRecordArgs) => ModifyTournamentRecordResult;
+  completeDrawMatchUps: (params: CompleteDrawMatchUpsArgs) => ReturnType<typeof completeDrawMatchUps>;
+  generateParticipants: (params?: GenerateParticipantsArgs) => GenerateParticipantsResult;
+  generateOutcomeFromScoreString: typeof generateOutcomeFromScoreString;
+  generateEventWithDraw: typeof generateEventWithDraw;
   generateOutcome: (params?: GenerateOutcomeArgs) => any;
   anonymizeTournamentRecord: (params?: AnonymizeTournamentRecordArgs) => any;
 };

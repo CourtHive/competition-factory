@@ -1,4 +1,5 @@
 import { generateSeedingScaleItems } from '@Assemblies/generators/drawDefinitions/generateSeedingScaleItems';
+import { defined } from '@Tests/helpers/defined';
 import POLICY_SEEDING_DEFAULT from '@Fixtures/policies/POLICY_SEEDING_DEFAULT';
 import { SINGLES_EVENT, DOUBLES_EVENT } from '@Constants/eventConstants';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
@@ -440,8 +441,8 @@ describe('seeding scale items always carry a scaleName', () => {
       eventProfiles: [{ participantsProfile: { participantsCount: 8 } }],
       setState: true,
     });
-    const stageEntries = tournamentRecord.events[0].entries;
-    const scaledEntries = stageEntries.map(({ participantId }) => ({ participantId }));
+    const stageEntries = defined(tournamentRecord.events, 'events')[0].entries;
+    const scaledEntries = defined(stageEntries, 'stageEntries').map(({ participantId }) => ({ participantId }));
     const namelessAttributes: ScaleAttributes = { eventType: SINGLES_EVENT, scaleType: RATING };
 
     let result: any = tournamentEngine.generateSeedingScaleItems({

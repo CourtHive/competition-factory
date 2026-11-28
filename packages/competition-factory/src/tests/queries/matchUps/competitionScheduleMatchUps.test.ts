@@ -1,4 +1,5 @@
 import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { instanceCount, unique } from '@Tools/arrays';
@@ -318,9 +319,9 @@ test.each([tournamentEngine])(
     expect(success).toEqual(true);
     expect(tournamentRecord).toBeDefined();
 
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions[0];
-    const mainStructure = drawDefinition.structures[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const mainStructure = defined(drawDefinition.structures, 'structures')[0];
 
     expect(drawDefinition).toBeDefined();
     expect(mainStructure).toBeDefined();

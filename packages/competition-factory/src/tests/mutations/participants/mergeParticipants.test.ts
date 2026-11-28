@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -26,8 +27,8 @@ test('participants can be merged', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const modifiedParticipant = tournamentRecord.participants[0];
-  modifiedParticipant.person.previousNames = ['Previous Name'];
+  const modifiedParticipant = defined(tournamentRecord.participants, 'participants')[0];
+  defined(modifiedParticipant.person, 'person').previousNames = ['Previous Name'];
   const { participantId } = modifiedParticipant;
 
   let { participants: tournamentParticipants } = tournamentEngine.getParticipants({
@@ -46,7 +47,7 @@ test('participants can be merged', () => {
   }));
   expect(modifiedParticipant.person).toEqual(tournamentParticipants[0].person);
 
-  modifiedParticipant.person.previousNames = ['Previous Name', 'Another Name'];
+  defined(modifiedParticipant.person, 'person').previousNames = ['Previous Name', 'Another Name'];
 
   result = tournamentEngine.mergeParticipants({
     participants: [modifiedParticipant],
@@ -58,7 +59,7 @@ test('participants can be merged', () => {
   }));
   expect(modifiedParticipant.person).toEqual(tournamentParticipants[0].person);
 
-  modifiedParticipant.person.previousNames = ['New Previous Name'];
+  defined(modifiedParticipant.person, 'person').previousNames = ['New Previous Name'];
 
   result = tournamentEngine.mergeParticipants({
     participants: [modifiedParticipant],

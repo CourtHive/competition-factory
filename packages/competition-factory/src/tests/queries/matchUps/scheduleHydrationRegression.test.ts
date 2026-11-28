@@ -13,6 +13,7 @@
  * server's scheduled-matchups response.
  */
 import { setSchemaWriteMode } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -42,13 +43,19 @@ function scheduleOneMatchUp(opts: { startDate: string }) {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const venueId = tournamentRecord.venues[0].venueId;
-  const courtId = tournamentRecord.venues[0].courts[0].courtId;
-  const courtName = tournamentRecord.venues[0].courts[0].courtName;
-  const venueName = tournamentRecord.venues[0].venueName;
-  const matchUpId = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0].matchUpId;
-  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
-  const eventId = tournamentRecord.events[0].eventId;
+  const venueId = defined(tournamentRecord.venues, 'venues')[0].venueId;
+  const courtId = defined(defined(tournamentRecord.venues, 'venues')[0].courts, 'courts')[0].courtId;
+  const courtName = defined(defined(tournamentRecord.venues, 'venues')[0].courts, 'courts')[0].courtName;
+  const venueName = defined(tournamentRecord.venues, 'venues')[0].venueName;
+  const matchUpId = defined(
+    defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps,
+    'matchUps',
+  )[0].matchUpId;
+  const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
+  const eventId = defined(tournamentRecord.events, 'events')[0].eventId;
 
   expect(tournamentEngine.assignMatchUpVenue({ drawId, matchUpId, venueId }).success).toEqual(true);
   expect(tournamentEngine.assignMatchUpCourt({ drawId, matchUpId, courtId }).success).toEqual(true);
@@ -191,8 +198,14 @@ describe('competitionScheduleMatchUps — public API shape', () => {
     expect(ac.court?.courtId).toEqual(courtId);
     expect(ac.venueId).toEqual(venueId);
 
-    const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
-    const matchUpId = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0].matchUpId;
+    const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
+    const matchUpId = defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    )[0].matchUpId;
     expect(tournamentEngine.assignMatchUpVenue({ drawId, matchUpId, venueId }).success).toEqual(true);
     expect(tournamentEngine.assignMatchUpCourt({ drawId, matchUpId, courtId }).success).toEqual(true);
     expect(tournamentEngine.addMatchUpScheduledDate({ drawId, matchUpId, scheduledDate: startDate }).success).toEqual(

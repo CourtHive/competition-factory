@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import * as tools from '@Assemblies/tools';
 import { expect, it, test } from 'vitest';
@@ -259,7 +260,7 @@ it('can filter by entries', () => {
   let result = tournamentEngine.addEvent({ event });
   expect(result.success).toEqual(true);
 
-  const participantIds = tournamentRecord.participants.map((p) => p.participantId);
+  const participantIds = defined(tournamentRecord.participants, 'participants').map((p) => p.participantId);
   tournamentEngine.addEventEntries({ eventId: newEventId, participantIds });
 
   ({ participants } = tournamentEngine.getParticipants({ participantFilters: { eventEntryStatuses: true } }));

@@ -8,7 +8,7 @@ import { MAIN } from '@Constants/drawDefinitionConstants';
 
 it('a draw whose direct entries and qualifiers exceed its drawSize is refused', () => {
   const {
-    tournamentId,
+    tournamentRecord: { tournamentId },
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     eventProfiles: [{ participantsProfile: { participantsCount: 32 } }],
@@ -22,7 +22,7 @@ it('a draw whose direct entries and qualifiers exceed its drawSize is refused', 
 
 it('a draw whose direct entries and qualifiers fill its drawSize is generated', () => {
   const {
-    tournamentId,
+    tournamentRecord: { tournamentId },
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
     eventProfiles: [{ participantsProfile: { participantsCount: 28 } }],

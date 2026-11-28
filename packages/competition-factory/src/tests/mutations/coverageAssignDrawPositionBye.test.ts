@@ -4,6 +4,7 @@
  * 242, 423, 477, 481, 505, 510, 593, 637
  */
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { defined } from '@Tests/helpers/defined';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
@@ -45,7 +46,7 @@ describe('assignDrawPositionBye guard paths', () => {
     });
     let result: any = assignDrawPositionBye({
       structureId: 'BOGUS_STRUCTURE_ID',
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       drawPosition: 1,
     });
     expect(result.error).toEqual(STRUCTURE_NOT_FOUND);
@@ -58,10 +59,10 @@ describe('assignDrawPositionBye guard paths', () => {
     const { drawDefinition } = mocksEngine.generateEventWithDraw({
       drawProfile: { drawSize: 4, participantsCount: 3, automated: false },
     });
-    const structure = drawDefinition.structures[0];
+    const structure = defined(defined(drawDefinition, 'drawDefinition').structures, 'structures')[0];
     // Pass structure but no structureId — line 96 should execute
     let result: any = assignDrawPositionBye({
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       drawPosition: 1,
       structure,
       // no structureId
@@ -122,15 +123,15 @@ describe('assignDrawPositionBye position assignment edge cases', () => {
     const { drawDefinition } = mocksEngine.generateEventWithDraw({
       drawProfile: { drawSize: 4, participantsCount: 3 },
     });
-    const structure = drawDefinition.structures[0];
+    const structure = defined(defined(drawDefinition, 'drawDefinition').structures, 'structures')[0];
     const byeAssignment = structure.positionAssignments?.find((a: any) => a.bye);
     expect(byeAssignment).toBeDefined();
 
     // Assign BYE again to a position that already has bye — line 141 early return
     let result: any = assignDrawPositionBye({
-      drawPosition: byeAssignment.drawPosition,
+      drawPosition: defined(byeAssignment, 'byeAssignment').drawPosition,
       structureId: structure.structureId,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
     });
     expect(result.success).toEqual(true);
   });
@@ -139,7 +140,7 @@ describe('assignDrawPositionBye position assignment edge cases', () => {
     const { drawDefinition } = mocksEngine.generateEventWithDraw({
       drawProfile: { drawSize: 4, participantsCount: 2, automated: false },
     });
-    const structure = drawDefinition.structures[0];
+    const structure = defined(defined(drawDefinition, 'drawDefinition').structures, 'structures')[0];
     const structureId = structure.structureId;
 
     // Manually remove a positionAssignment to force the missing-assignment branch
@@ -152,7 +153,7 @@ describe('assignDrawPositionBye position assignment edge cases', () => {
 
     // Now assign BYE — should create the missing positionAssignment (lines 136-137)
     let result: any = assignDrawPositionBye({
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       drawPosition,
       structureId,
     });
@@ -362,14 +363,14 @@ describe('advanceWinner edge cases', () => {
 
     // Assign BYEs to positions 1 and 2 (paired in same R1 matchUp)
     let result: any = assignDrawPositionBye({
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       drawPosition: 1,
       structureId,
     });
     expect(result.success).toEqual(true);
 
     result = assignDrawPositionBye({
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       drawPosition: 2,
       structureId,
     });
@@ -378,7 +379,7 @@ describe('advanceWinner edge cases', () => {
     // Now assign a BYE to position 3 as well — this creates a scenario
     // where the bye-advanced position meets another bye in R2
     result = assignDrawPositionBye({
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       drawPosition: 3,
       structureId,
     });
@@ -411,15 +412,17 @@ describe('advanceWinner edge cases', () => {
     });
 
     const entryStatuses: Set<string> = new Set([DIRECT_ACCEPTANCE, WILDCARD]);
-    const entries = drawDefinition.entries?.filter((e: any) => entryStatuses.has(e.entryStatus));
-    const participantIds = entries?.map((e: any) => e.participantId) || [];
+    const entries = defined(drawDefinition, 'drawDefinition').entries?.filter((e: any) =>
+      entryStatuses.has(e.entryStatus),
+    );
+    const participantIds = entries?.map((e: any) => e.participantId) ?? [];
 
     // Fill all positions with participants
     for (let i = 0; i < participantIds.length && i < (unassignedPositions?.length || 0); i++) {
       assignDrawPosition({
         drawPosition: unassignedPositions![i].drawPosition,
         participantId: participantIds[i],
-        drawDefinition,
+        drawDefinition: defined(drawDefinition, 'drawDefinition'),
         structureId,
       });
     }
@@ -427,7 +430,7 @@ describe('advanceWinner edge cases', () => {
     // Now try to assign a BYE to a position that has a participant — should return DRAW_POSITION_ASSIGNED
     let result: any = assignDrawPositionBye({
       drawPosition: unassignedPositions![0].drawPosition,
-      drawDefinition,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
       structureId,
     });
     expect(result.error).toEqual(DRAW_POSITION_ASSIGNED);

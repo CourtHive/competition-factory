@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -39,7 +40,7 @@ it('generateDrawDefinition validates a passed matchUpFormat even when it equals 
   } = mocksEngine.generateTournamentRecord({ eventProfiles: [{ participantsProfile: { participantsCount: 8 } }] });
 
   // a record that already stores a refused format (imported, or written before this check existed)
-  tournamentRecord.events[0].matchUpFormat = OVERTIME;
+  defined(tournamentRecord.events, 'events')[0].matchUpFormat = OVERTIME;
   tournamentEngine.setState(tournamentRecord);
 
   // passing the format is new use, equal to the event's or not

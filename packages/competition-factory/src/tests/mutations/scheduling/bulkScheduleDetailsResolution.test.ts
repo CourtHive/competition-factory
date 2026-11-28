@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -66,7 +67,7 @@ it('B4: what is not scheduled is reported: BYE and completed are skipped, unknow
     setState: true,
     startDate,
   });
-  const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+  const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   const { matchUps } = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [1] } });
   const byeMatchUpId = matchUps.find(({ matchUpStatus }) => matchUpStatus === BYE).matchUpId;
   const playedMatchUpId = matchUps.find(({ matchUpStatus }) => matchUpStatus !== BYE).matchUpId;

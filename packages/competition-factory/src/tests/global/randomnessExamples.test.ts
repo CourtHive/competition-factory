@@ -2,13 +2,17 @@ import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import { repoFile } from '@Tests/testHarness/repoRoot';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
+import typedMocksEngine from '@Assemblies/engines/mock';
 import asyncEngine from '@Engines/asyncEngine';
 import * as tools from '@Assemblies/tools';
 import fs from 'node:fs';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+
+// the page's examples read the generated records as plain objects, as a JavaScript reader does; the example code
+// must stay verbatim, so its records are untyped here
+const mocksEngine: any = typedMocksEngine;
 
 /**
  * The worked examples of documentation/docs/concepts/randomness.md, one test per example.

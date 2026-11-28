@@ -1,4 +1,5 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -40,11 +41,16 @@ describe.each(MODES)('pipeline %s', (mode) => {
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 4, completeAllMatchUps: true }],
     });
-    const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
-    const byPosition = new Map(structure.positionAssignments.map((a) => [a.drawPosition, a.participantId]));
+    const structure = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0];
+    const byPosition = new Map(
+      defined(structure.positionAssignments, 'positionAssignments').map((a) => [a.drawPosition, a.participantId]),
+    );
     // the converter's shape: who played and who won, and a round number on the final alone
-    structure.matchUps = structure.matchUps.map((matchUp) => ({
-      sides: matchUp.drawPositions.map((drawPosition, index) => ({
+    structure.matchUps = defined(structure.matchUps, 'matchUps').map((matchUp) => ({
+      sides: defined(matchUp.drawPositions, 'drawPositions').map((drawPosition, index) => ({
         participantId: byPosition.get(drawPosition),
         sideNumber: index + 1,
       })),

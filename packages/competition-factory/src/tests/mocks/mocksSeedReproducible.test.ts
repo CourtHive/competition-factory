@@ -1,4 +1,5 @@
 import { modifyTournamentRecord } from '@Generators/mocks/modifyTournamentRecord';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -102,7 +103,7 @@ describe('the same seed gives the same record', () => {
       expect(result.success).toEqual(true);
       return tournamentRecord;
     });
-    expect(first.events.length).toEqual(3);
+    expect(defined(first.events, 'events').length).toEqual(3);
     expect(JSON.stringify(second)).toEqual(JSON.stringify(first));
   });
 
@@ -162,9 +163,11 @@ describe('a profile is not changed by generating from it', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ gender: MALE, drawProfiles: [{ drawSize: 8 }] }],
     });
-    expect(tournamentRecord.events[0].gender).toEqual(MALE);
+    expect(defined(tournamentRecord.events, 'events')[0].gender).toEqual(MALE);
     const participantsProfile = { participantsCount: 4, idPrefix: 'P' };
-    const eventProfiles = [{ eventId: tournamentRecord.events[0].eventId, drawProfiles: [{ drawSize: 4 }] }];
+    const eventProfiles = [
+      { eventId: defined(tournamentRecord.events, 'events')[0].eventId, drawProfiles: [{ drawSize: 4 }] },
+    ];
     const result: any = modifyTournamentRecord({ participantsProfile, eventProfiles, tournamentRecord } as any);
 
     expect(result.success).toEqual(true);
@@ -172,7 +175,7 @@ describe('a profile is not changed by generating from it', () => {
     expect(eventProfiles[0]).not.toHaveProperty('gender');
 
     // the prefix is still applied to what is generated, so new ids cannot collide with existing ones
-    const prefixed = tournamentRecord.participants.filter((participant: any) =>
+    const prefixed = defined(tournamentRecord.participants, 'participants').filter((participant: any) =>
       participant.participantId.startsWith('P-8'),
     );
     expect(prefixed.length).toBeGreaterThan(0);

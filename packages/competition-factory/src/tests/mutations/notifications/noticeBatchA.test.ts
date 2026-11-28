@@ -1,4 +1,5 @@
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
+import { defined } from '@Tests/helpers/defined';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -159,11 +160,13 @@ describe('ladder', () => {
       drawProfiles: [{ drawType: LADDER, drawSize: 4 }],
       setState: true,
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const { drawId } = drawDefinition;
-    const structureId = drawDefinition.structures[0].structureId;
+    const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
     if (policy) tournamentEngine.attachPolicies({ drawId, policyDefinitions: { [POLICY_TYPE_LADDER]: policy } });
-    const participantIds = tournamentRecord.participants.slice(0, 4).map((p: any) => p.participantId);
+    const participantIds = defined(tournamentRecord.participants, 'participants')
+      .slice(0, 4)
+      .map((p: any) => p.participantId);
     return { drawId, structureId, participantIds };
   }
 

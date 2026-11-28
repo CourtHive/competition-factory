@@ -40,8 +40,8 @@ describe('resetQualifyingStructure()', () => {
     expect(result.success).toEqual(true);
 
     // the reset is written to the draw in state, not to the copy getEvents returned
-    const stored = tournamentEngine.getEvent({ drawId: drawDefinition.drawId }).drawDefinition;
-    const storedQualifying = stored.structures.find(
+    const stored = defined(tournamentEngine.getEvent({ drawId: drawDefinition.drawId }).drawDefinition, 'stored');
+    const storedQualifying = defined(stored.structures, 'structures').find(
       ({ structureId }) => structureId === qualifyingStructure.structureId,
     );
     const { structure } = getStructureMatchUps({ structure: storedQualifying });

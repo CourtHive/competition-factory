@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
@@ -23,8 +24,8 @@ function draw32() {
     drawProfiles: [{ drawSize: 32, participantsCount: 32, seedsCount: 8 }],
     setState: true,
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  return { drawDefinition, structureId: drawDefinition.structures[0].structureId };
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  return { drawDefinition, structureId: defined(drawDefinition.structures, 'structures')[0].structureId };
 }
 
 describe('isValidSeedPosition', () => {

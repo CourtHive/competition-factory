@@ -1,4 +1,5 @@
 import scaleEngine from '@Engines/scaleEngine';
+import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
 import { mocksEngine } from '../../..';
 
@@ -231,7 +232,9 @@ describe('getTournamentPointAwards: team awards and refusal', () => {
       setState: true,
     });
     const teamIds = new Set(
-      tournamentRecord.participants.filter((p: any) => p.participantType === 'TEAM').map((p: any) => p.participantId),
+      defined(tournamentRecord.participants, 'participants')
+        .filter((p: any) => p.participantType === 'TEAM')
+        .map((p: any) => p.participantId),
     );
 
     const result = scaleEngine.getTournamentPointAwards({

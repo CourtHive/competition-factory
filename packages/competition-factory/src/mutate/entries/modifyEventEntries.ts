@@ -15,6 +15,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 // constants and types
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
 import { EntryStatusUnion, Event, Tournament } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 // should NOT remove entries that are present in drawDefinition.entries
 // if those entries are assigned positions in any structures...
@@ -33,7 +34,7 @@ export function modifyEventEntries({
   entryStage = MAIN,
   tournamentRecord,
   event,
-}: ModifyEventEntriesArgs) {
+}: ModifyEventEntriesArgs): ResultType & { invalidParticipantIds?: string[]; invalidParticipantIdPairs?: string[][] } {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 

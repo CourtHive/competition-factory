@@ -1,4 +1,5 @@
 import { setDeepCopy, setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -124,8 +125,8 @@ describe('the engine addExtension on a stored structure or matchUp', () => {
   function borrowed() {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
     tournamentEngine.setState(tournamentRecord, false);
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const structure = drawDefinition.structures[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const structure = defined(drawDefinition.structures, 'structures')[0];
     return { structure, matchUp: (matchUpsOf(structure) ?? [])[0] };
   }
 

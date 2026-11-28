@@ -1,4 +1,5 @@
 import { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/removeMatchUpSideParticipant';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -49,7 +50,7 @@ describe('removeMatchUpSideParticipant', () => {
     });
 
     tournamentEngine.setState(tournamentRecord);
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = removeMatchUpSideParticipant({
       matchUpId: 'test',
@@ -66,7 +67,7 @@ describe('removeMatchUpSideParticipant', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = removeMatchUpSideParticipant({
       matchUpId: 'test',
@@ -108,7 +109,7 @@ describe('removeMatchUpSideParticipant', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = removeMatchUpSideParticipant({
       tournamentRecord,
@@ -125,8 +126,8 @@ describe('removeMatchUpSideParticipant', () => {
     });
 
     tournamentEngine.setState(tournamentRecord);
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const matchUp = drawDefinition.structures[0].matchUps[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const matchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
 
     const result = removeMatchUpSideParticipant({
       tournamentRecord,

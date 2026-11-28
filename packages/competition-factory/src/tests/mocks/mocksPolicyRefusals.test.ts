@@ -1,4 +1,5 @@
 import { TEMPLATE_SANCTIONING_USTA, TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import POLICY_DRAWS_DEFAULT from '@Fixtures/policies/POLICY_DRAWS_DEFAULT';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -162,7 +163,7 @@ describe('modifyTournamentRecord: an existing event', () => {
     expect(result.error).toEqual(EXISTING_POLICY_TYPE);
     expect(result.context.option).toEqual('eventProfiles[0].policyDefinitions.scoring');
     expect(eventPolicies(tournamentRecord)[POLICY_TYPE_SCORING].policyName).toEqual('A');
-    expect(tournamentRecord.events[0].drawDefinitions.length).toEqual(1);
+    expect(defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions').length).toEqual(1);
   });
 
   it('counts a walkover as a result', () => {

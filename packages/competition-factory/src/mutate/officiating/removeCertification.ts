@@ -6,15 +6,16 @@ import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 type RemoveCertificationArgs = {
   officialRecord: OfficialRecord;
   certificationId: string;
 };
 
-export function removeCertification({ officialRecord, certificationId }: RemoveCertificationArgs) {
+export function removeCertification({ officialRecord, certificationId }: RemoveCertificationArgs): ResultType {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } } as any;
+  if (!certificationId) return { error: INVALID_VALUES, context: { message: 'Missing certificationId' } };
 
   const index = officialRecord.certifications.findIndex((c) => c.certificationId === certificationId);
   if (index === -1) return { error: CERTIFICATION_NOT_FOUND, context: { certificationId } };

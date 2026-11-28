@@ -1,4 +1,5 @@
 import { structureSort } from '@Functions/sorters/structureSort';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { instanceCount } from '@Tools/arrays';
@@ -91,26 +92,30 @@ test('structureSort can sort by stage and stageSequence', () => {
     ],
   });
 
-  const allStructures = tournamentRecord.events
-    .flatMap(({ drawDefinitions }) => drawDefinitions.flatMap(({ structures }) => structures))
+  const allStructures = defined(tournamentRecord.events, 'events')
+    .flatMap(({ drawDefinitions }) =>
+      defined(drawDefinitions, 'drawDefinitions').flatMap(({ structures }) => defined(structures, 'structures')),
+    )
     .sort((a, b) => tools.structureSort(a, b, { mode: AGGREGATE_EVENT_STRUCTURES }));
 
   const structureMap = Object.keys(instanceCount(allStructures.map(({ structureName }) => structureName)));
 
   const flatStructures = tournamentRecord.events
     ?.flatMap(({ drawDefinitions, eventType }) =>
-      drawDefinitions?.flatMap(({ structures, drawId }) => structures?.map((s) => ({ ...s, drawId, eventType }))),
+      defined(drawDefinitions, 'drawDefinitions').flatMap(({ structures, drawId }) =>
+        defined(structures, 'structures').map((s) => ({ ...s, drawId, eventType })),
+      ),
     )
     .sort((a, b) => tools.structureSort(a, b, { mode: AGGREGATE_EVENT_STRUCTURES }))
-    ?.reduce(
+    ?.reduce<Record<string, { stage?: string }[]>>(
       (acc, { structureName, stage }) => ({
         ...acc,
-        [structureName]: [...(acc[structureName] ?? []), { stage }],
+        [defined(structureName, 'structureName')]: [...(acc[defined(structureName, 'structureName')] ?? []), { stage }],
       }),
       {},
     );
 
   const expectation = ['Main', 'Play Off', 'Consolation', 'Consolation 1', 'Consolation 2'];
-  expect(Object.keys(flatStructures)).toEqual(expectation);
+  expect(Object.keys(defined(flatStructures, 'flatStructures'))).toEqual(expectation);
   expect(structureMap).toEqual(expectation);
 });

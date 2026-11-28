@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -20,7 +21,7 @@ it('can set participant scaleItems', () => {
   const { participants } = tournamentRecord;
   tournamentEngine.setState(tournamentRecord);
 
-  const { participantId } = participants[0];
+  const { participantId } = defined(participants, 'participants')[0];
   const { participant } = tournamentEngine.findParticipant({ participantId });
   expect(participant.participantId).toEqual(participantId);
 
@@ -143,7 +144,7 @@ it('can set participant scaleItems in bulk', () => {
   const { participants } = tournamentRecord;
   tournamentEngine.setState(tournamentRecord);
 
-  const scaleItemsWithParticipantIds = participants.map((participant) => {
+  const scaleItemsWithParticipantIds = defined(participants, 'participants').map((participant) => {
     const { participantId } = participant;
     const scaleItems = [
       {
@@ -242,7 +243,7 @@ it('addDynamicRatings succeeds with valid scale values', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const { participants } = tournamentRecord;
-  const participantId = participants[0].participantId;
+  const participantId = defined(participants, 'participants')[0].participantId;
 
   const scaleItem = {
     scaleValue: 8.3,

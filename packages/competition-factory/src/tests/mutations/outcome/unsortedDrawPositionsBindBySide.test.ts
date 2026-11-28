@@ -1,4 +1,5 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -34,18 +35,27 @@ describe.each(MODES)('pipeline %s', (mode) => {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawType: SINGLE_ELIMINATION, drawSize: 4 }] });
-    const matchUps = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps;
-    const source = matchUps.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 1);
-    source.drawPositions = [...source.drawPositions].reverse();
+    const matchUps = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps;
+    const source = defined(matchUps, 'matchUps').find(
+      (matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 1,
+    );
+    defined(source, 'source').drawPositions = [
+      ...defined(defined(source, 'source').drawPositions, 'drawPositions'),
+    ].reverse();
     tournamentEngine.setState(tournamentRecord);
     setOutcomePipeline(mode);
 
     const shown = tournamentEngine
       .allDrawMatchUps({ drawId, inContext: true })
-      .matchUps.find((matchUp) => matchUp.matchUpId === source.matchUpId)
+      .matchUps.find((matchUp) => matchUp.matchUpId === defined(source, 'source').matchUpId)
       .sides.find((side) => side.sideNumber === winningSide);
     const outcome = { matchUpStatus: COMPLETED, winningSide };
-    expect(tournamentEngine.setMatchUpStatus({ drawId, matchUpId: source.matchUpId, outcome }).success).toEqual(true);
+    expect(
+      tournamentEngine.setMatchUpStatus({ drawId, matchUpId: defined(source, 'source').matchUpId, outcome }).success,
+    ).toEqual(true);
 
     const final = tournamentEngine
       .allDrawMatchUps({ drawId, inContext: true })

@@ -1,4 +1,5 @@
 import { CANNOT_RESET_STRUCTURE, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { defined } from '@Tests/helpers/defined';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -13,7 +14,12 @@ import {
 } from '@Constants/drawDefinitionConstants';
 
 const structureOf = (drawId: string, stage: string) =>
-  tournamentEngine.getEvent({ drawId }).drawDefinition.structures.find((structure) => structure.stage === stage);
+  defined(
+    defined(tournamentEngine.getEvent({ drawId }).drawDefinition, 'drawDefinition').structures?.find(
+      (structure) => structure.stage === stage,
+    ),
+    `${stage} structure`,
+  );
 const matchUpsOf = (stage: string) => {
   const matchUps =
     tournamentEngine.allTournamentMatchUps().matchUps?.filter((matchUp) => matchUp.stage === stage) ?? [];
@@ -103,7 +109,9 @@ describe('resetStructure', () => {
     expect(participantIdsOf(structureOf(drawId, CONSOLATION))).toEqual(participantIdsOf(consolation));
 
     // every consolation matchUp still holds the positions fed into it; only the positions consolation wins delivered went
-    const fedPositions = new Set(consolation.positionAssignments.map(({ drawPosition }) => drawPosition));
+    const fedPositions = new Set(
+      defined(consolation.positionAssignments, 'positionAssignments').map(({ drawPosition }) => drawPosition),
+    );
     const reset = matchUpsOf(CONSOLATION);
     const firstRound = reset.filter(({ roundNumber }) => roundNumber === 1);
     expect(firstRound.every(({ drawPositions }) => (drawPositions ?? []).filter(Boolean).length === 2)).toEqual(true);

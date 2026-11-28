@@ -1,4 +1,5 @@
 import { getDualIssues } from '@Query/matchUp/getDualIssues';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, test } from 'vitest';
@@ -56,7 +57,7 @@ function setup({ category, doublesGender }: { category?: any; doublesGender?: st
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat }] });
 
   // every member MALE and adult, so that only what a test changes is an issue
-  for (const participant of tournamentRecord.participants) {
+  for (const participant of defined(tournamentRecord.participants, 'participants')) {
     if (participant.person) Object.assign(participant.person, { sex: MALE, birthDate: '1990-01-01' });
   }
   tournamentEngine.setState(tournamentRecord);

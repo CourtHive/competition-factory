@@ -1,4 +1,5 @@
 import { modifyEvent } from '@Mutate/events/modifyEvent';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -62,7 +63,7 @@ describe('modifyEvent - Extended Coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result = modifyEvent({
       tournamentRecord,
       eventId: event.eventId,
@@ -78,7 +79,7 @@ describe('modifyEvent - Extended Coverage', () => {
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       eventUpdates: { gender: FEMALE },
@@ -98,8 +99,11 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
-    tournamentEngine.addEventEntries({ event, participantIds: [tournamentRecord.participants[0].participantId] });
+    const event = defined(tournamentRecord.events, 'events')[0];
+    tournamentEngine.addEventEntries({
+      event,
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
+    });
 
     const result = modifyEvent({
       eventUpdates: { gender: ANY },
@@ -118,10 +122,10 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     tournamentEngine.addEventEntries({
       event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
     });
 
     const result = modifyEvent({
@@ -146,12 +150,12 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     // No draws, no flights
     event.drawDefinitions = [];
 
     tournamentEngine.addEventEntries({
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
       event,
     });
 
@@ -172,10 +176,10 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     tournamentEngine.addEventEntries({
       event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
     });
 
     const result = modifyEvent({
@@ -195,10 +199,10 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     tournamentEngine.addEventEntries({
       event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
     });
 
     const result = modifyEvent({
@@ -216,7 +220,7 @@ describe('modifyEvent - Extended Coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       tournamentRecord,
@@ -236,10 +240,10 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     tournamentEngine.addEventEntries({
       event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
     });
 
     const result = modifyEvent({
@@ -259,10 +263,10 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     tournamentEngine.addEventEntries({
       event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
     });
 
     const result = modifyEvent({
@@ -282,10 +286,10 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     tournamentEngine.addEventEntries({
       event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
     });
 
     const result = modifyEvent({
@@ -303,7 +307,7 @@ describe('modifyEvent - Extended Coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       tournamentRecord,
@@ -331,9 +335,12 @@ describe('modifyEvent - Extended Coverage', () => {
       startDate: '2024-01-01',
       endDate: '2024-01-07',
     });
-    for (const participant of tournamentRecord.participants) participant.person.birthDate = '2010-01-01';
+    for (const participant of defined(tournamentRecord.participants, 'participants'))
+      defined(participant.person, 'person').birthDate = '2010-01-01';
     tournamentEngine.setState(tournamentRecord);
-    const participantIds = tournamentRecord.participants.map(({ participantId }) => participantId);
+    const participantIds = defined(tournamentRecord.participants, 'participants').map(
+      ({ participantId }) => participantId,
+    );
     const entered = tournamentEngine.addEventEntries({ eventId, participantIds });
     expect(entered.success).toEqual(true);
   };
@@ -364,17 +371,17 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     event.startDate = '2024-01-01';
 
     // Remove birth dates
-    tournamentRecord.participants.forEach((p) => {
+    defined(tournamentRecord.participants, 'participants').forEach((p) => {
       if (p.person) delete p.person.birthDate;
     });
 
     tournamentEngine.addEventEntries({
       event,
-      participantIds: [tournamentRecord.participants[0].participantId],
+      participantIds: [defined(tournamentRecord.participants, 'participants')[0].participantId],
     });
 
     const result = modifyEvent({
@@ -403,7 +410,7 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const newStartDate = '2024-01-10';
 
     const result = modifyEvent({
@@ -424,7 +431,7 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const newStartDate = '2024-01-01';
 
     const result = modifyEvent({
@@ -445,7 +452,7 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const newEndDate = '2024-01-20';
 
     const result = modifyEvent({
@@ -466,7 +473,7 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       eventId: event.eventId,
@@ -486,7 +493,7 @@ describe('modifyEvent - Extended Coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       tournamentRecord,
@@ -506,7 +513,7 @@ describe('modifyEvent - Extended Coverage', () => {
       startDate: '2024-01-10',
       endDate: '2024-02-01',
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       eventId: event.eventId,
@@ -532,7 +539,7 @@ describe('modifyEvent - Extended Coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       tournamentRecord,
@@ -548,7 +555,7 @@ describe('modifyEvent - Extended Coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     delete event.entries;
 
     const result = modifyEvent({
@@ -565,7 +572,7 @@ describe('modifyEvent - Extended Coverage', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventId, eventName: 'Test Event' }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     event.entries = [];
 
     const result = modifyEvent({
@@ -586,7 +593,7 @@ describe('modifyEvent - Extended Coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result = modifyEvent({
       tournamentRecord,

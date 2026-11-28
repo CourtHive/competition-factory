@@ -106,7 +106,7 @@ it('can add statistics to tournament participants', () => {
     drawProfiles,
   });
 
-  let tournamentRecord = genResult.tournamentRecord;
+  let tournamentRecord: any = genResult.tournamentRecord;
   const eventIds = genResult.eventIds;
 
   tournamentEngine.setState(tournamentRecord);

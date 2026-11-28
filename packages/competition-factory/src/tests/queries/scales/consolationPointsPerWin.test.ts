@@ -69,7 +69,7 @@ it.each(scenarios)(
         drawSize: scenario.drawSize,
       },
     ];
-    let result = mocksEngine.generateTournamentRecord({
+    let result: any = mocksEngine.generateTournamentRecord({
       completeAllMatchUps: true,
       randomWinningSide: true,
       policyDefinitions,

@@ -10,6 +10,7 @@
  * not covered by existing test suites.
  */
 import { attemptToSetMatchUpStatusBYE } from '@Mutate/matchUps/matchUpStatus/attemptToSetMatchUpStatusBYE';
+import { defined } from '@Tests/helpers/defined';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -504,7 +505,7 @@ describe('updateTieMatchUpScore edge cases', () => {
       setState: true,
     });
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     let result: any = updateTieMatchUpScore({
       tournamentRecord,
       drawDefinition,

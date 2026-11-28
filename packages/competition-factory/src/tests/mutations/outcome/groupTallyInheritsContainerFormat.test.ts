@@ -1,4 +1,5 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -49,10 +50,14 @@ describe.each(MODES)('pipeline %s', (mode) => {
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawType: ROUND_ROBIN, drawSize: 4, matchUpFormat: 'SET3-S:6/TB7' }],
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     drawDefinition.matchUpFormat = 'SET3-S:6/TB7';
-    drawDefinition.structures[0].matchUpFormat = 'SET3-S:6/TB7-F:TB10';
-    for (const matchUp of drawDefinition.structures[0].structures[0].matchUps) delete matchUp.matchUpFormat;
+    defined(drawDefinition.structures, 'structures')[0].matchUpFormat = 'SET3-S:6/TB7-F:TB10';
+    for (const matchUp of defined(
+      defined(defined(drawDefinition.structures, 'structures')[0].structures, 'structures')[0].matchUps,
+      'matchUps',
+    ))
+      delete matchUp.matchUpFormat;
     tournamentEngine.setState(tournamentRecord);
     setOutcomePipeline(mode);
 

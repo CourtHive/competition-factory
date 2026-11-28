@@ -9,6 +9,7 @@
  * setSchemaWriteModeLegacy.ts) — these tests own the new behavior.
  */
 import { describe, expect, it } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { findExtension } from '@Helpers/extensions/findExtension';
@@ -47,7 +48,7 @@ function buildCompletedRRTournament(mode: SchemaWriteMode) {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });
   tournamentEngine.setState(tournamentRecord);
 
-  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+  const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
   // RR draws nest the group structures under a CONTAINER top-level structure.

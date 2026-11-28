@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
@@ -46,7 +47,7 @@ describe('setTournamentCategories', () => {
 
   it('rejects a removal that orphans an event.category by ageCategoryCode', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-    tournamentRecord.events[0].category = { ageCategoryCode: 'U18' };
+    defined(tournamentRecord.events, 'events')[0].category = { ageCategoryCode: 'U18' };
     tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }];
     tournamentEngine.setState(tournamentRecord);
 
@@ -61,8 +62,8 @@ describe('setTournamentCategories', () => {
   });
 
   it('rejects a removal that orphans by categoryName', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-    tournamentRecord.events[0].category = { categoryName: 'Foobar' };
+    const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
+    defined(tournamentRecord.events, 'events')[0].category = { categoryName: 'Foobar' };
     tournamentRecord.tournamentCategories = [{ categoryName: 'Foobar', type: RATING }];
     tournamentEngine.setState(tournamentRecord);
 
@@ -75,7 +76,7 @@ describe('setTournamentCategories', () => {
 
   it('allows the removal when the event reference is preserved under the new set', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-    tournamentRecord.events[0].category = { ageCategoryCode: 'U18' };
+    defined(tournamentRecord.events, 'events')[0].category = { ageCategoryCode: 'U18' };
     tournamentRecord.tournamentCategories = [
       { categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' },
       { categoryName: 'U16', type: AGE, ageCategoryCode: 'U16' },
@@ -102,7 +103,7 @@ describe('setTournamentCategories', () => {
 
   it('passes when no event has a category assigned', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-    delete tournamentRecord.events[0].category;
+    delete defined(tournamentRecord.events, 'events')[0].category;
     tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }];
     tournamentEngine.setState(tournamentRecord);
 
@@ -112,12 +113,12 @@ describe('setTournamentCategories', () => {
 
   it('collects multiple orphaned references across events', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-    tournamentRecord.events.push({
-      ...tournamentRecord.events[0],
+    defined(tournamentRecord.events, 'events').push({
+      ...defined(tournamentRecord.events, 'events')[0],
       eventId: 'e2',
       category: { ageCategoryCode: 'U16' },
     });
-    tournamentRecord.events[0].category = { ageCategoryCode: 'U18' };
+    defined(tournamentRecord.events, 'events')[0].category = { ageCategoryCode: 'U18' };
     tournamentRecord.tournamentCategories = [
       { categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' },
       { categoryName: 'U16', type: AGE, ageCategoryCode: 'U16' },
@@ -139,8 +140,8 @@ describe('setTournamentCategories', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8 }, { drawSize: 8 }],
     });
-    tournamentRecord.events[0].category = { categoryName: 'U18', ageCategoryCode: 'U18' };
-    tournamentRecord.events[1].category = { categoryName: 'U16', ageCategoryCode: 'U16' };
+    defined(tournamentRecord.events, 'events')[0].category = { categoryName: 'U18', ageCategoryCode: 'U18' };
+    defined(tournamentRecord.events, 'events')[1].category = { categoryName: 'U16', ageCategoryCode: 'U16' };
     tournamentEngine.setState(tournamentRecord);
 
     let result: any = tournamentEngine.setTournamentCategories({
@@ -163,8 +164,8 @@ describe('setTournamentCategories', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8 }, { drawSize: 8 }],
     });
-    tournamentRecord.events[0].category = { categoryName: 'U18', ageCategoryCode: 'U18' };
-    tournamentRecord.events[1].category = { categoryName: 'U16', ageCategoryCode: 'U16' };
+    defined(tournamentRecord.events, 'events')[0].category = { categoryName: 'U18', ageCategoryCode: 'U18' };
+    defined(tournamentRecord.events, 'events')[1].category = { categoryName: 'U16', ageCategoryCode: 'U16' };
     tournamentRecord.tournamentCategories = [{ categoryName: 'U18', type: AGE, ageCategoryCode: 'U18' }];
     tournamentEngine.setState(tournamentRecord);
 

@@ -1,4 +1,5 @@
 import { isRoundWinnerLink, traversesByFinishingPosition, traversesByRound } from '@Helpers/drawTopology/linkTraversal';
+import { defined } from '@Tests/helpers/defined';
 import { repairMalformedLinks } from '@Mutate/drawDefinitions/links/repairMalformedLinks';
 import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
@@ -84,7 +85,7 @@ function generate(drawProfile: any, variant?: Variant, finishingPositions?: numb
     eventIds: [eventId],
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [drawProfile], setState: false });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   const links = containerLinks(drawDefinition);
   if (variant || finishingPositions) expect(links.length).toBeGreaterThan(0);
   for (const link of links) {
@@ -162,12 +163,12 @@ describe('the shared definition: how a link traverses', () => {
         { structureProfiles: [{ drawSize: 16, drawType: SINGLE_ELIMINATION, qualifyingPositions: 4 }] },
       ],
     });
-    const link = drawDefinition.links.find(({ linkType }: any) => linkType === WINNER);
+    const link = defined(drawDefinition.links, 'links').find(({ linkType }: any) => linkType === WINNER);
     expect(traversesByRound(link, drawDefinition)).toEqual(true);
     expect(isRoundWinnerLink(link, drawDefinition)).toEqual(true);
-    link.source.finishingPositions = [1];
+    defined(link, 'link').source.finishingPositions = [1];
     expect(traversesByFinishingPosition(link, drawDefinition)).toEqual(false);
-    delete link.source.roundNumber;
+    delete defined(link, 'link').source.roundNumber;
     expect(isMalformedRoundLink(link, drawDefinition)).toEqual(true);
     expect(getMalformedRoundLink(drawDefinition)?.error).toBeDefined();
   });
@@ -214,7 +215,10 @@ describe('the shared definition: how a link traverses', () => {
 describe('round robin QUALIFYING into MAIN', () => {
   it.each(VARIANTS)('$name: every group winner, and only group winners, reach MAIN', (variant) => {
     const { drawDefinition, drawId, eventId } = generate(ROUND_ROBIN_QUALIFYING, variant);
-    const containerId = drawDefinition.structures.find(isContainer).structureId;
+    const containerId = defined(
+      defined(drawDefinition.structures, 'structures').find(isContainer),
+      'value',
+    ).structureId;
 
     expect(scoreGroups(drawId, containerId)).toEqual(24);
     const winners = finishersByPlace(drawId, containerId).get(1) as Set<string>;
@@ -250,7 +254,10 @@ describe('round robin QUALIFYING into MAIN', () => {
 
   it.each(VARIANTS)('$name naming [1, 2]: the top two of every group qualify, not only the winners', (variant) => {
     const { drawDefinition, drawId, eventId } = generate(ROUND_ROBIN_QUALIFYING, variant, [1, 2]);
-    const containerId = drawDefinition.structures.find(isContainer).structureId;
+    const containerId = defined(
+      defined(drawDefinition.structures, 'structures').find(isContainer),
+      'value',
+    ).structureId;
     scoreGroups(drawId, containerId);
     const places = finishersByPlace(drawId, containerId);
     const topTwo = new Set([...(places.get(1) as Set<string>), ...(places.get(2) as Set<string>)]);
@@ -302,7 +309,10 @@ describe('round robin QUALIFYING into MAIN', () => {
 describe('round robin MAIN into Gold and Silver playoffs', () => {
   it.each(VARIANTS)('$name: Gold holds the group winners and Silver the runners-up', (variant) => {
     const { drawDefinition, drawId } = generate(ROUND_ROBIN_GOLD_SILVER, variant);
-    const containerId = drawDefinition.structures.find(isContainer).structureId;
+    const containerId = defined(
+      defined(drawDefinition.structures, 'structures').find(isContainer),
+      'value',
+    ).structureId;
     expect(containerLinks(drawDefinition).length).toEqual(2);
 
     expect(scoreGroups(drawId, containerId)).toEqual(24);
@@ -361,11 +371,11 @@ describe('the repair and the migration leave it as it is', () => {
       VARIANTS[3],
     );
     const roundRobinLink = containerLinks(drawDefinition)[0];
-    const eliminationLink = drawDefinition.links.find(
+    const eliminationLink = defined(drawDefinition.links, 'links').find(
       (link: any) => link !== roundRobinLink && link.linkType === WINNER,
     );
-    const round = eliminationLink.source.roundNumber;
-    delete eliminationLink.source.roundNumber;
+    const round = defined(eliminationLink, 'eliminationLink').source.roundNumber;
+    delete defined(eliminationLink, 'eliminationLink').source.roundNumber;
     const roundRobinBefore = structuredClone(roundRobinLink);
 
     const result: any = repairMalformedLinks({ drawDefinition, tournamentRecord });
@@ -373,6 +383,6 @@ describe('the repair and the migration leave it as it is', () => {
     expect(result.repaired.map(({ sourceRoundNumber }: any) => sourceRoundNumber)).toEqual([round]);
     expect(result.removed).toEqual([]);
     expect(roundRobinLink).toEqual(roundRobinBefore);
-    expect(eliminationLink.source.roundNumber).toEqual(round);
+    expect(defined(eliminationLink, 'eliminationLink').source.roundNumber).toEqual(round);
   });
 });

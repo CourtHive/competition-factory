@@ -2,7 +2,7 @@ import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScal
 import { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 
 // constants and types
-import { ParticipantFilters, PolicyDefinitions, ScaleItem } from '@Types/factoryTypes';
+import { ParticipantFilters, PolicyDefinitions, ScaleItem, ResultType } from '@Types/factoryTypes';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { RANKING } from '@Constants/scaleConstants';
@@ -24,7 +24,12 @@ export function applyTournamentRankingPoints({
   scaleName = 'RANKING_POINTS',
   level,
   removePriorValues,
-}: ApplyTournamentRankingPointsArgs) {
+}: ApplyTournamentRankingPointsArgs): ResultType & {
+  personPoints?: Record<string, unknown[]>;
+  pairPoints?: Record<string, unknown[]>;
+  teamPoints?: Record<string, unknown[]>;
+  modificationsApplied?: number;
+} {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   // Step 1: Compute all tournament points

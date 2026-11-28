@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -17,7 +18,7 @@ function seed() {
     startDate,
   });
   const { tournamentId } = tournamentRecord;
-  const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
+  const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   const { courts } = tournamentEngine.getVenuesAndCourts();
   matchUpIds.forEach((matchUpId, index) => {
     const { courtId, venueId } = courts[index];

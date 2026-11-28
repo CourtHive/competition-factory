@@ -1,4 +1,5 @@
 import { validateCollectionDefinition } from '@Validators/validateCollectionDefinition';
+import { defined } from '@Tests/helpers/defined';
 import { addPoint, createMatchUp, getScore } from '@Assemblies/governors/scoreGovernor';
 import * as matchUpFormatCode from '@Assemblies/governors/matchUpFormatGovernor';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -88,7 +89,9 @@ describe('§ 12.8: a persisted refused format replays by v1’s rule', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN }],
     });
-    if (storedFormat) tournamentRecord.events[0].drawDefinitions[0].matchUpFormat = storedFormat;
+    if (storedFormat)
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].matchUpFormat =
+        storedFormat;
     tournamentEngine.setState(tournamentRecord);
     const matchUp = tournamentEngine.allTournamentMatchUps().matchUps[0];
     return { matchUpId: matchUp.matchUpId, drawId: matchUp.drawId, stored: matchUp.matchUpFormat };

@@ -55,7 +55,7 @@ it('can create virtual courts with overlapping bookings', () => {
     matchUps,
   });
 
-  const scheduledMatchUpsCount = schedulerResult.scheduledMatchUpIds[startDate].length;
+  const scheduledMatchUpsCount = defined(schedulerResult, 'schedulerResult').scheduledMatchUpIds[startDate].length;
   expect(dateScheduledMatchUps?.length).toEqual(scheduledMatchUpsCount);
   expect(relevantMatchUps?.length).toEqual(scheduledMatchUpsCount);
   expect(bookings?.length).toEqual(scheduledMatchUpsCount);

@@ -1,4 +1,5 @@
 import { addMatchUpTimeItem, resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
+import { defined } from '@Tests/helpers/defined';
 import { addTimeItem, resetTimeItems, addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { getTimeItemValues } from '@Acquire/getTimeItemValues';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -127,7 +128,7 @@ describe('addTimeItem edge cases', () => {
     expect(result.error).toEqual(MISSING_PARTICIPANT_ID);
 
     // valid participantId
-    const { participantId } = tournamentRecord.participants[0];
+    const { participantId } = defined(tournamentRecord.participants, 'participants')[0];
     result = tournamentEngine.addParticipantTimeItem({
       participantId,
       timeItem: { itemType: 'test.participant', itemValue: 'val' },
@@ -443,7 +444,7 @@ describe('addTimeItem and getTimeItemValues direct calls', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       participantsProfile: { participantsCount: 5 },
     });
-    const participantId = tournamentRecord.participants[0].participantId;
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
 
     const result = addTimeItem({
       timeItem: { itemType: 'test.derived', itemValue: 'val' },
@@ -547,7 +548,7 @@ describe('matchUpTimeItems direct calls', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const result = addMatchUpTimeItem({
       drawDefinition,
       matchUpId: 'nonexistent',
@@ -564,7 +565,7 @@ describe('matchUpTimeItems direct calls', () => {
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const matchUp = matchUps.find((m) => m.roundNumber === 1);
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = addMatchUpTimeItem({
       drawDefinition,
@@ -583,7 +584,7 @@ describe('matchUpTimeItems direct calls', () => {
 
     const { matchUps } = tournamentEngine.allTournamentMatchUps();
     const matchUp = matchUps.find((m) => m.roundNumber === 1);
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     // Add a timeItem first
     addMatchUpTimeItem({
@@ -605,7 +606,7 @@ describe('matchUpTimeItems direct calls', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
     const result = resetMatchUpTimeItems({
       drawDefinition,

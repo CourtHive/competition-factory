@@ -1,4 +1,5 @@
 import { getEventAlternateParticipantIds } from '@Query/drawDefinition/matchUpActions/getEventAlternateParticipantids';
+import { defined } from '@Tests/helpers/defined';
 import { policyAttachment } from '@Generators/drawDefinitions/generateDrawDefinition/drawDefinitionPolicyAttachment';
 import { generateOrGetExisting } from '@Generators/drawDefinitions/generateDrawDefinition/generateOrGetExisting';
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
@@ -108,9 +109,9 @@ describe('generateAdHocRounds branches', () => {
     });
     tournamentEngine.setState(tournamentRecord);
     const { drawDefinition } = tournamentEngine.getEvent({
-      drawId: tournamentRecord.events[0].drawDefinitions[0].drawId,
+      drawId: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId,
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result = generateAdHocRounds({
       drawDefinition,
       event,
@@ -220,7 +221,7 @@ describe('generateOrGetExisting branches', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4 }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const result = generateOrGetExisting({
       tournamentRecord,
       event,
@@ -575,8 +576,13 @@ describe('allocateTeamMatchUpCourts branches', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    const matchUpId = drawDefinition.structures[0].matchUps.find((m) => m.matchUpType === TEAM_MATCHUP).matchUpId;
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+    const matchUpId = defined(
+      defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps').find(
+        (m) => m.matchUpType === TEAM_MATCHUP,
+      ),
+      'value',
+    ).matchUpId;
     for (const courtIds of ['invalid', [], [1]]) {
       const result: any = allocateTeamMatchUpCourts({
         tournamentRecord,

@@ -6,7 +6,7 @@ import { checkInParticipant } from './checkInParticipant';
 
 // constants and types
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import type { Attribution } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -57,7 +57,9 @@ type SetParticipantCheckInStateArgs = {
  * `changed` is the contract a server relies on to decide what other copies of the record must apply: a
  * `changed: false` result holds no fact for anybody to replay.
  */
-export function setParticipantCheckInState(params: SetParticipantCheckInStateArgs) {
+export function setParticipantCheckInState(
+  params: SetParticipantCheckInStateArgs,
+): ResultType & { checkedIn?: boolean; changed?: boolean } {
   const paramCheck = checkRequiredParameters(params, [
     { [PARTICIPANT_ID]: true, [DRAW_DEFINITION]: true, [MATCHUP_ID]: true },
   ]);

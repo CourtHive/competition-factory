@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
@@ -18,7 +19,9 @@ it('throws an error on misgendered entries', () => {
     ],
   });
   const { participants } = tournamentRecord;
-  const genders = unique(participants.map(({ person }) => person.sex)).sort();
+  const genders = unique(
+    defined(participants, 'participants').map(({ person }) => defined(person, 'person').sex),
+  ).sort();
   expect(genders).toEqual([FEMALE, MALE]);
 
   tournamentEngine.setState(tournamentRecord);
@@ -34,12 +37,14 @@ it('throws an error on misgendered entries', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
   expect(result.context.mismatchedGender.length).toBeGreaterThan(0);
 
-  const maleParticipantIds = participants.filter(({ person }) => person.sex === MALE).map((p) => p.participantId);
+  const maleParticipantIds = defined(participants, 'participants')
+    .filter(({ person }) => defined(person, 'person').sex === MALE)
+    .map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({
     participantIds: maleParticipantIds,
     eventId,
@@ -62,7 +67,9 @@ it('validates gender for ungrouped doubles entries', () => {
     ],
   });
   const { participants } = tournamentRecord;
-  const genders = unique(participants.map(({ person }) => person.sex)).sort();
+  const genders = unique(
+    defined(participants, 'participants').map(({ person }) => defined(person, 'person').sex),
+  ).sort();
   expect(genders).toEqual([FEMALE, MALE]);
 
   tournamentEngine.setState(tournamentRecord);
@@ -101,8 +108,12 @@ it('validates gender for ungrouped doubles entries', () => {
   const mixedDoublesEventId = result.event.eventId;
 
   // Get male and female participants
-  const maleParticipants = participants.filter(({ person }) => person.sex === MALE);
-  const femaleParticipants = participants.filter(({ person }) => person.sex === FEMALE);
+  const maleParticipants = defined(participants, 'participants').filter(
+    ({ person }) => defined(person, 'person').sex === MALE,
+  );
+  const femaleParticipants = defined(participants, 'participants').filter(
+    ({ person }) => defined(person, 'person').sex === FEMALE,
+  );
   const maleParticipantIds = maleParticipants.map((p) => p.participantId);
   const femaleParticipantIds = femaleParticipants.map((p) => p.participantId);
 
@@ -205,7 +216,7 @@ it('accepts both short form (M/F) and long form (MALE/FEMALE) gender values', ()
     },
   };
 
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  const { tournamentRecord }: any = mocksEngine.generateTournamentRecord();
 
   // Add our custom participants
   tournamentRecord.participants = [
@@ -374,7 +385,7 @@ it('accepts both short and long form genders for ungrouped doubles entries', () 
     },
   };
 
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord();
+  const { tournamentRecord }: any = mocksEngine.generateTournamentRecord();
 
   tournamentRecord.participants = [
     maleParticipantShort,

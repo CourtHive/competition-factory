@@ -1,4 +1,5 @@
 import { getAccessorValue } from '@Tools/getAccessorValue';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -31,10 +32,10 @@ test('accessorValues can target person.sex when participantType: PAIR', () => {
   });
   tournamentEngine.setState(tournamentRecord);
 
-  const participantWithTimeItems = tournamentRecord.participants.find(
+  const participantWithTimeItems: any = defined(tournamentRecord.participants, 'participants').find(
     (participant) => participant.participantType === INDIVIDUAL && participant.timeItems?.length,
   );
-  expect(participantWithTimeItems.ratings).toBeUndefined();
+  expect(defined(participantWithTimeItems, 'participantWithTimeItems').ratings).toBeUndefined();
 
   const { participants } = tournamentEngine.getParticipants({
     withIndividualParticipants: true,
@@ -50,7 +51,8 @@ test('accessorValues can target person.sex when participantType: PAIR', () => {
   }
 
   let targetParticipant = participants.find(
-    (participant) => participant.participantId === participantWithTimeItems.participantId,
+    (participant) =>
+      participant.participantId === defined(participantWithTimeItems, 'participantWithTimeItems').participantId,
   );
   expect(Object.keys(targetParticipant.ratings)).not.toBeUndefined();
 
@@ -63,7 +65,8 @@ test('accessorValues can target person.sex when participantType: PAIR', () => {
 
   const state = tournamentEngine.getTournament();
   targetParticipant = state.tournamentRecord.participants.find(
-    (participant) => participant.participantId === participantWithTimeItems.participantId,
+    (participant) =>
+      participant.participantId === defined(participantWithTimeItems, 'participantWithTimeItems').participantId,
   );
   expect(targetParticipant.ratings).toBeUndefined();
 });

@@ -1,4 +1,5 @@
 import { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
+import { defined } from '@Tests/helpers/defined';
 import { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -2009,7 +2010,7 @@ describe('lucky draw — invalid drawSize rejection', () => {
     const drawProfiles = [{ drawSize: 3, drawType: LUCKY_DRAW }];
     const result = mocksEngine.generateTournamentRecord({ drawProfiles });
     expect(result.error).toEqual(INVALID_DRAW_SIZE);
-    expect(result.error.code).toBe(INVALID_DRAW_SIZE.code);
+    expect(defined(result.error, 'error').code).toBe(INVALID_DRAW_SIZE.code);
   });
 
   test('drawSize 2 is valid for LUCKY_DRAW (power of 2)', () => {

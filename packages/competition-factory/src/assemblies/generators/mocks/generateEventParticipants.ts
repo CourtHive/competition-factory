@@ -12,8 +12,13 @@ import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { MALE, FEMALE, MIXED } from '@Constants/genderConstants';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
 import { Participant } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
+import type { HydratedParticipant } from '@Types/hydrated';
 
-export function generateEventParticipants(params) {
+export function generateEventParticipants(params): ResultType & {
+  uniqueDrawParticipants?: HydratedParticipant[];
+  uniqueParticipantIds?: string[];
+} {
   const { uniqueParticipantsCount, ratingsParameters, tournamentRecord, eventProfile, eventIndex, event, uuids } =
     params;
 

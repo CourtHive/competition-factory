@@ -1,4 +1,5 @@
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -17,7 +18,10 @@ function shellDraw(drawSize: number, participantsCount: number) {
     drawProfiles: [{ drawSize, participantsCount, seedsCount: 0, automated: false }],
     nonRandom: 1,
   });
-  const { structureId } = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+  const { structureId } = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
   const position = (nonRandom: number, explicitDrawSize?: number) => {
     tournamentEngine.setState(structuredClone(tournamentRecord));
     const result = tournamentEngine.automatedPositioning({

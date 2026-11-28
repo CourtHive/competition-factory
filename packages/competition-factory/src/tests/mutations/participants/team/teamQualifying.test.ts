@@ -1,4 +1,5 @@
 import { getParticipantId } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { instanceCount } from '@Tools/arrays';
@@ -64,7 +65,7 @@ it('Modifying tieFormats supported for TEAM QUALIFYING events', () => {
 
   // -----------------------------------------------------------------------------------
   // mocksEngine attaches tieFormat to event; remove it here to simulate other use cases
-  delete tournamentRecord.events[0].tieFormat;
+  delete defined(tournamentRecord.events, 'events')[0].tieFormat;
   // -----------------------------------------------------------------------------------
 
   tournamentEngine.setState(tournamentRecord);

@@ -1,4 +1,5 @@
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { defined } from '@Tests/helpers/defined';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
@@ -11,7 +12,7 @@ const drawId = 'did';
 
 it('can extract elimination structures', () => {
   mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawId, drawSize: 32, seedsCount: 8 }], setState: true });
-  const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
+  const drawDefinition = defined(tournamentEngine.getEvent({ drawId }).drawDefinition, 'drawDefinition');
   const { structureGroups, allStructuresLinked } = getStructureGroups({
     drawDefinition,
   });
@@ -24,10 +25,9 @@ it('can extract round robin structures', () => {
     drawProfiles: [{ drawId, drawSize: 32, drawType: ROUND_ROBIN, seedsCount: 8 }],
     setState: true,
   });
-  const {
-    drawDefinition,
-    event: { eventId },
-  } = tournamentEngine.getEvent({ drawId });
+  const eventResult = tournamentEngine.getEvent({ drawId });
+  const drawDefinition = defined(eventResult.drawDefinition, 'drawDefinition');
+  const { eventId } = defined(eventResult.event, 'event');
   const { structureGroups, allStructuresLinked } = getStructureGroups({
     drawDefinition,
   });

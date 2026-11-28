@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { chunkArray, unique } from '@Tools/arrays';
 import { expect, it } from 'vitest';
@@ -69,7 +70,7 @@ it('will not allow duplicated entries to be created', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });

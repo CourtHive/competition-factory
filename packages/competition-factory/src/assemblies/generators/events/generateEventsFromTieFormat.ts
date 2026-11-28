@@ -15,6 +15,7 @@ import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 type GenerateEventsFromTieFormatArgs = {
   entryStatus?: EntryStatusUnion; // default to DIRECT_ACCEPTANCE
@@ -26,7 +27,9 @@ type GenerateEventsFromTieFormatArgs = {
   uuids?: string[];
 };
 
-export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatArgs) {
+export function generateEventsFromTieFormat(
+  params: GenerateEventsFromTieFormatArgs,
+): ResultType & { events?: Event[] } {
   const paramsCheck = checkRequiredParameters(params, [
     // a missing tieFormat is refused with INVALID_VALUES, as it was when a tieFormatName could stand in for one
     { [ONE_OF]: { [TIE_FORMAT]: true } },

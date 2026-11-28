@@ -4,8 +4,9 @@ import { setParticipantScaleItem } from './addScaleItems';
 // constants
 import { OBJECT, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
-export function addDynamicRatings(params) {
+export function addDynamicRatings(params): ResultType {
   const { tournamentRecord, modifiedScaleValues, removePriorValues } = params;
   const paramsCheck = checkRequiredParameters(params, [
     { [TOURNAMENT_RECORD]: true },

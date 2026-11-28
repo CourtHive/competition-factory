@@ -1,4 +1,5 @@
 import { drawWithDerivedGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
+import { defined } from '@Tests/helpers/defined';
 import { queryGovernor } from '@Assemblies/governors';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../..';
@@ -36,7 +37,9 @@ const recordWithoutEdges = (drawType: string) => {
     eventIds: [eventId],
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 16, drawType }] });
-  const drawDefinition = stripEdges(tournamentRecord.events[0].drawDefinitions[0]);
+  const drawDefinition = stripEdges(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0],
+  );
   expect(hasStoredGoesTo({ drawDefinition })).toEqual(false);
   return { tournamentRecord, drawDefinition, eventId, drawId, before: JSON.stringify(tournamentRecord) };
 };
@@ -94,7 +97,7 @@ it('a draw that owes nothing is read as it is, never copied', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 8 }, { drawSize: 8, drawType: AD_HOC, automated: true, roundsCount: 2 }],
   });
-  const [generated, adHoc] = tournamentRecord.events.map((event: any) => event.drawDefinitions[0]);
+  const [generated, adHoc] = defined(tournamentRecord.events, 'events').map((event: any) => event.drawDefinitions[0]);
   expect(drawWithDerivedGoesTo(generated)).toBe(generated);
   expect(drawWithDerivedGoesTo(adHoc)).toBe(adHoc);
 

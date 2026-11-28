@@ -76,7 +76,10 @@ const ROUTES: { name: string; invoke: (inputs: any) => void }[] = [
         tournamentRecord,
         drawIds: [drawId],
       } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }], setState: true, nonRandom: 1 });
-      const drawDefinition = tournamentRecord.events[0].drawDefinitions.find((d: any) => d.drawId === drawId);
+      const drawDefinition = defined(
+        defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+        'drawDefinitions',
+      ).find((d: any) => d.drawId === drawId);
       const { matchUps } = tournamentEngine.allTournamentMatchUps();
       const matchUp = matchUps.find((m: any) => m.sides?.every((s: any) => s?.participantId));
       getMatchUpOfficialConflicts({ ...inputs, tournamentRecord, drawDefinition, matchUpId: matchUp.matchUpId });

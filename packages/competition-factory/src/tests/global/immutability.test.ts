@@ -1,4 +1,5 @@
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { dateStringDaysChange } from '@Tools/dateTime';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -45,7 +46,7 @@ test('setting deepCopy option to false will allow source objects to be modified'
   });
   expect(result.success).toEqual(true);
 
-  const extensionNames = new Set(tournamentRecord.extensions.map(({ name }) => name));
+  const extensionNames = new Set(defined(tournamentRecord.extensions, 'extensions').map(({ name }) => name));
   expect(extensionNames.has('test')).toEqual(true);
   expect(firstClassOrExtension({ element: tournamentRecord, attribute: 'factory', name: FACTORY })).toBeDefined();
 

@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { getDisabledMatchUpStatuses } from '@Query/matchUps/getDisabledMatchUpStatuses';
 import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
@@ -70,20 +71,27 @@ function createFixture(kind: Kind) {
     expect(rubber).toBeDefined();
     rubberId = rubber.matchUpId;
     for (const side of dual.sides) {
-      const teamParticipant = tournamentRecord.participants.find((p) => p.participantId === side.participantId);
+      const teamParticipant = defined(tournamentRecord.participants, 'participants').find(
+        (p) => p.participantId === side.participantId,
+      );
       expect(
         tournamentEngine.assignTieMatchUpParticipantId({
           drawId,
           tieMatchUpId: rubberId,
-          teamParticipantId: teamParticipant.participantId,
-          participantId: teamParticipant.individualParticipantIds[0],
+          teamParticipantId: defined(teamParticipant, 'teamParticipant').participantId,
+          participantId: defined(
+            defined(teamParticipant, 'teamParticipant').individualParticipantIds,
+            'individualParticipantIds',
+          )[0],
           sideNumber: side.sideNumber,
         }).success,
       ).toBe(true);
     }
   }
   if (kind === 'ladder') {
-    const participantIds = tournamentRecord.participants.slice(0, 2).map(({ participantId }) => participantId);
+    const participantIds = defined(tournamentRecord.participants, 'participants')
+      .slice(0, 2)
+      .map(({ participantId }) => participantId);
     participantIds.forEach((participantId) => {
       expect(
         tournamentEngine.addLadderParticipant({ participantId, drawId, addedAt: '2026-10-13T10:00:00Z' }).success,
@@ -100,8 +108,8 @@ function createFixture(kind: Kind) {
   }
   if (kind === 'adHoc') {
     const participantIds: [string, string] = [
-      tournamentRecord.participants[0].participantId,
-      tournamentRecord.participants[1].participantId,
+      defined(tournamentRecord.participants, 'participants')[0].participantId,
+      defined(tournamentRecord.participants, 'participants')[1].participantId,
     ];
     const generated = tournamentEngine.generateAdHocMatchUps({
       drawId,

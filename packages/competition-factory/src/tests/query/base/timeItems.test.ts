@@ -415,7 +415,7 @@ describe('getParticipantTimeItem', () => {
       participantsProfile: { participantsCount: 2 },
     });
 
-    const participantId = tournamentRecord.participants[0].participantId;
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
 
     const result = getParticipantTimeItem({
       tournamentRecord,
@@ -431,8 +431,8 @@ describe('getParticipantTimeItem', () => {
       participantsProfile: { participantsCount: 2 },
     });
 
-    const participantId = tournamentRecord.participants[0].participantId;
-    tournamentRecord.participants[0].timeItems = [
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
+    defined(tournamentRecord.participants, 'participants')[0].timeItems = [
       { itemType: 'TEST', itemValue: 'test', createdAt: new Date().toISOString() },
     ];
 
@@ -450,8 +450,8 @@ describe('getParticipantTimeItem', () => {
       participantsProfile: { participantsCount: 1 },
     });
 
-    const participantId = tournamentRecord.participants[0].participantId;
-    tournamentRecord.participants[0].timeItems = [
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
+    defined(tournamentRecord.participants, 'participants')[0].timeItems = [
       { itemType: 'TEST', itemSubTypes: ['A'], itemValue: 'typeA', createdAt: new Date().toISOString() },
       { itemType: 'TEST', itemSubTypes: ['B'], itemValue: 'typeB', createdAt: new Date().toISOString() },
     ];
@@ -471,8 +471,8 @@ describe('getParticipantTimeItem', () => {
       participantsProfile: { participantsCount: 1 },
     });
 
-    const participantId = tournamentRecord.participants[0].participantId;
-    tournamentRecord.participants[0].timeItems = [
+    const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
+    defined(tournamentRecord.participants, 'participants')[0].timeItems = [
       { itemType: 'TEST', itemValue: 'v1', createdAt: '2024-01-01' },
       { itemType: 'TEST', itemValue: 'v2', createdAt: '2024-01-02' },
     ];

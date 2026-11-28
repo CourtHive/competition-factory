@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { defined } from '@Tests/helpers/defined';
 import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { expect, it } from 'vitest';
 
@@ -15,7 +16,7 @@ it('calculates winningSide for single timed set', () => {
   });
 
   expect(result.outcome.winningSide).toEqual(1);
-  expect(result.outcome.score.sets[0].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[0].winningSide).toEqual(1);
 });
 
 it('calculates winningSide for aggregate scoring (SET2XA-S:T10)', () => {
@@ -28,8 +29,8 @@ it('calculates winningSide for aggregate scoring (SET2XA-S:T10)', () => {
   });
 
   expect(result.outcome.winningSide).toEqual(1);
-  expect(result.outcome.score.sets[0].side1Score).toEqual(30);
-  expect(result.outcome.score.sets[0].side2Score).toEqual(25);
+  expect(defined(result.outcome.score.sets, 'sets')[0].side1Score).toEqual(30);
+  expect(defined(result.outcome.score.sets, 'sets')[0].side2Score).toEqual(25);
 
   // Side 2 aggregate winner: 40 vs 55 total
   result = generateOutcomeFromScoreString({
@@ -51,8 +52,8 @@ it('calculates winningSide for aggregate with split sets', () => {
   });
 
   expect(result.outcome.winningSide).toEqual(1);
-  expect(result.outcome.score.sets[0].winningSide).toEqual(1);
-  expect(result.outcome.score.sets[1].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[0].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[1].winningSide).toEqual(2);
 
   // Verify aggregate calculation would be correct
   const analyzed = analyzeScore({
@@ -76,9 +77,9 @@ it('calculates winningSide for aggregate with exactly 3 sets', () => {
   expect(result.outcome.winningSide).toEqual(1);
 
   // Verify each individual set has winningSide
-  expect(result.outcome.score.sets[0].winningSide).toEqual(1);
-  expect(result.outcome.score.sets[1].winningSide).toEqual(2);
-  expect(result.outcome.score.sets[2].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[0].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[1].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[2].winningSide).toEqual(1);
 });
 
 it('calculates winningSide for points-based scoring (T10P)', () => {
@@ -91,9 +92,9 @@ it('calculates winningSide for points-based scoring (T10P)', () => {
   });
 
   expect(result.outcome.winningSide).toEqual(1);
-  expect(result.outcome.score.sets[0].winningSide).toEqual(1);
-  expect(result.outcome.score.sets[1].winningSide).toEqual(2);
-  expect(result.outcome.score.sets[2].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[0].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[1].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[2].winningSide).toEqual(1);
 });
 
 it('calculates winningSide for games-based timed sets (default)', () => {
@@ -106,9 +107,9 @@ it('calculates winningSide for games-based timed sets (default)', () => {
   });
 
   expect(result.outcome.winningSide).toEqual(1);
-  expect(result.outcome.score.sets[0].winningSide).toEqual(1);
-  expect(result.outcome.score.sets[1].winningSide).toEqual(2);
-  expect(result.outcome.score.sets[2].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[0].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[1].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[2].winningSide).toEqual(1);
 });
 
 it('calculates winningSide for best-of with aggregate', () => {
@@ -138,8 +139,8 @@ it('handles tied individual sets in aggregate scoring', () => {
   expect(result.outcome.winningSide).toEqual(1);
 
   // Individual sets can have ties for aggregate
-  expect(result.outcome.score.sets[0].side1Score).toEqual(30);
-  expect(result.outcome.score.sets[0].side2Score).toEqual(30);
+  expect(defined(result.outcome.score.sets, 'sets')[0].side1Score).toEqual(30);
+  expect(defined(result.outcome.score.sets, 'sets')[0].side2Score).toEqual(30);
 });
 
 it('calculates winningSide for mixed format (regular + timed final)', () => {
@@ -152,9 +153,9 @@ it('calculates winningSide for mixed format (regular + timed final)', () => {
   });
 
   expect(result.outcome.winningSide).toEqual(1);
-  expect(result.outcome.score.sets[0].winningSide).toEqual(1);
-  expect(result.outcome.score.sets[1].winningSide).toEqual(2);
-  expect(result.outcome.score.sets[2].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[0].winningSide).toEqual(1);
+  expect(defined(result.outcome.score.sets, 'sets')[1].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[2].winningSide).toEqual(1);
 });
 
 it('validates aggregate winningSide calculation is correct', () => {
@@ -190,9 +191,9 @@ it('calculates winningSide correctly when side 2 wins aggregate', () => {
   });
 
   expect(result.outcome.winningSide).toEqual(2);
-  expect(result.outcome.score.sets[0].winningSide).toEqual(2);
-  expect(result.outcome.score.sets[1].winningSide).toEqual(2);
-  expect(result.outcome.score.sets[2].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[0].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[1].winningSide).toEqual(2);
+  expect(defined(result.outcome.score.sets, 'sets')[2].winningSide).toEqual(2);
 });
 
 it('handles close aggregate scores correctly', () => {

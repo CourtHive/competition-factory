@@ -1,4 +1,5 @@
 import { deferInContextMatchUp, deferredQuery } from '@Mutate/notifications/drawNotifications';
+import { defined } from '@Tests/helpers/defined';
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { TOPICS, won } from '@Tests/testHarness/outcome/directionFixtures';
@@ -35,8 +36,10 @@ function fixture() {
   setOutcomePipeline('v1');
   setClock('2026-11-23T00:00:00Z');
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ nonRandom: 17, drawProfiles: [{ drawSize: 8 }] });
-  const draw = tournamentRecord.events[0].drawDefinitions[0];
-  const first = draw.structures[0].matchUps.filter((m) => m.roundNumber === 1).slice(0, 2);
+  const draw = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const first = defined(defined(draw.structures, 'structures')[0].matchUps, 'matchUps')
+    .filter((m) => m.roundNumber === 1)
+    .slice(0, 2);
   const directives = first.map((m, i) => ({
     method: 'setMatchUpStatus',
     params: { drawId: draw.drawId, matchUpId: m.matchUpId, outcome: won(i === 0 ? 1 : 2) },

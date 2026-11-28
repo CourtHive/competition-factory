@@ -1,4 +1,5 @@
 import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
+import { defined } from '@Tests/helpers/defined';
 import { getDayLoad } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import competitionEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -44,9 +45,13 @@ function setup({
   }
 
   const { tournamentId } = tournamentRecord;
-  const { eventId, drawDefinitions } = tournamentRecord.events[0];
-  const { drawId, structures } = drawDefinitions[0];
-  const structureId = (stage) => structures.find((structure) => structure.stage === stage).structureId;
+  const { eventId, drawDefinitions } = defined(tournamentRecord.events, 'events')[0];
+  const { drawId, structures } = defined(drawDefinitions, 'drawDefinitions')[0];
+  const structureId = (stage) =>
+    defined(
+      defined(structures, 'structures').find((structure) => structure.stage === stage),
+      'value',
+    ).structureId;
 
   const addRound = (scheduleDate, stage, roundNumber) => {
     const result: any = competitionEngine.addSchedulingProfileRound({

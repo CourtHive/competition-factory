@@ -1,4 +1,5 @@
 import { POLICY_MATCHUP_ACTIONS_DEFAULT } from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -20,7 +21,9 @@ it('matchUpActions on a gendered collection leaves out a team member with no per
   });
 
   // one team member is recorded without a person (and so without a sex)
-  const individuals = tournamentRecord.participants.filter(({ participantType }) => participantType === INDIVIDUAL);
+  const individuals = defined(tournamentRecord.participants, 'participants').filter(
+    ({ participantType }) => participantType === INDIVIDUAL,
+  );
   const personlessParticipantId = individuals[0].participantId;
   delete individuals[0].person;
 

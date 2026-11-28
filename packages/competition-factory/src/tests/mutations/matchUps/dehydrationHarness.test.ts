@@ -1,4 +1,5 @@
 import { buildFromSources } from '@Generators/ingestion/buildFromSources/buildFromSources';
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
 import tournamentEngine from '@Engines/syncEngine';
@@ -91,7 +92,7 @@ function generate(shape: Shape) {
   });
   if (shape.schedule) {
     const { matchUps } = tournamentEngine.allTournamentMatchUps({ inContext: false });
-    const { venueId } = tournamentRecord.venues[0];
+    const { venueId } = defined(tournamentRecord.venues, 'venues')[0];
     const scheduled = matchUps.slice(0, 6);
     for (const [i, { matchUpId }] of scheduled.entries()) {
       const schedule = {

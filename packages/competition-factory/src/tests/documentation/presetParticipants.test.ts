@@ -79,23 +79,23 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
     const tr = result.tournamentRecord;
 
     // No mock synthesis — every participant in the tournament is one we passed in
-    expect(tr.participants.length).toEqual(8);
-    const ids = new Set(tr.participants.map((p) => p.participantId));
+    expect(defined(tr.participants, 'participants').length).toEqual(8);
+    const ids = new Set(defined(tr.participants, 'participants').map((p) => p.participantId));
     for (let i = 1; i <= 8; i += 1) expect(ids.has(`PRESET${i}`)).toEqual(true);
 
     // Event entries reference OUR participant IDs, not synthesized UUIDs
-    const event = tr.events[0];
-    expect(event.entries.length).toEqual(8);
-    for (const entry of event.entries) expect(ids.has(entry.participantId)).toEqual(true);
+    const event = defined(tr.events, 'events')[0];
+    expect(defined(event.entries, 'entries').length).toEqual(8);
+    for (const entry of defined(event.entries, 'entries')) expect(ids.has(entry.participantId)).toEqual(true);
 
     // Draw was built (single-structure SE) — automated: false leaves positions unassigned
-    const drawDef = event.drawDefinitions[0];
-    expect(drawDef.structures.length).toEqual(1);
-    const structure = drawDef.structures[0];
+    const drawDef = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    expect(defined(drawDef.structures, 'structures').length).toEqual(1);
+    const structure = defined(drawDef.structures, 'structures')[0];
     expect(structure.stage).toEqual(MAIN);
-    expect(structure.matchUps.length).toEqual(7); // 8-draw SE = 7 matchUps
+    expect(defined(structure.matchUps, 'matchUps').length).toEqual(7); // 8-draw SE = 7 matchUps
     // Deterministic matchUpIds from idPrefix
-    const ids01 = structure.matchUps.map((m) => m.matchUpId);
+    const ids01 = defined(structure.matchUps, 'matchUps').map((m) => m.matchUpId);
     expect(ids01).toContain('m-1-1');
   });
 
@@ -219,12 +219,12 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
     expect(result.success).toEqual(true);
     const tr = result.tournamentRecord;
     // All 8 individuals + 4 pairs preserved, nothing synthesized
-    expect(tr.participants.length).toEqual(12);
+    expect(defined(tr.participants, 'participants').length).toEqual(12);
     const pairIds = new Set(pairs.map((p) => p.participantId));
-    const event = tr.events[0];
+    const event = defined(tr.events, 'events')[0];
     // Event entries are the PAIR participants
-    expect(event.entries.length).toEqual(4);
-    for (const entry of event.entries) expect(pairIds.has(entry.participantId)).toEqual(true);
+    expect(defined(event.entries, 'entries').length).toEqual(4);
+    for (const entry of defined(event.entries, 'entries')) expect(pairIds.has(entry.participantId)).toEqual(true);
   });
 
   // Regression: multiple events spanning different genders in ONE preset call.
@@ -308,19 +308,19 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
 
     expect(result.success).toEqual(true);
     const tr = result.tournamentRecord;
-    expect(tr.events.length).toEqual(4);
+    expect(defined(tr.events, 'events').length).toEqual(4);
 
     // Every entry in every event matches the event's gender.
-    for (const event of tr.events) {
-      expect(event.entries.length).toBeGreaterThan(0);
-      for (const entry of event.entries) {
+    for (const event of defined(tr.events, 'events')) {
+      expect(defined(event.entries, 'entries').length).toBeGreaterThan(0);
+      for (const entry of defined(event.entries, 'entries')) {
         expect(sexOf(tr, entry.participantId)).toEqual(event.gender);
       }
     }
 
     // Singles events between them consume all 16 distinct individuals — no
     // double-booking, no gender skipped.
-    const singlesEntryIds = tr.events
+    const singlesEntryIds = defined(tr.events, 'events')
       .filter((e: any) => e.eventType === SINGLES)
       .flatMap((e: any) => e.entries.map((en: any) => en.participantId));
     expect(new Set(singlesEntryIds).size).toEqual(16);
@@ -355,8 +355,8 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
     });
 
     expect(result.success).toEqual(true);
-    const event = result.tournamentRecord.events[0];
-    expect(event.entries.length).toEqual(8);
-    for (const entry of event.entries) expect(entry.participantId.startsWith('B')).toEqual(true);
+    const event = defined(result.tournamentRecord.events, 'events')[0];
+    expect(defined(event.entries, 'entries').length).toEqual(8);
+    for (const entry of defined(event.entries, 'entries')) expect(entry.participantId.startsWith('B')).toEqual(true);
   });
 });

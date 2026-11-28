@@ -16,7 +16,7 @@ import { isPowerOf2 } from '@Tools/math';
 
 // constants and types
 import { DrawDefinition, DrawLink, Structure, TieFormat } from '@Types/tournamentTypes';
-import { PlayoffAttributes, PolicyDefinitions } from '@Types/factoryTypes';
+import { PlayoffAttributes, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
 import {
@@ -56,7 +56,11 @@ type GenerateDrawStructuresAndLinksArgs = {
   isMock?: boolean;
   uuids?: string[];
 };
-export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAndLinksArgs) {
+export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAndLinksArgs): ResultType & {
+  qualifyingResult?: { qualifyingDrawPositionsCount?: number; qualifiersCount: number };
+  structures?: Structure[];
+  links?: DrawLink[];
+} {
   const {
     enforceMinimumDrawSize = true,
     overwriteExisting,

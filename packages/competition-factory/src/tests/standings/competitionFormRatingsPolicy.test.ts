@@ -1,4 +1,5 @@
 import { initializeCompetitionState } from '@Mutate/drawDefinitions/competition/initializeCompetitionState';
+import { defined } from '@Tests/helpers/defined';
 import { POLICY_RATINGS_COMPETITION_FORM } from '@Fixtures/policies/POLICY_RATINGS_COMPETITION_FORM';
 import { deriveCompetitionState } from '@Query/drawDefinition/competition/deriveCompetitionState';
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
@@ -112,10 +113,17 @@ describe('the competition form rating and its ratings policy', () => {
       policyDefinitions: { [POLICY_TYPE_COMPETITION]: competition },
       drawProfiles: [{ drawSize: 4 }],
     });
-    const event = tournamentRecord.events[0];
-    const drawDefinition = event.drawDefinitions.find((draw) => draw.drawId === drawId);
-    const participantIds = tournamentRecord.participants.map(({ participantId }) => participantId);
-    const result: any = initializeCompetitionState({ tournamentRecord, drawDefinition, participantIds, event });
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions').find((draw) => draw.drawId === drawId);
+    const participantIds = defined(tournamentRecord.participants, 'participants').map(
+      ({ participantId }) => participantId,
+    );
+    const result: any = initializeCompetitionState({
+      tournamentRecord,
+      drawDefinition: defined(drawDefinition, 'drawDefinition'),
+      participantIds,
+      event,
+    });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 });

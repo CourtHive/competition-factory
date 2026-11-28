@@ -1,4 +1,5 @@
 import { normalizeGender } from '@Helpers/coercedGender';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { coercedSex } from '@Helpers/coercedSex';
@@ -113,7 +114,9 @@ describe('reading an externally-constructed record with abbreviated gender/sex a
   // (non-factory) producer would, WITHOUT re-adding through the factory
   function externalAbbreviatedRecord(participantsCount = 20) {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ participantsProfile: { participantsCount } });
-    const individuals = tournamentRecord.participants.filter((p: any) => p.participantType === INDIVIDUAL);
+    const individuals = defined(tournamentRecord.participants, 'participants').filter(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
     individuals.forEach((p: any) => {
       if (p.person?.sex === MALE) p.person.sex = MALE_ABBR;
       else if (p.person?.sex === FEMALE) p.person.sex = FEMALE_ABBR;

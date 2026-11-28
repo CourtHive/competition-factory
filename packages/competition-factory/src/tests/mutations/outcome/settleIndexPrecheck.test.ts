@@ -1,4 +1,5 @@
 import { settleUnlessIdle, takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
+import { defined } from '@Tests/helpers/defined';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -43,7 +44,10 @@ function draw(drawProfile: Record<string, unknown> = { drawSize: 8 }) {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [drawProfile], setState: true });
-  return { drawDefinition: tournamentRecord.events[0].drawDefinitions[0], drawId };
+  return {
+    drawDefinition: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0],
+    drawId,
+  };
 }
 
 describe('settleUnlessIdle', () => {

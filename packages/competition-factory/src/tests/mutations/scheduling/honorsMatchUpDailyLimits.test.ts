@@ -1,4 +1,5 @@
 import { getMatchUpIds } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
@@ -22,7 +23,7 @@ it('can set and honor matchUpDailyLimits', () => {
     drawProfiles,
   });
 
-  expect(tournamentRecord.participants.length).toEqual(participantsCount);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(participantsCount);
 
   tournamentEngine.setState([tournamentRecord]);
   const { matchUps } = tournamentEngine.allCompetitionMatchUps();

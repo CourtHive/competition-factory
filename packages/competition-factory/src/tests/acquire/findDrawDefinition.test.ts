@@ -1,4 +1,5 @@
 import { findDrawDefinition, publicFindDrawDefinition } from '@Acquire/findDrawDefinition';
+import { defined } from '@Tests/helpers/defined';
 import { beforeEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 
@@ -63,7 +64,7 @@ describe('findDrawDefinition', () => {
       const { tournamentRecord: record2 } = mocksEngine.generateTournamentRecord();
 
       tournamentId = record1.tournamentId;
-      drawId = record1.events?.[0]?.drawDefinitions?.[0]?.drawId;
+      drawId = defined(record1.events?.[0]?.drawDefinitions?.[0]?.drawId, 'drawId');
 
       tournamentRecords = {
         [record1.tournamentId]: record1,
@@ -136,7 +137,7 @@ describe('findDrawDefinition', () => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({ eventProfiles });
 
       const drawId = tournamentRecord.events?.[0]?.drawDefinitions?.[0]?.drawId;
-      const result = publicFindDrawDefinition({ tournamentRecord, drawId });
+      const result = publicFindDrawDefinition({ tournamentRecord, drawId: defined(drawId, 'drawId') });
 
       expect(result.error).toBeUndefined();
       expect(result.drawDefinition).toBeDefined();

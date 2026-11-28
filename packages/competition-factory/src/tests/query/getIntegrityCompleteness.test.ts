@@ -1,4 +1,5 @@
 import { getDrawCompleteness } from '@Query/drawDefinition/getDrawCompleteness';
+import { defined } from '@Tests/helpers/defined';
 import { getEventCompleteness } from '@Query/event/getEventCompleteness';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
@@ -15,8 +16,8 @@ test('a fully-completed tournament is complete at draw, event, and tournament la
     completeAllMatchUps: true,
     setState: true,
   });
-  const event = tournamentRecord.events[0];
-  const drawDefinition = event.drawDefinitions[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
+  const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
 
   expect(getDrawCompleteness({ drawDefinition }).complete).toEqual(true);
   expect(getEventCompleteness({ event, tournamentRecord }).complete).toEqual(true);
@@ -33,8 +34,8 @@ test('rolls up unplayed matchUp counts through event and tournament layers', () 
     drawProfiles: [{ drawId: 'inc', drawSize: 8, drawType: SINGLE_ELIMINATION }],
     setState: true,
   });
-  const event = tournamentRecord.events[0];
-  const drawDefinition = event.drawDefinitions[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
+  const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
 
   const drawResult: any = getDrawCompleteness({ drawDefinition });
   expect(drawResult.complete).toEqual(false);

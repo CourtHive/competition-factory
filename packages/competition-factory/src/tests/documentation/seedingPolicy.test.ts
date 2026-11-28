@@ -65,14 +65,22 @@ it('ADJACENT works as synonym for CLUSTER in positioning', () => {
   });
 
   // Both should produce valid draws
-  expect(adjacentRecord.events[0].drawDefinitions).toBeDefined();
-  expect(clusterRecord.events[0].drawDefinitions).toBeDefined();
+  expect(defined(adjacentRecord.events, 'events')[0].drawDefinitions).toBeDefined();
+  expect(defined(clusterRecord.events, 'events')[0].drawDefinitions).toBeDefined();
 
   // Both should have same structure
-  const adjacentStructure = adjacentRecord.events[0].drawDefinitions[0].structures[0];
-  const clusterStructure = clusterRecord.events[0].drawDefinitions[0].structures[0];
+  const adjacentStructure = defined(
+    defined(defined(adjacentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
+  const clusterStructure = defined(
+    defined(defined(clusterRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
 
-  expect(adjacentStructure.matchUps.length).toBe(clusterStructure.matchUps.length);
+  expect(defined(adjacentStructure.matchUps, 'matchUps').length).toBe(
+    defined(clusterStructure.matchUps, 'matchUps').length,
+  );
 });
 
 it('POLICY_SEEDING_DEFAULT has all documented attributes', () => {
@@ -278,8 +286,11 @@ it('seedsCountThresholds determine seeds based on participant count', () => {
     ],
   });
 
-  let seedAssignments = tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments;
-  expect(seedAssignments.length).toBe(16); // 50 >= 48, so 16 seeds
+  let seedAssignments = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0].seedAssignments;
+  expect(defined(seedAssignments, 'seedAssignments').length).toBe(16); // 50 >= 48, so 16 seeds
 
   // Test with 45 participants (does NOT meet 64-draw threshold)
   ({ tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -293,8 +304,11 @@ it('seedsCountThresholds determine seeds based on participant count', () => {
     ],
   }));
 
-  seedAssignments = tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments;
-  expect(seedAssignments.length).toBe(8); // 45 < 48, falls back to 32-draw threshold (8 seeds)
+  seedAssignments = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0].seedAssignments;
+  expect(defined(seedAssignments, 'seedAssignments').length).toBe(8); // 45 < 48, falls back to 32-draw threshold (8 seeds)
 });
 
 it('duplicateSeedNumbers allows multiple participants with same seed value', () => {
@@ -376,7 +390,15 @@ it('drawSizeProgression affects seeds count calculation', () => {
     ],
   });
 
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments.length).toBe(8);
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].seedAssignments,
+      'seedAssignments',
+    ).length,
+  ).toBe(8);
 
   ({ tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
@@ -389,7 +411,15 @@ it('drawSizeProgression affects seeds count calculation', () => {
     ],
   }));
 
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments.length).toBe(8);
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].seedAssignments,
+      'seedAssignments',
+    ).length,
+  ).toBe(8);
 });
 
 it('seedingProfile.drawTypes allows different positioning per draw type', () => {
@@ -426,7 +456,7 @@ it('seedingProfile.drawTypes allows different positioning per draw type', () => 
     ],
   });
 
-  expect(elimRecord.events[0].drawDefinitions[0]).toBeDefined();
+  expect(defined(defined(elimRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0]).toBeDefined();
 
   // Test Round Robin uses WATERFALL (through policy)
   const { tournamentRecord: rrRecord } = mocksEngine.generateTournamentRecord({
@@ -439,7 +469,7 @@ it('seedingProfile.drawTypes allows different positioning per draw type', () => 
     ],
   });
 
-  expect(rrRecord.events[0].drawDefinitions[0]).toBeDefined();
+  expect(defined(defined(rrRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0]).toBeDefined();
 });
 
 it('validSeedPositions.ignore allows flexible seed placement', () => {
@@ -470,8 +500,8 @@ it('validSeedPositions.ignore allows flexible seed placement', () => {
     drawProfiles: [{ drawSize: 32, policyDefinitions: flexiblePolicy }],
   });
 
-  expect(strictRecord.events[0].drawDefinitions[0]).toBeDefined();
-  expect(flexibleRecord.events[0].drawDefinitions[0]).toBeDefined();
+  expect(defined(defined(strictRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0]).toBeDefined();
+  expect(defined(defined(flexibleRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0]).toBeDefined();
 
   // With ignore: true, ITF and USTA allow manual placement
   expect(TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING].validSeedPositions.ignore).toBe(true);
@@ -500,8 +530,8 @@ it('getValidSeedBlocks respects seeding profile', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const structure = drawDefinition.structures[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const structure = defined(drawDefinition.structures, 'structures')[0];
 
   const { validSeedBlocks } = getValidSeedBlocks({
     appliedPolicies: TEMPLATE_SEEDING_ITF,
@@ -531,13 +561,24 @@ it('can generate 256-draw with 64 seeds using USTA policy', () => {
     ],
   });
 
-  const seedAssignments = tournamentRecord.events[0].drawDefinitions[0].structures[0].seedAssignments;
+  const seedAssignments = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0].seedAssignments;
 
   // Should have 64 seeds
-  expect(seedAssignments.length).toBe(64);
+  expect(defined(seedAssignments, 'seedAssignments').length).toBe(64);
 
   // Verify draw was created successfully
-  expect(tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps.length).toBeGreaterThan(0);
+  expect(
+    defined(
+      defined(
+        defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+        'structures',
+      )[0].matchUps,
+      'matchUps',
+    ).length,
+  ).toBeGreaterThan(0);
 });
 
 it('can generate draw with ITF policy and duplicate seeds', () => {
@@ -552,16 +593,19 @@ it('can generate draw with ITF policy and duplicate seeds', () => {
     ],
   });
 
-  const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+  const structure = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
 
   // ITF policy allows duplicateSeedNumbers
   expect(TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING].duplicateSeedNumbers).toBe(true);
 
   // Should have 8 seed assignments
-  expect(structure.seedAssignments.length).toBe(8);
+  expect(defined(structure.seedAssignments, 'seedAssignments').length).toBe(8);
 
   // Should have matchUps
-  expect(structure.matchUps.length).toBeGreaterThan(0);
+  expect(defined(structure.matchUps, 'matchUps').length).toBeGreaterThan(0);
 });
 
 it('positioning constants are correctly defined', () => {
@@ -630,16 +674,21 @@ it('seeding policy works with actual draw generation', () => {
     ],
   });
 
-  const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+  const structure = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
 
   // Verify structure was created
   expect(structure).toBeDefined();
-  expect(structure.seedAssignments.length).toBe(8);
-  expect(structure.matchUps.length).toBe(31); // 32-draw has 31 matchUps
+  expect(defined(structure.seedAssignments, 'seedAssignments').length).toBe(8);
+  expect(defined(structure.matchUps, 'matchUps').length).toBe(31); // 32-draw has 31 matchUps
 
   // Verify seeds are assigned
   const seedAssignments = structure.seedAssignments;
-  const seedNumbers = seedAssignments.map((sa) => sa.seedNumber).sort((a, b) => a - b);
+  const seedNumbers = defined(seedAssignments, 'seedAssignments')
+    .map((sa) => sa.seedNumber)
+    .sort((a, b) => a - b);
   expect(seedNumbers).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
 });
 
@@ -674,17 +723,23 @@ it('ADJACENT produces same seed placement as CLUSTER', () => {
   });
 
   tournamentEngine.setState(adjacentRecord);
-  const adjacentStructure = adjacentRecord.events[0].drawDefinitions[0].structures[0];
+  const adjacentStructure = defined(
+    defined(defined(adjacentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
   const adjacentSeedAssignments = adjacentStructure.seedAssignments;
-  const adjacentDrawPositions = adjacentSeedAssignments
+  const adjacentDrawPositions = defined(adjacentSeedAssignments, 'adjacentSeedAssignments')
     .map((sa) => ({ seed: sa.seedNumber, pos: sa.seedValue }))
     .sort((a, b) => a.seed - b.seed)
     .map((item) => item.pos);
 
   tournamentEngine.setState(clusterRecord);
-  const clusterStructure = clusterRecord.events[0].drawDefinitions[0].structures[0];
+  const clusterStructure = defined(
+    defined(defined(clusterRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
   const clusterSeedAssignments = clusterStructure.seedAssignments;
-  const clusterDrawPositions = clusterSeedAssignments
+  const clusterDrawPositions = defined(clusterSeedAssignments, 'clusterSeedAssignments')
     .map((sa) => ({ seed: sa.seedNumber, pos: sa.seedValue }))
     .sort((a, b) => a.seed - b.seed)
     .map((item) => item.pos);

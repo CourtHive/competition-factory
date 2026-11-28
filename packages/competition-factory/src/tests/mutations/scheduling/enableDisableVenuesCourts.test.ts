@@ -1,4 +1,5 @@
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { defined } from '@Tests/helpers/defined';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -77,7 +78,11 @@ it('can disable and enable courts and venues', () => {
   expect(result.success).toEqual(true);
   tournamentRecord = tournamentEngine.getTournament().tournamentRecord;
   expect(
-    firstClassOrExtension({ element: tournamentRecord.venues[0], attribute: 'disabled', name: DISABLED }),
+    firstClassOrExtension({
+      element: defined(tournamentRecord.venues, 'venues')[0],
+      attribute: 'disabled',
+      name: DISABLED,
+    }),
   ).toBeTruthy();
   result = tournamentEngine.getVenuesAndCourts({ ignoreDisabled: true });
   expect([result.courts.length, result.venues.length]).toEqual([8, 1]);
@@ -86,14 +91,22 @@ it('can disable and enable courts and venues', () => {
   expect(result.success).toEqual(true);
   tournamentRecord = tournamentEngine.getTournament().tournamentRecord;
   expect(
-    firstClassOrExtension({ element: tournamentRecord.venues[0], attribute: 'disabled', name: DISABLED }),
+    firstClassOrExtension({
+      element: defined(tournamentRecord.venues, 'venues')[0],
+      attribute: 'disabled',
+      name: DISABLED,
+    }),
   ).toBeFalsy();
 
   result = tournamentEngine.disableVenues({ venueIds: ['venueId1'] });
   expect(result.success).toEqual(true);
   tournamentRecord = tournamentEngine.getTournament().tournamentRecord;
   expect(
-    firstClassOrExtension({ element: tournamentRecord.venues[0], attribute: 'disabled', name: DISABLED }),
+    firstClassOrExtension({
+      element: defined(tournamentRecord.venues, 'venues')[0],
+      attribute: 'disabled',
+      name: DISABLED,
+    }),
   ).toBeTruthy();
 
   result = tournamentEngine.scheduleProfileRounds();
@@ -106,7 +119,11 @@ it('can disable and enable courts and venues', () => {
   expect(result.success).toEqual(true);
   tournamentRecord = tournamentEngine.getTournament().tournamentRecord;
   expect(
-    firstClassOrExtension({ element: tournamentRecord.venues[0], attribute: 'disabled', name: DISABLED }),
+    firstClassOrExtension({
+      element: defined(tournamentRecord.venues, 'venues')[0],
+      attribute: 'disabled',
+      name: DISABLED,
+    }),
   ).toBeFalsy();
 
   result = tournamentEngine.clearScheduledMatchUps();

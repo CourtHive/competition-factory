@@ -1,4 +1,5 @@
 import { TEMPLATE_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect } from 'vitest';
@@ -29,7 +30,8 @@ export function avoidanceTest(params) {
   let { seedsCount } = params;
   if (!seedsCount) seedsCount = participantsCount / 4;
 
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  // inContext participants carry their hydrated individualParticipants
+  const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
     startDate: '2020-01-01',
     endDate: '2020-01-06',
 
@@ -58,7 +60,7 @@ export function avoidanceTest(params) {
 
   const eventParticipantType = (eventType === SINGLES && INDIVIDUAL) || (DOUBLES && PAIR);
 
-  const relevantParticipants = participants
+  const relevantParticipants = defined(participants, 'participants')
     .filter((participant) => participant.participantType === eventParticipantType)
     .slice(0, seedsCount);
 
@@ -85,7 +87,9 @@ export function avoidanceTest(params) {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const eventParticipants = participants.filter((participant) => participant.participantType === eventParticipantType);
+  const eventParticipants = defined(participants, 'participants').filter(
+    (participant) => participant.participantType === eventParticipantType,
+  );
   const participantIds = eventParticipants.map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);

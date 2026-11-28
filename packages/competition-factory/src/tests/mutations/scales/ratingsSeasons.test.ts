@@ -1,4 +1,5 @@
 import { ratingsPresets } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -49,7 +50,7 @@ function replay(fixture: SeasonFixture) {
   if (fixture.tier) tournamentRecord.tournamentTier = fixture.tier;
   tournamentEngine.setState(tournamentRecord);
 
-  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+  const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
   const participantIds = tournamentEngine.getParticipants().participants.map(({ participantId }) => participantId);
   const idOf = Object.fromEntries(fixture.teams.map((team, index) => [team, participantIds[index]]));
   const { ratingType } = fixture;

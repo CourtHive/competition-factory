@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { defined } from '@Tests/helpers/defined';
 import { allPlayoffPositionsFilled } from '@Query/drawDefinition/structureActions';
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -37,7 +38,7 @@ export function roundRobinWithPlayoffsTest(params) {
   const { eventId } = createdEvent;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

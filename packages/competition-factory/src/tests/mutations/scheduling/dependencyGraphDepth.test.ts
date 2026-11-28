@@ -1,4 +1,5 @@
 import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
+import { defined } from '@Tests/helpers/defined';
 import { timeStringMinutes } from '@Tools/dateTime';
 import competitionEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -71,9 +72,13 @@ describe('a qualifier position depends on the qualifying round that fills it (G2
     competitionEngine.setState(tournamentRecord);
 
     const { tournamentId } = tournamentRecord;
-    const { eventId, drawDefinitions } = tournamentRecord.events[0];
-    const { drawId, structures } = drawDefinitions[0];
-    const structureId = (stage) => structures.find((structure) => structure.stage === stage).structureId;
+    const { eventId, drawDefinitions } = defined(tournamentRecord.events, 'events')[0];
+    const { drawId, structures } = defined(drawDefinitions, 'drawDefinitions')[0];
+    const structureId = (stage) =>
+      defined(
+        defined(structures, 'structures').find((structure) => structure.stage === stage),
+        'value',
+      ).structureId;
     for (const [stage, roundNumber] of [
       [QUALIFYING, 1],
       [QUALIFYING, 2],

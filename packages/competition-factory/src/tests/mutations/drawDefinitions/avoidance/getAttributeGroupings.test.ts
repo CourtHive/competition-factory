@@ -1,4 +1,5 @@
 import { getAttributeGroupings } from '@Query/participants/getAttributeGrouping';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
@@ -29,9 +30,11 @@ it('can generate groupings accurately', () => {
   const doublesParticipantsNationalityCodes = Object.assign(
     {},
     ...doublesParticipants.map((participant) => {
-      const nationalityCodes = participant.individualParticipants.map((individualParticipant) => {
-        return individualParticipant.person.nationalityCode;
-      });
+      const nationalityCodes = defined(participant.individualParticipants, 'individualParticipants').map(
+        (individualParticipant) => {
+          return defined(individualParticipant.person, 'person').nationalityCode;
+        },
+      );
       return { [participant.participantId]: nationalityCodes };
     }),
   );

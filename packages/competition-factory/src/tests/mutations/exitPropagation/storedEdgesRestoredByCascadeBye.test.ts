@@ -1,4 +1,5 @@
 import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
+import { defined } from '@Tests/helpers/defined';
 import { hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -29,7 +30,10 @@ function generate(drawType: string, drawId: string, strip: boolean) {
   });
   let stripped = 0;
   if (strip) {
-    for (const structure of tournamentRecord.events[0].drawDefinitions[0].structures) {
+    for (const structure of defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )) {
       for (const matchUp of structure.matchUps ?? []) {
         if (matchUp.winnerMatchUpId || matchUp.loserMatchUpId) stripped += 1;
         delete matchUp.winnerMatchUpId;

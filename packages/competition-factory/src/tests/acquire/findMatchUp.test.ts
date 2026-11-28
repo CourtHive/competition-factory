@@ -1,4 +1,5 @@
 import { findMatchUp, publicFindMatchUp } from '@Acquire/findMatchUp';
+import { defined } from '@Tests/helpers/defined';
 import { beforeEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -155,7 +156,7 @@ describe('findMatchUp', () => {
       });
 
       // Remove all drawDefinitions from events so findEvent returns no drawDefinition
-      const event = tournamentRecord.events[0];
+      const event = defined(tournamentRecord.events, 'events')[0];
       event.drawDefinitions = [];
 
       // allTournamentMatchUps will return no matchUps since draws are empty
@@ -324,8 +325,8 @@ describe('findMatchUp', () => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 4 }],
       });
-      const event = tournamentRecord.events[0];
-      const drawDefinition = event.drawDefinitions[0];
+      const event = defined(tournamentRecord.events, 'events')[0];
+      const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
 
       // Set event-level properties
       event.surfaceCategory = CLAY;
@@ -351,8 +352,8 @@ describe('findMatchUp', () => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 4 }],
       });
-      const event = tournamentRecord.events[0];
-      const drawDefinition = event.drawDefinitions[0];
+      const event = defined(tournamentRecord.events, 'events')[0];
+      const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
 
       // Set tournament-level properties (event has none)
       tournamentRecord.surfaceCategory = HARD;
@@ -379,8 +380,8 @@ describe('findMatchUp', () => {
       const { tournamentRecord } = mocksEngine.generateTournamentRecord({
         drawProfiles: [{ drawSize: 8 }],
       });
-      const event = tournamentRecord.events[0];
-      const drawDefinition = event.drawDefinitions[0];
+      const event = defined(tournamentRecord.events, 'events')[0];
+      const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
 
       tournamentEngine.setState(tournamentRecord);
       const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
@@ -453,7 +454,7 @@ describe('findMatchUp', () => {
       tournamentEngine.setState(tournamentRecord);
       const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
       const matchUpId = matchUps[0].matchUpId;
-      const eventId = tournamentRecord.events[0].eventId;
+      const eventId = defined(tournamentRecord.events, 'events')[0].eventId;
 
       // eventId provided but no drawDefinition — triggers brute force
       const result = findMatchUp({
@@ -473,7 +474,8 @@ describe('findMatchUp', () => {
       tournamentEngine.setState(tournamentRecord);
       const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
       const matchUpId = matchUps[0].matchUpId;
-      const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+      const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0]
+        .drawId;
 
       const result = findMatchUp({
         tournamentRecord,
@@ -499,7 +501,7 @@ describe('findMatchUp', () => {
       // so with event missing, brute force is triggered
       const result = findMatchUp({
         tournamentRecord,
-        drawDefinition: tournamentRecord.events[0].drawDefinitions[0],
+        drawDefinition: defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0],
         matchUpId,
         // event not provided
       });
@@ -518,7 +520,7 @@ describe('findMatchUp', () => {
 
       const result = findMatchUp({
         tournamentRecord,
-        event: tournamentRecord.events[0],
+        event: defined(tournamentRecord.events, 'events')[0],
         matchUpId,
         // drawDefinition not provided
       });

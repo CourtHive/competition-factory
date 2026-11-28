@@ -1,4 +1,5 @@
 import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
+import { defined } from '@Tests/helpers/defined';
 import { findVenue } from '@Query/venues/findVenue';
 import { findCourt } from '@Query/venues/findCourt';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -78,7 +79,7 @@ describe('findCourt across linked tournaments', () => {
     const matchUpId = drawDefinition.structures![0].matchUps![0].matchUpId;
 
     let result: any = assignMatchUpCourt({
-      courtDayDate: a.startDate,
+      courtDayDate: defined(a.startDate, 'startDate'),
       tournamentRecord: a,
       tournamentRecords,
       drawDefinition,
@@ -98,7 +99,7 @@ describe('findCourt across linked tournaments', () => {
 
     // assigning again copies nothing more
     result = assignMatchUpCourt({
-      courtDayDate: a.startDate,
+      courtDayDate: defined(a.startDate, 'startDate'),
       tournamentRecord: a,
       tournamentRecords,
       drawDefinition,

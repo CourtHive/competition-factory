@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -42,15 +43,15 @@ it.each(tieKeys)('can generate all exported tieFormatConstants', (tieKey) => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const tieFormat = tournamentRecord.events[0].tieFormat;
+  const tieFormat = defined(tournamentRecord.events, 'events')[0].tieFormat;
 
   let result: any = validateTieFormat({ tieFormat });
   expect(result.valid).toEqual(true);
 
   if (tieFormatName) {
-    expect(tieFormat.tieFormatName).toEqual(tieFormatName);
+    expect(defined(tieFormat, 'tieFormat').tieFormatName).toEqual(tieFormatName);
   }
-  expect(tieFormat.collectionDefinitions.length).toEqual(collectionsCount);
+  expect(defined(tieFormat, 'tieFormat').collectionDefinitions.length).toEqual(collectionsCount);
 
   const { participants } = tournamentEngine.getParticipants({
     participantFilters: { participantTypes: [TEAM] },

@@ -12,6 +12,7 @@ import { Participant, Tournament } from '@Types/tournamentTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 type AddParticipantsType = {
   allowDuplicateParticipantIdPairs?: boolean;
@@ -25,7 +26,7 @@ export function addParticipants({
   returnParticipants,
   tournamentRecord,
   participants = [],
-}: AddParticipantsType) {
+}: AddParticipantsType): ResultType & { participants?: Participant[]; notAdded?: Participant[]; addedCount?: number } {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   const tournamentParticipants = tournamentRecord.participants ?? [];
   const retired = retiredParticipantCheck(tournamentRecord, participants.map((p) => p.participantId).filter(Boolean));
@@ -73,7 +74,7 @@ export function addParticipants({
         return result;
       }
 
-      if (result.success && !result.existingParticipant) addedParticipants.push(result.participant);
+      if (result.success && !result.existingParticipant) addedParticipants.push(result.participant!);
     }
 
     if (addedParticipants.length) {

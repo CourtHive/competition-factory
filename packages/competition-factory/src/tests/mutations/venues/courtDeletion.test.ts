@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { extractTime } from '@Tools/dateTime';
 import { xa } from '@Tools/extractAttributes';
@@ -30,7 +31,7 @@ it('can add events, venues, and schedule matchUps', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 

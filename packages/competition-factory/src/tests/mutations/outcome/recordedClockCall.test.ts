@@ -1,4 +1,5 @@
 import { deleteNotices, setCapturedClock, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { findTarget, R1, TOPICS, cleared, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { completeDrawMatchUps } from '@Assemblies/generators/simulation/completeDrawMatchUps';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
@@ -370,7 +371,10 @@ describe('the generator called as a bare function, with no engine around it', ()
           drawProfiles: [{ drawType, drawSize: 8, drawId: 'd' }],
           nonRandom: 1,
         });
-        const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+        const drawDefinition = defined(
+          defined(tournamentRecord.events, 'events')[0].drawDefinitions,
+          'drawDefinitions',
+        )[0];
         let reads = 0;
         setClock(() => EPOCH + ++reads * 100);
         setOutcomePipeline(mode);

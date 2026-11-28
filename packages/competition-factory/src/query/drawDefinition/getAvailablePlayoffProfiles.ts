@@ -15,13 +15,21 @@ import { CONTAINER, FIRST_MATCHUP, VOLUNTARY_CONSOLATION } from '@Constants/draw
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+import type { ResultType } from '@Types/factoryTypes';
 
-type GetAvailablePlayoffProfileArgs = {
+type PlayoffProfileArgs = {
   drawDefinition: DrawDefinition;
   structureId?: string;
 };
 
-export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: GetAvailablePlayoffProfileArgs) {
+/** One structure's profile when a structureId is given; otherwise every structure's, in `availablePlayoffProfiles`. */
+type ProfilesResult = ResultType &
+  Partial<AvailablePlayoffProfile> & {
+    availablePlayoffProfiles?: AvailablePlayoffProfile[];
+    availablePlayoffRounds?: AvailablePlayoffProfile[];
+  };
+
+export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: PlayoffProfileArgs): ProfilesResult {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const { matchUps, matchUpsMap } = allDrawMatchUps({
@@ -40,7 +48,7 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
     (structure) => (!structureId && structure.stage !== VOLUNTARY_CONSOLATION) || structure.structureId === structureId,
   );
 
-  const available = {};
+  const available: { [structureId: string]: AvailablePlayoffProfile } = {};
 
   // a QUALIFYING structure's finishing positions are scoped to its own chain of loser-fed structures
   const scopedPositions: { [structureId: string]: number[] } = {};
@@ -78,6 +86,24 @@ export function getAvailablePlayoffProfiles({ drawDefinition, structureId }: Get
     };
   }
 }
+
+/** What can still be played off from one structure: finishing positions for a round robin, rounds for elimination. */
+export type AvailablePlayoffProfile = {
+  structureId: string;
+  playoffFinishingPositionRanges?: {
+    finishingPositions: number[] | undefined;
+    finishingPositionRange: string;
+    finishingPosition: number;
+  }[];
+  playoffRoundsRanges?: { finishingPositionRange: string; finishingPositions: number[]; roundNumber: number }[];
+  finishingPositionsPlayedOff?: number[];
+  finishingPositionsAvailable?: number[];
+  positionsNotPlayedOff?: number[];
+  positionsPlayedOff?: number[];
+  playoffRounds?: number[];
+  groupCount?: number;
+  groupSize?: number;
+};
 
 type AvailablePlayoffProfilesArgs = {
   playoffPositions?: number[];

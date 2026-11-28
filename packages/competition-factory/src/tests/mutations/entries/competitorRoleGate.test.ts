@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
@@ -34,12 +35,14 @@ const seed = ({ stripRole }: { stripRole?: boolean } = {}) => {
   });
   let rolelessId;
   if (stripRole) {
-    const legacy = tournamentRecord.participants.find((p: any) => p.participantType === INDIVIDUAL);
-    delete legacy.participantRole;
-    rolelessId = legacy.participantId;
+    const legacy = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantType === INDIVIDUAL,
+    );
+    delete defined(legacy, 'legacy').participantRole;
+    rolelessId = defined(legacy, 'legacy').participantId;
   }
   tournamentEngine.setState(tournamentRecord);
-  const eventId = tournamentRecord.events[0].eventId;
+  const eventId = defined(tournamentRecord.events, 'events')[0].eventId;
   const participantIds = tournamentEngine
     .getParticipants({ participantFilters: { participantTypes: [INDIVIDUAL] } })
     .participants.map(({ participantId }: any) => participantId);

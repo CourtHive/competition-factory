@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -28,11 +29,11 @@ it('can get event properties to determine if there are seeded, ranked, or rated 
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = participants.map((p) => p.participantId);
+  const participantIds = defined(participants, 'participants').map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
   expect(result.success).toEqual(true);
 
-  const scaleItemsWithParticipantIds = participants.map((participant) => {
+  const scaleItemsWithParticipantIds = defined(participants, 'participants').map((participant) => {
     const { participantId } = participant;
     const scaleItems = [
       {

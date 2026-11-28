@@ -34,7 +34,7 @@ it('will generate an AD_HOC drawDefinition with no matchUps', () => {
 });
 
 it('can generate AD_HOC drawDefinitions, add and delete matchUps', () => {
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 32, drawType: AD_HOC }],
   });
 

@@ -1,4 +1,5 @@
 import { derivedGoesToOrLinkError, hasStoredGoesTo, needsFinishingRounds } from '@Query/matchUps/addGoesTo';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { mocksEngine } from '../../..';
 import { expect, it } from 'vitest';
@@ -19,8 +20,9 @@ const oneRoundForeignDraw = () => {
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 2, drawType: SINGLE_ELIMINATION }] });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  for (const matchUp of drawDefinition.structures[0].matchUps) delete matchUp.finishingPositionRange;
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  for (const matchUp of defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps'))
+    delete matchUp.finishingPositionRange;
   tournamentEngine.setState(tournamentRecord);
   return { drawId };
 };

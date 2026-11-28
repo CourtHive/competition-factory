@@ -1,4 +1,5 @@
 import { getMatchUpIds } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';
@@ -187,10 +188,10 @@ test('eventProfiles and participantsProfile work as expected', () => {
   expect(drawIds.length).toEqual(2);
 
   const { events } = tournamentRecord;
-  expect(events[0].gender).toEqual(MALE);
-  expect(events[1].gender).toEqual(FEMALE);
-  expect(events[0].surfaceCategory).toEqual(HARD);
-  expect(events[1].surfaceCategory).toEqual(CLAY);
+  expect(defined(events, 'events')[0].gender).toEqual(MALE);
+  expect(defined(events, 'events')[1].gender).toEqual(FEMALE);
+  expect(defined(events, 'events')[0].surfaceCategory).toEqual(HARD);
+  expect(defined(events, 'events')[1].surfaceCategory).toEqual(CLAY);
 
   tournamentEngine.setState(tournamentRecord);
   const { participants } = tournamentEngine.getParticipants({

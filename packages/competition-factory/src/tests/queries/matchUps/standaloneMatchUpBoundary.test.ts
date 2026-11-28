@@ -1,4 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
@@ -24,9 +25,15 @@ function attestation(participantId: string) {
 }
 
 function getRecord() {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
-  const participantId = tournamentRecord.participants[0].participantId;
-  const drawnMatchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0];
+  const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
+  const participantId = defined(tournamentRecord.participants, 'participants')[0].participantId;
+  const drawnMatchUp = defined(
+    defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps,
+    'matchUps',
+  )[0];
   drawnMatchUp.checkIns = [attestation(participantId)];
   tournamentRecord.matchUps = [
     {
@@ -69,9 +76,12 @@ test('other matchUpFilters and contextFilters apply to standalone matchUps', () 
 
 test('a filter scoped to events, draws or structures excludes standalone matchUps', () => {
   const { tournamentRecord, drawnMatchUp } = getRecord();
-  const { eventId } = tournamentRecord.events[0];
-  const { drawId } = tournamentRecord.events[0].drawDefinitions[0];
-  const { structureId } = tournamentRecord.events[0].drawDefinitions[0].structures[0];
+  const { eventId } = defined(tournamentRecord.events, 'events')[0];
+  const { drawId } = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const { structureId } = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
 
   for (const filters of [{ eventIds: [eventId] }, { drawIds: [drawId] }, { structureIds: [structureId] }]) {
     for (const key of ['matchUpFilters', 'contextFilters']) {
@@ -93,12 +103,19 @@ test('an inContext standalone matchUp is a copy with check-in attribution stripp
   expect(standalone.checkIns[0].attributedTo).toBeUndefined();
   expect(standalone.checkIns[0].participantId).toEqual(drawn.checkIns[0].participantId);
 
-  expect(standalone).not.toBe(tournamentRecord.matchUps[0]);
+  expect(standalone).not.toBe(defined(tournamentRecord.matchUps, 'matchUps')[0]);
   standalone.matchUpStatus = 'EDITED';
   standalone.checkIns[0].state = 'EDITED';
-  expect(tournamentRecord.matchUps[0].matchUpStatus).toEqual(TO_BE_PLAYED);
-  expect(tournamentRecord.matchUps[0].checkIns[0].attributedTo.name).toEqual(SENTINEL);
-  expect(tournamentRecord.matchUps[0].checkIns[0].state).toEqual('CHECKED_IN');
+  expect(defined(tournamentRecord.matchUps, 'matchUps')[0].matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(
+    defined(
+      defined(defined(tournamentRecord.matchUps, 'matchUps')[0].checkIns, 'checkIns')[0].attributedTo,
+      'attributedTo',
+    ).name,
+  ).toEqual(SENTINEL);
+  expect(defined(defined(tournamentRecord.matchUps, 'matchUps')[0].checkIns, 'checkIns')[0].state).toEqual(
+    'CHECKED_IN',
+  );
 });
 
 test('without inContext the stored standalone matchUp is returned, as stored drawn matchUps are', () => {
@@ -106,7 +123,7 @@ test('without inContext the stored standalone matchUp is returned, as stored dra
   const matchUps: any = allTournamentMatchUps({ tournamentRecord, inContext: false }).matchUps;
 
   expect(matchUps.find((m) => m.matchUpId === drawnMatchUp.matchUpId)).toBe(drawnMatchUp);
-  expect(matchUps.find((m) => m.matchUpId === STANDALONE_ID)).toBe(tournamentRecord.matchUps[0]);
+  expect(matchUps.find((m) => m.matchUpId === STANDALONE_ID)).toBe(defined(tournamentRecord.matchUps, 'matchUps')[0]);
 });
 
 test('a record with no standalone matchUps returns only drawn matchUps', () => {

@@ -27,7 +27,7 @@ it('can assign participants to SINGLES/DOUBLES matchUps in TEAM AdHoc events', (
   const eventId = 'e1';
   const drawId = 'd1';
 
-  let result = mocksEngine.generateTournamentRecord({
+  let result: any = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
         drawId,

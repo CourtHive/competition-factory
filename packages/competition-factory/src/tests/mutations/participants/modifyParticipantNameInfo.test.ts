@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
@@ -37,12 +38,12 @@ describe('modifyParticipant — participantName precedence is surfaced', () => {
 
     const result: any = tournamentEngine.modifyParticipant({
       participant: { ...participant, participantName: 'SUPPLIED NAME' },
-      participantId: participant.participantId,
+      participantId: defined(participant, 'participant').participantId,
     });
 
     expect(result.success).toEqual(true);
     // the precedence itself is unchanged — the derived name still wins
-    expect(currentName(participant.participantId)).not.toEqual('SUPPLIED NAME');
+    expect(currentName(defined(participant, 'participant').participantId)).not.toEqual('SUPPLIED NAME');
     // ...but it is no longer silent
     expect(result.info).toEqual(PARTICIPANT_NAME_DERIVED_FROM_PERSON);
   });
@@ -53,16 +54,16 @@ describe('modifyParticipant — participantName precedence is surfaced', () => {
 
     const result: any = tournamentEngine.modifyParticipant({
       participant: {
-        participantId: participant.participantId,
-        participantType: participant.participantType,
-        participantRole: participant.participantRole,
+        participantId: defined(participant, 'participant').participantId,
+        participantType: defined(participant, 'participant').participantType,
+        participantRole: defined(participant, 'participant').participantRole,
         participantName: 'ACCEPTED NAME',
       },
-      participantId: participant.participantId,
+      participantId: defined(participant, 'participant').participantId,
     });
 
     expect(result.success).toEqual(true);
-    expect(currentName(participant.participantId)).toEqual('ACCEPTED NAME');
+    expect(currentName(defined(participant, 'participant').participantId)).toEqual('ACCEPTED NAME');
     expect(result.info).toBeUndefined();
   });
 
@@ -72,7 +73,7 @@ describe('modifyParticipant — participantName precedence is surfaced', () => {
 
     const result: any = tournamentEngine.modifyParticipant({
       participant: { ...participant },
-      participantId: participant.participantId,
+      participantId: defined(participant, 'participant').participantId,
     });
 
     expect(result.success).toEqual(true);
@@ -84,12 +85,12 @@ describe('modifyParticipant — participantName precedence is surfaced', () => {
 
     const result: any = tournamentEngine.modifyParticipant({
       participant: { ...participant, participantName: 'EXPLICIT WINS' },
-      participantId: participant.participantId,
+      participantId: defined(participant, 'participant').participantId,
       updateParticipantName: false,
     });
 
     expect(result.success).toEqual(true);
-    expect(currentName(participant.participantId)).toEqual('EXPLICIT WINS');
+    expect(currentName(defined(participant, 'participant').participantId)).toEqual('EXPLICIT WINS');
     expect(result.info).toBeUndefined();
   });
 });

@@ -35,7 +35,7 @@ it('can assign SINGLE_ELIMINATION draw drawPositions', () => {
 
   const entryStatuses: EntryStatusUnion[] = [DIRECT_ACCEPTANCE, WILDCARD];
   const mainDrawEntries = getStageEntries({
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     entryStatuses,
     stage,
   });
@@ -111,7 +111,7 @@ it('can assign ROUND_ROBIN draw drawPositions', () => {
 
   const entryStatuses: EntryStatusUnion[] = [DIRECT_ACCEPTANCE, WILDCARD];
   const mainDrawEntries = getStageEntries({
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
     entryStatuses,
     stage,
   });
@@ -142,10 +142,10 @@ it('can assign ROUND_ROBIN draw drawPositions', () => {
   });
   expect(assignedPositions?.length).toEqual(16);
 
-  const groups = drawDefinition.structures[0].structures;
-  groups.forEach((group, i) => {
+  const groups = defined(defined(drawDefinition, 'drawDefinition').structures, 'structures')[0].structures;
+  defined(groups, 'groups').forEach((group, i) => {
     const positionAssignments = group.positionAssignments;
-    positionAssignments.forEach((assignment, j) => {
+    defined(positionAssignments, 'positionAssignments').forEach((assignment, j) => {
       const expectedParticipant = (i * 4 + j) * 2;
       const expectedUUID = `uuid${expectedParticipant}`;
       expect(expectedUUID).not.toBeUndefined();
@@ -220,7 +220,10 @@ it('can assign QUALIFIER placeholder to draw position', () => {
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
   // Find MAIN structure with stageSequence 1
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN && s.stageSequence === 1);
+  const mainStructure = defined(
+    defined(drawDefinition, 'drawDefinition').structures?.find((s) => s.stage === MAIN && s.stageSequence === 1),
+    'main structure',
+  );
 
   expect(mainStructure).toBeDefined();
 
@@ -285,10 +288,15 @@ it('can replace qualifier with participant', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN && s.stageSequence === 1);
+  const mainStructure = defined(
+    defined(drawDefinition, 'drawDefinition').structures?.find((s) => s.stage === MAIN && s.stageSequence === 1),
+    'main structure',
+  );
 
   // automated: false leaves every MAIN position unassigned
-  expect(mainStructure.positionAssignments.every(({ participantId }) => !participantId)).toBe(true);
+  expect(
+    defined(mainStructure.positionAssignments, 'positionAssignments').every(({ participantId }) => !participantId),
+  ).toBe(true);
 
   const structureId = mainStructure.structureId;
   const drawPosition = 1;
@@ -358,7 +366,10 @@ it('qualifier positions are correctly counted', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN && s.stageSequence === 1);
+  const mainStructure = defined(
+    defined(drawDefinition, 'drawDefinition').structures?.find((s) => s.stage === MAIN && s.stageSequence === 1),
+    'main structure',
+  );
 
   const structureId = mainStructure.structureId;
 

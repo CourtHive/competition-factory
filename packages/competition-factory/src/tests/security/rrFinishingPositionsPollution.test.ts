@@ -1,4 +1,5 @@
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { defined } from '@Tests/helpers/defined';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -54,7 +55,8 @@ describe('round robin finishing positions cannot write onto a prototype or a bui
           withMatchUps: true,
         });
         expect(pollution()).toEqual([]);
-        for (const { participantId } of record.participants) expect(({} as any)[participantId]).toBeUndefined();
+        for (const { participantId } of defined(record.participants, 'participants'))
+          expect(({} as any)[participantId]).toBeUndefined();
         expect(result.participants.length).toBeGreaterThan(0);
 
         // the round robin still ranks every participant in the draw, the renamed one included

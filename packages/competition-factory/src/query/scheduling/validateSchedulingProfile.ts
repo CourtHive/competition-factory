@@ -6,7 +6,7 @@ import { getDrawStructures } from '@Acquire/findStructure';
 import { isValidDateString } from '@Tools/dateTime';
 
 // constants and types
-import { INVALID_VALUES, VENUE_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { INVALID_VALUES, VENUE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 
 /** The round numbers of each structure, keyed tournamentId → eventId → drawId → structureId. */
@@ -22,7 +22,11 @@ type SchedulingIds = {
   drawIds: string[];
 };
 
-export function validateSchedulingProfile({ tournamentRecords, schedulingProfile }): any {
+export function validateSchedulingProfile({ tournamentRecords, schedulingProfile }): {
+  error?: ErrorType;
+  valid: boolean;
+  info?: string;
+} {
   if (!schedulingProfile) return { valid: true };
 
   if (!Array.isArray(schedulingProfile)) return { valid: false, error: INVALID_VALUES };

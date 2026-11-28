@@ -1,4 +1,5 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
+import { defined } from '@Tests/helpers/defined';
 import { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getDrawStructures } from '@Acquire/findStructure';
@@ -32,10 +33,11 @@ it('can correctly determine positions playedOff for STANDARD_ELIMINATION', () =>
 
   const structureId = drawDefinition.structures?.[0].structureId;
 
-  const { playoffRounds, playoffRoundsRanges } = getAvailablePlayoffProfiles({
+  const { playoffRounds, playoffRoundsRanges: ranges } = getAvailablePlayoffProfiles({
     drawDefinition,
     structureId,
   });
+  const playoffRoundsRanges = defined(ranges, 'playoffRoundsRanges');
   expect(playoffRounds).toEqual([1, 2, 3]);
   expect(playoffRoundsRanges[0]).toEqual({
     roundNumber: 1,

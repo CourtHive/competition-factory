@@ -1,4 +1,5 @@
 import { getParticipantId } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -114,12 +115,12 @@ it('counts a draw stored without a flight as a flight, and gives it one when app
     eventProfiles: [{ participantsProfile: { participantsCount: 16 }, drawProfiles: [{ drawSize: 8 }] }],
   });
   // a record stored without a profile: an ingested or older record
-  const event = tournamentRecord.events[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
   delete event.flightProfile;
   event.extensions = (event.extensions ?? []).filter(({ name }) => name !== FLIGHT_PROFILE);
   tournamentEngine.setState(tournamentRecord);
-  const [{ drawId, entries }] = event.drawDefinitions;
-  const drawParticipantIds = entries.map(getParticipantId);
+  const [{ drawId, entries }] = defined(event.drawDefinitions, 'drawDefinitions');
+  const drawParticipantIds = defined(entries, 'entries').map(getParticipantId);
   expect(flights(eventId)).toEqual([]);
 
   const result: any = tournamentEngine.generateFlightProfile({

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -27,7 +28,13 @@ function seedTournament() {
   });
   const drawId = result.drawIds[0];
   const eventId = result.eventIds[0];
-  const matchUpId = result.tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps[0].matchUpId;
+  const matchUpId = defined(
+    defined(
+      defined(defined(result.tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].matchUps,
+    'matchUps',
+  )[0].matchUpId;
   return { drawId, eventId, matchUpId };
 }
 

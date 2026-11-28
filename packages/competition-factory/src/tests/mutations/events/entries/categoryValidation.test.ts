@@ -14,7 +14,7 @@ import { WTN } from '@Constants/ratingConstants';
 describe('Category Validation in addEventEntries', () => {
   describe('Age Validation', () => {
     it('accepts participants within age range throughout event', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -58,7 +58,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('rejects participants who age out during event', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-20',
       });
@@ -110,7 +110,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('rejects participants too young at event start', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -154,7 +154,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('rejects participants with missing birthDate when age restrictions exist', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -197,7 +197,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('accepts participants when no age restrictions', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -239,7 +239,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('validates age with both ageMin and ageMax', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -310,7 +310,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('validates age using ageCategoryCode when ageMin/ageMax not provided', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -370,7 +370,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('validates age using U18 ageCategoryCode when ageMin/ageMax not provided', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -430,7 +430,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('skips age validation for combined age categories (C##-##)', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -490,7 +490,7 @@ describe('Category Validation in addEventEntries', () => {
 
   describe('Rating Validation', () => {
     it('accepts participants with valid rating', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -546,7 +546,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('rejects participants with rating too low', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -604,7 +604,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('rejects participants with rating too high', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -660,7 +660,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('rejects participants with missing rating', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -706,7 +706,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('accepts participants when no rating restrictions', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -750,7 +750,7 @@ describe('Category Validation in addEventEntries', () => {
 
   describe('Combined Validation', () => {
     it('rejects participants failing both age and rating', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -815,7 +815,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('adds valid participants and rejects invalid ones', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -898,7 +898,7 @@ describe('Category Validation in addEventEntries', () => {
 
   describe('Age Eligibility Scenarios', () => {
     it('rejects a 25-year-old entering a U14 event', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -944,7 +944,7 @@ describe('Category Validation in addEventEntries', () => {
 
   describe('Enforcement Parameter', () => {
     it('does not validate when enforceCategory is false', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -988,7 +988,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('validates when enforceCategory is true', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1032,7 +1032,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('does not validate when event has no category', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1074,7 +1074,7 @@ describe('Category Validation in addEventEntries', () => {
 
   describe('Rejection Details', () => {
     it('includes participant name in rejection', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1116,7 +1116,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('includes detailed rejection information', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1167,7 +1167,7 @@ describe('Category Validation in addEventEntries', () => {
 
   describe('Paired Entry Category Validation', () => {
     it('rejects a PAIR entry where one member exceeds U14 age limit', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1232,7 +1232,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('accepts a PAIR entry where both members are within U14 age limit', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1290,7 +1290,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('skips validation for combined age categories (C50-70) on pair entries', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1351,7 +1351,7 @@ describe('Category Validation in addEventEntries', () => {
     });
 
     it('rejects a PAIR entry when one member rating exceeds category maximum', () => {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });
@@ -1446,7 +1446,7 @@ describe('Category Validation in addEventEntries', () => {
 
   describe('Year-precision birthYear (CODES)', () => {
     function setup(person: any, category: any) {
-      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      const { tournamentRecord }: any = mocksEngine.generateTournamentRecord({
         startDate: '2024-08-01',
         endDate: '2024-08-15',
       });

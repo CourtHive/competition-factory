@@ -1,4 +1,5 @@
 import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -103,8 +104,8 @@ it('can generate feedIn structures with various seedCounts', () => {
     ],
   });
 
-  let drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  let structureId = drawDefinition.structures[0].structureId;
+  let drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  let structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
   verifyStructure({
     structureId,
@@ -130,8 +131,8 @@ it('can generate feedIn structures with various seedCounts', () => {
     ],
   }));
 
-  drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  structureId = drawDefinition.structures[0].structureId;
+  drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
   verifyStructure({
     structureId,
@@ -159,8 +160,8 @@ it('can generate large feedIn with many BYEs', () => {
     ],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const structureId = drawDefinition.structures[0].structureId;
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
   verifyStructure({
     structureId,
@@ -179,8 +180,8 @@ it('can generate large feedIn with many BYEs', () => {
     drawProfiles: [{ drawSize: 12, participantsCount: 10, drawType: FEED_IN }],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const structureId = drawDefinition.structures[0].structureId;
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const structureId = defined(drawDefinition.structures, 'structures')[0].structureId;
 
   verifyStructure({
     structureId,

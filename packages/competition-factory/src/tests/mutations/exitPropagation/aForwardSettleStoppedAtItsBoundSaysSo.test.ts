@@ -1,4 +1,5 @@
 import { FORWARD_SETTLE_EXHAUSTED } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -39,9 +40,13 @@ it('a settle that stops with winners still owed returns FORWARD_SETTLE_EXHAUSTED
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 256, drawId: DRAW_ID, completionGoal: 128 }],
   });
-  const structure = tournamentRecord.events[0].drawDefinitions[0].structures[0];
-  expect(structure.matchUps.filter((matchUp: any) => matchUp.winningSide).length).toEqual(128);
-  for (const matchUp of structure.matchUps) if (matchUp.roundNumber === 2) matchUp.drawPositions = [];
+  const structure = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0];
+  expect(defined(structure.matchUps, 'matchUps').filter((matchUp: any) => matchUp.winningSide).length).toEqual(128);
+  for (const matchUp of defined(structure.matchUps, 'matchUps'))
+    if (matchUp.roundNumber === 2) matchUp.drawPositions = [];
   tournamentEngine.setState(tournamentRecord);
   expect(advancedPositions()).toEqual(0);
 

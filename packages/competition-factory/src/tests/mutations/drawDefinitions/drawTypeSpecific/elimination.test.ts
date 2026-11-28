@@ -1,4 +1,5 @@
 import { verifyMatchUps, verifySideNumbers } from '@Tests/mutations/drawDefinitions/primitives/verifyMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
 import { getParticipantIdMatchUps } from '@Query/drawDefinition/participantIdMatchUps';
 import { generateRange, instanceCount, unique } from '@Tools/arrays';
@@ -294,7 +295,7 @@ it('can reliably generate sideNumbers', () => {
     },
   });
 
-  let structureId = drawDefinition.structures[0].structureId;
+  let structureId = defined(defined(drawDefinition, 'drawDefinition').structures, 'structures')[0].structureId;
 
   verifyStructure({
     structureId,
@@ -360,7 +361,7 @@ it('can reliably generate sideNumbers', () => {
     },
   }));
 
-  structureId = drawDefinition.structures[0].structureId;
+  structureId = defined(defined(drawDefinition, 'drawDefinition').structures, 'structures')[0].structureId;
 
   expectedDrawPositions = {
     2: [
@@ -433,7 +434,7 @@ it('can return participantIdMatchUps', () => {
   });
 
   const { participantIdMatchUps } = getParticipantIdMatchUps({
-    drawDefinition,
+    drawDefinition: defined(drawDefinition, 'drawDefinition'),
   });
 
   const participantIds = Object.keys(participantIdMatchUps);

@@ -12,11 +12,12 @@ import { EVENT_DATE_INACTIVE, EXISTING_ROUND, INVALID_DATE } from '@Constants/er
 import type { ProfileRound, ProfileVenue } from '@Query/matchUps/scheduling/schedulingUtils';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType, ResultWarning } from '@Types/factoryTypes';
 
 // Every rule is decided before the profile is written: the date and its range, the round at another venue, the round
 // already at this venue, and the validity of the whole proposed profile (its draw, structure and round references).
 // A refusal leaves the stored profile as it was; an accepted round is appended where the planner found its place.
-export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, venueId, round }) {
+export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, venueId, round }): ResultType {
   if (!isValidDateString(scheduleDate)) {
     return { error: INVALID_DATE };
   }
@@ -95,7 +96,7 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
 
   // a round profiled on a day its event does not play is added, and warned about, beside whatever
   // setSchedulingProfile warns of the profile's other dates
-  const warnings = [...(planned.result.warnings ?? [])];
+  const warnings = [...((planned.result as ResultType).warnings ?? [])];
   const verdict =
     round?.tournamentId &&
     eventDateResolver(tournamentRecords)({
@@ -110,7 +111,7 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
       reason: verdict.reason,
       eventId: round.eventId,
       roundKey,
-    });
+    } as ResultWarning);
   }
 
   // commit: the stored profile takes the round in place, as it always did, and is then saved to every record

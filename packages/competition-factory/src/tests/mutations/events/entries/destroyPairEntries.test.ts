@@ -1,4 +1,5 @@
 import { destroyPairEntries as destroyPairEntriesFn } from '@Mutate/entries/destroyPairEntry';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -21,7 +22,7 @@ it('can destroy multiple pair entries at once', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const pairParticipantIds = tournamentRecord.participants
+  const pairParticipantIds = defined(tournamentRecord.participants, 'participants')
     .filter((p) => p.participantType === PAIR)
     .map((p) => p.participantId);
 
@@ -65,7 +66,7 @@ it('returns errors when participantIds are invalid', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const pairParticipantIds = tournamentRecord.participants
+  const pairParticipantIds = defined(tournamentRecord.participants, 'participants')
     .filter((p) => p.participantType === PAIR)
     .map((p) => p.participantId);
 
@@ -94,7 +95,7 @@ it('handles mixed valid and invalid participantIds', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const pairParticipantIds = tournamentRecord.participants
+  const pairParticipantIds = defined(tournamentRecord.participants, 'participants')
     .filter((p) => p.participantType === PAIR)
     .map((p) => p.participantId);
 
@@ -127,7 +128,7 @@ it('refuses with one error that carries a code, and every failure in context', (
     eventProfiles: [{ eventType: DOUBLES, eventId: doublesId }],
   });
   tournamentEngine.setState(tournamentRecord);
-  const pairParticipantIds = tournamentRecord.participants
+  const pairParticipantIds = defined(tournamentRecord.participants, 'participants')
     .filter((p) => p.participantType === PAIR)
     .map((p) => p.participantId);
   expect(tournamentEngine.addEventEntries({ participantIds: pairParticipantIds, eventId: doublesId }).success).toEqual(

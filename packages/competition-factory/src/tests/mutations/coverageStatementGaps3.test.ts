@@ -1065,7 +1065,7 @@ describe('positionAssignment additional paths', () => {
     const assignedIds = positionAssignments?.filter((a) => a.participantId).map((a) => a.participantId) || [];
 
     // Find a participant not in the draw
-    const allParticipants = tournamentRecord.participants || [];
+    const allParticipants = tournamentRecord.participants ?? [];
     const unassignedParticipant = allParticipants.find(
       (p) => p.participantType === INDIVIDUAL && !assignedIds.includes(p.participantId),
     );

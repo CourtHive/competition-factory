@@ -15,6 +15,8 @@ import type {
   TieFormat,
   TimeItem,
   Tournament,
+  DrawDefinition,
+  Event,
 } from './tournamentTypes';
 
 /**
@@ -423,8 +425,8 @@ export type CompleteDrawMatchUpsArgs = MockEngineCall &
     /** per structure, complete at most this many rounds, counted from its first round still to play */
     roundsToComplete?: number;
     tournamentRecord?: Tournament;
-    drawDefinition?: { [key: string]: unknown };
-    event?: { [key: string]: unknown };
+    drawDefinition?: DrawDefinition;
+    event?: Event;
     structureIds?: string[];
     random?: () => number;
     completionGoal?: number;

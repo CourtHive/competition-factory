@@ -1,4 +1,5 @@
 import { addMatchUpEndTime, addMatchUpStartTime } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
+import { defined } from '@Tests/helpers/defined';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -18,7 +19,7 @@ function setup(scheduledDate: string) {
     startDate: '2026-07-10',
     endDate: '2026-07-13',
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
   const { matchUps } = getAllDrawMatchUps({ drawDefinition, inContext: true });
   const matchUpId = matchUps?.[0]?.matchUpId ?? '';
 

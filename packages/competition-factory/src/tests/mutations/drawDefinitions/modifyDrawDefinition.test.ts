@@ -1,4 +1,5 @@
 import { modifyDrawDefinition } from '@Mutate/drawDefinitions/modifyDrawDefinition';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -124,7 +125,8 @@ it('returns an { error } result when drawUpdates.drawName is not a string', () =
     drawProfiles: [{ drawSize: 4 }],
     setState: true,
   });
-  const originalName = tournamentRecord.events[0].drawDefinitions[0].drawName;
+  const originalName = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0]
+    .drawName;
 
   // modifyDrawName rejects a non-string drawName. modifyDrawDefinition used to return the bare
   // ErrorType ({ message, code }) instead of the result, so `result.error` was undefined and a caller
@@ -251,7 +253,7 @@ it('skips drawDefinition block when drawDefinition is absent but flight exists',
     drawProfiles: [{ drawSize: 4 }],
   });
 
-  const event = tournamentRecord.events[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
 
   // Call directly with a valid event (which has a flightProfile) but no drawDefinition
   const result = modifyDrawDefinition({
@@ -271,7 +273,7 @@ it('skips flight extension block when no flight exists but drawDefinition is pre
     drawProfiles: [{ drawSize: 4 }],
   });
 
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
 
   // Pass an empty event so flightProfile is absent → no flight found
   const result = modifyDrawDefinition({

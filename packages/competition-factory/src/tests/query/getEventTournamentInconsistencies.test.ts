@@ -1,4 +1,5 @@
 import { getEventInconsistencies, EVENT_PARTICIPANT_TYPE_MISMATCH } from '@Query/event/getEventInconsistencies';
+import { defined } from '@Tests/helpers/defined';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -33,7 +34,7 @@ test('detects participants whose type is inconsistent with the eventType', () =>
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId: 'd1', drawSize: 8, drawType: SINGLE_ELIMINATION, eventType: DOUBLES_EVENT }],
   });
-  const event = tournamentRecord.events[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
 
   // baseline: a DOUBLES event with PAIR participants is coherent
   expect(getEventInconsistencies({ event, tournamentRecord }).valid).toEqual(true);
@@ -56,13 +57,15 @@ test('fans out draw + structure inconsistencies with eventId stamped', () => {
     drawProfiles: [{ drawId: 'fe', drawSize: 8, drawType: SINGLE_ELIMINATION, eventType: SINGLES_EVENT }],
     completeAllMatchUps: true,
   });
-  const event = tournamentRecord.events[0];
-  const structure = event.drawDefinitions[0].structures[0];
-  const r1 = structure.matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1 && m.winningSide);
-  r1.winningSide = r1.winningSide === 1 ? 2 : 1;
+  const event = defined(tournamentRecord.events, 'events')[0];
+  const structure = defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0];
+  const r1 = defined(structure.matchUps, 'matchUps').find(
+    (m) => m.roundNumber === 1 && m.roundPosition === 1 && m.winningSide,
+  );
+  defined(r1, 'r1').winningSide = defined(r1, 'r1').winningSide === 1 ? 2 : 1;
 
   const result: any = getEventInconsistencies({ event, tournamentRecord });
-  const bubbled = result.inconsistencies.find((i) => i.matchUpId === r1.matchUpId);
+  const bubbled = result.inconsistencies.find((i) => i.matchUpId === defined(r1, 'r1').matchUpId);
   expect(bubbled).toBeTruthy();
   expect(bubbled.scope).toEqual('STRUCTURE');
   expect(bubbled.eventId).toEqual(event.eventId);
@@ -78,17 +81,19 @@ test('detects a person represented by two distinct INDIVIDUAL participants', () 
   expect(getTournamentInconsistencies({ tournamentRecord }).valid).toEqual(true);
 
   // corrupt: clone an existing INDIVIDUAL participant under a new participantId but the same personId
-  const original = tournamentRecord.participants.find((p) => p.participantType === INDIVIDUAL && p.person?.personId);
-  tournamentRecord.participants.push({
+  const original = defined(tournamentRecord.participants, 'participants').find(
+    (p) => p.participantType === INDIVIDUAL && p.person?.personId,
+  );
+  defined(tournamentRecord.participants, 'participants').push({
     ...original,
-    participantId: `${original.participantId}-dup`,
+    participantId: `${defined(original, 'original').participantId}-dup`,
   });
 
   const result: any = getTournamentInconsistencies({ tournamentRecord });
   const dup = result.inconsistencies.find((i) => i.issueType === PARTICIPANT_IDENTITY_DUPLICATION);
   expect(dup).toBeTruthy();
-  expect(dup.personId).toEqual(original.person.personId);
-  expect(dup.participantIds).toContain(`${original.participantId}-dup`);
+  expect(dup.personId).toEqual(defined(defined(original, 'original').person, 'person').personId);
+  expect(dup.participantIds).toContain(`${defined(original, 'original').participantId}-dup`);
   expect(dup.severity).toEqual('warning');
   expect(dup.scope).toEqual('TOURNAMENT');
   expect(typeof dup.fingerprint).toEqual('string');

@@ -1,4 +1,5 @@
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { defined } from '@Tests/helpers/defined';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -24,7 +25,7 @@ test('mocksEngine can modify existing tournamentRecords', () => {
     eventProfiles,
   });
 
-  expect(tournamentRecord.participants.length).toEqual(0);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(0);
 
   // prettier-ignore
   eventProfiles = [{ eventName: `Boy's U16 Doubles`, drawProfiles: [{ drawSize: 4, drawType: ROUND_ROBIN }] }];
@@ -37,7 +38,7 @@ test('mocksEngine can modify existing tournamentRecords', () => {
     });
   expect(result.success).toEqual(true);
   expect(result.drawIds.length).toEqual(1);
-  expect(tournamentRecord.participants.length).toEqual(12); // 4 * 3 = 12
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(12); // 4 * 3 = 12
 });
 
 test('mocksEngine can modify existing tournamentRecords and complete SOME matchUps', () => {
@@ -51,7 +52,7 @@ test('mocksEngine can modify existing tournamentRecords and complete SOME matchU
     eventProfiles,
   });
 
-  expect(tournamentRecord.participants.length).toEqual(0);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(0);
 
   // prettier-ignore
   eventProfiles = [{ eventIndex: 0, drawProfiles: [{ drawSize: 16, completionGoal: 8 }] }];
@@ -61,7 +62,7 @@ test('mocksEngine can modify existing tournamentRecords and complete SOME matchU
   });
   expect(result.success).toEqual(true);
   expect(result.drawIds.length).toEqual(1);
-  expect(tournamentRecord.participants.length).toEqual(16);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(16);
 
   tournamentEngine.setState(tournamentRecord);
 
@@ -97,7 +98,7 @@ test('mocksEngine can modify existing tournamentRecords', () => {
     eventProfiles,
   });
 
-  expect(tournamentRecord.participants.length).toEqual(0);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(0);
 
   // prettier-ignore
   const participantsProfile = { participantsCount: 20, participantType: PAIR };
@@ -107,7 +108,7 @@ test('mocksEngine can modify existing tournamentRecords', () => {
   });
   expect(result.success).toEqual(true);
 
-  expect(tournamentRecord.participants.length).toEqual(60); // 20 DOUBLES participants + 40 SINGLES participants
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(60); // 20 DOUBLES participants + 40 SINGLES participants
 
   // prettier-ignore
   eventProfiles = [
@@ -123,7 +124,7 @@ test('mocksEngine can modify existing tournamentRecords', () => {
   expect(result.success).toEqual(true);
   expect(result.drawIds.length).toEqual(4);
 
-  expect(tournamentRecord.participants.length).toEqual(220); // 16 * 3 + 32 + 16 * 3 + 32 + 60 = 124 + 96 = 220
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(220); // 16 * 3 + 32 + 16 * 3 + 32 + 60 = 124 + 96 = 220
 
   // prettier-ignore
   eventProfiles = [
@@ -136,11 +137,11 @@ test('mocksEngine can modify existing tournamentRecords', () => {
   expect(result.success).toEqual(true);
   expect(result.drawIds.length).toEqual(1);
 
-  let event = tournamentRecord.events[0];
+  let event = defined(tournamentRecord.events, 'events')[0];
   let { flightProfile } = getFlightProfile({ event });
   expect(flightProfile?.flights.length).toEqual(1);
 
-  expect(tournamentRecord.participants.length).toEqual(232); // 220 + 3 * 4 = 232
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(232); // 220 + 3 * 4 = 232
 
   // prettier-ignore
   eventProfiles = [
@@ -153,11 +154,11 @@ test('mocksEngine can modify existing tournamentRecords', () => {
   expect(result.success).toEqual(true);
   expect(result.drawIds.length).toEqual(1);
 
-  event = tournamentRecord.events[0];
+  event = defined(tournamentRecord.events, 'events')[0];
   ({ flightProfile } = getFlightProfile({ event }));
   expect(flightProfile?.flights.length).toEqual(2);
 
-  expect(tournamentRecord.participants.length).toEqual(256); // 232 + 3 * 8 = 256
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(256); // 232 + 3 * 8 = 256
 
   result = mocksEngine.modifyTournamentRecord({ tournamentRecord });
   expect(result.totalParticipantsCount).toEqual(288);
@@ -248,5 +249,9 @@ test('mocksEngine can modify existing tournamentRecords with drawProfiles', () =
     drawProfiles,
   });
   expect(result.success).toEqual(true);
-  expect(Object.values(result.schedulerResult.matchUpScheduleTimes)).toEqual(['07:00', '07:00', '08:30']);
+  expect(Object.values(defined(result.schedulerResult, 'schedulerResult').matchUpScheduleTimes)).toEqual([
+    '07:00',
+    '07:00',
+    '08:30',
+  ]);
 });

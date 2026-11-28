@@ -1,4 +1,5 @@
 import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -56,7 +57,7 @@ it('can schedule all matchUps in first round with only drawId', () => {
     startDate,
   });
 
-  expect(Object.values(schedulerResult.matchUpScheduleTimes).length).toEqual(24);
+  expect(Object.values(defined(schedulerResult, 'schedulerResult').matchUpScheduleTimes).length).toEqual(24);
 
   const { matchUps } = tournamentEngine.allCompetitionMatchUps();
   const scheduledMatchUps = matchUps?.filter(hasSchedule);

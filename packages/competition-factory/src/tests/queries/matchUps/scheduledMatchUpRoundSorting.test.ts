@@ -33,7 +33,7 @@ test.each([
 
     const startDate = '2022-01-01';
     const endDate = '2022-01-07';
-    let result = mocksEngine.generateTournamentRecord({
+    let result: any = mocksEngine.generateTournamentRecord({
       policyDefinitions: POLICY_SCHEDULING_DEFAULT,
       venueProfiles,
       drawProfiles,

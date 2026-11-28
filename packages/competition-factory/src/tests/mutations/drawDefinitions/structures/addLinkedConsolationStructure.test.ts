@@ -1,4 +1,5 @@
 import * as drawsGovernor from '@Assemblies/governors/drawsGovernor';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -302,7 +303,7 @@ describe('addLinkedConsolationStructure', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
     });
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
     const before = structuredClone(drawDefinition);
 
     const result: any = drawsGovernor.addLinkedConsolationStructure({

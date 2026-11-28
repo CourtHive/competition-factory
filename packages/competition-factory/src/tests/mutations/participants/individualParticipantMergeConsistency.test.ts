@@ -1,4 +1,5 @@
 import { checkMergeConsistency } from '@Query/participants/individualMerge/integrity';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
@@ -10,10 +11,13 @@ test('detects a newly introduced participant-type mismatch against the baseline'
     drawProfiles: [{ drawSize: 4 }],
   });
   const after = structuredClone(before);
-  after.events[0].eventType = 'DOUBLES';
+  defined(after.events, 'events')[0].eventType = 'DOUBLES';
   const blockers: IndividualMergeBlocker[] = [];
   checkMergeConsistency(before, after, 'source', 'target', blockers);
   expect(blockers).toContainEqual(
-    expect.objectContaining({ code: 'INTEGRITY_CONFLICT', drawId: before.events[0].drawDefinitions[0].drawId }),
+    expect.objectContaining({
+      code: 'INTEGRITY_CONFLICT',
+      drawId: defined(defined(before.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId,
+    }),
   );
 });

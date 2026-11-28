@@ -1,4 +1,5 @@
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, test } from 'vitest';
@@ -27,7 +28,7 @@ function loaded() {
   });
   tournamentEngine.setState(tournamentRecord);
   const stored = () => tournamentEngine.getEvent({ eventId }).event;
-  const unentered = tournamentRecord.participants
+  const unentered = defined(tournamentRecord.participants, 'participants')
     .map(({ participantId }) => participantId)
     .find((participantId) => !stored().entries.some((entry) => entry.participantId === participantId));
   return { tournamentRecord, eventId, drawId, stored, unentered };
@@ -98,8 +99,8 @@ describe('an object and an id that name different entities are refused', () => {
 
   test('without the engine', () => {
     const { tournamentRecord, stored, unentered } = loaded();
-    const event = tournamentRecord.events[0];
-    const before = event.entries.length;
+    const event = defined(tournamentRecord.events, 'events')[0];
+    const before = defined(event.entries, 'entries').length;
     // an untyped caller can pass both (the typed params name only the event)
     let result: any = addEventEntries({
       tournamentRecord,
@@ -108,12 +109,12 @@ describe('an object and an id that name different entities are refused', () => {
       participantIds: [unentered],
     } as any);
     expect(result.error).toEqual(INVALID_VALUES);
-    expect(event.entries.length).toEqual(before);
+    expect(defined(event.entries, 'entries').length).toEqual(before);
 
     // CONTROL: the matching eventId, without the engine, writes to the event it is given
     result = addEventEntries({ tournamentRecord, event, eventId: event.eventId, participantIds: [unentered] } as any);
     expect(result.success).toEqual(true);
-    expect(event.entries.length).toEqual(before + 1);
+    expect(defined(event.entries, 'entries').length).toEqual(before + 1);
     expect(stored().entries.length).toEqual(before);
   });
 });

@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -16,17 +17,21 @@ test('anonymize DOUBLES tournament covers PAIR participant handling', () => {
   });
 
   // Verify PAIR participants exist
-  const pairParticipants = tournamentRecord.participants.filter((p) => p.participantType === PAIR);
+  const pairParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === PAIR,
+  );
   expect(pairParticipants.length).toBeGreaterThan(0);
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
 
   // Verify pair participants have new names with '/' separator
-  const anonPairParticipants = tournamentRecord.participants.filter((p) => p.participantType === PAIR);
+  const anonPairParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === PAIR,
+  );
   anonPairParticipants.forEach((pair) => {
     expect(pair.participantName).toBeDefined();
-    expect(pair.participantName.includes('/')).toEqual(true);
+    expect(defined(pair.participantName, 'participantName').includes('/')).toEqual(true);
   });
 });
 
@@ -36,14 +41,18 @@ test('anonymize TEAM tournament covers TEAM participant handling', () => {
   });
 
   // Verify TEAM participants exist
-  const teamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM_PARTICIPANT);
+  const teamParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === TEAM_PARTICIPANT,
+  );
   expect(teamParticipants.length).toBeGreaterThan(0);
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
 
   // Team participants should have new names
-  const anonTeamParticipants = tournamentRecord.participants.filter((p) => p.participantType === TEAM_PARTICIPANT);
+  const anonTeamParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === TEAM_PARTICIPANT,
+  );
   anonTeamParticipants.forEach((team) => {
     expect(team.participantName).toBeDefined();
   });
@@ -56,7 +65,9 @@ test('anonymize tournament with GROUP participants covers GROUP handling', () =>
 
   tournamentEngine.setState(tournamentRecord);
 
-  const individualParticipants = tournamentRecord.participants.filter((p) => p.participantType === INDIVIDUAL);
+  const individualParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === INDIVIDUAL,
+  );
   const individualParticipantIds = individualParticipants.slice(0, 3).map((p) => p.participantId);
 
   const groupResult = tournamentEngine.createGroupParticipant({
@@ -86,13 +97,13 @@ test('anonymize tournament with venues covers venue/court handling', () => {
   });
 
   expect(tournamentRecord.venues?.length).toBeGreaterThan(0);
-  expect(tournamentRecord.venues[0].courts?.length).toBeGreaterThan(0);
+  expect(defined(tournamentRecord.venues, 'venues')[0].courts?.length).toBeGreaterThan(0);
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
 
   // Venues should be anonymized
-  tournamentRecord.venues.forEach((venue, i) => {
+  defined(tournamentRecord.venues, 'venues').forEach((venue, i) => {
     expect(venue.venueName).toEqual(`Venue #${i}`);
     expect(venue.isMock).toEqual(true);
   });
@@ -103,7 +114,7 @@ test('anonymize with anonymizeParticipantNames: false preserves original names',
     drawProfiles: [{ drawSize: 4 }],
   });
 
-  const originalNames = tournamentRecord.participants
+  const originalNames = defined(tournamentRecord.participants, 'participants')
     .filter((p) => p.participantType === INDIVIDUAL)
     .map((p) => p.person?.standardFamilyName);
 
@@ -114,9 +125,11 @@ test('anonymize with anonymizeParticipantNames: false preserves original names',
   expect(result.success).toEqual(true);
 
   // standardFamilyName should be preserved
-  const anonParticipants = tournamentRecord.participants.filter((p) => p.participantType === INDIVIDUAL);
+  const anonParticipants = defined(tournamentRecord.participants, 'participants').filter(
+    (p) => p.participantType === INDIVIDUAL,
+  );
   anonParticipants.forEach((p, i) => {
-    expect(p.person.standardFamilyName).toEqual(originalNames[i]);
+    expect(defined(p.person, 'person').standardFamilyName).toEqual(originalNames[i]);
   });
 });
 
@@ -137,12 +150,15 @@ test('anonymize tournament with scheduling profile extension', () => {
     drawProfiles: [{ drawSize: 4 }],
   });
 
-  const eventId = tournamentRecord.events[0].eventId;
-  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
-  const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+  const eventId = defined(tournamentRecord.events, 'events')[0].eventId;
+  const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
+  const structureId = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0].structureId;
 
   // Add a scheduling profile extension to the tournament record
-  if (!tournamentRecord.extensions) tournamentRecord.extensions = [];
+  tournamentRecord.extensions ??= [];
   tournamentRecord.extensions.push({
     name: 'schedulingProfile',
     value: [
@@ -161,11 +177,17 @@ test('anonymize tournament with scheduling profile extension', () => {
   // Verify the scheduling profile IDs were updated
   const schedulingProfile = tournamentRecord.extensions.find((e) => e.name === 'schedulingProfile');
   expect(schedulingProfile).toBeDefined();
-  expect(schedulingProfile.value[0].tournamentId).toEqual(tournamentRecord.tournamentId);
-  expect(schedulingProfile.value[0].eventId).toEqual(tournamentRecord.events[0].eventId);
-  expect(schedulingProfile.value[0].drawId).toEqual(tournamentRecord.events[0].drawDefinitions[0].drawId);
-  expect(schedulingProfile.value[0].structureId).toEqual(
-    tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId,
+  const schedulingProfileValue: any = defined(schedulingProfile, 'schedulingProfile').value;
+  expect(schedulingProfileValue[0].tournamentId).toEqual(tournamentRecord.tournamentId);
+  expect(schedulingProfileValue[0].eventId).toEqual(defined(tournamentRecord.events, 'events')[0].eventId);
+  expect(schedulingProfileValue[0].drawId).toEqual(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId,
+  );
+  expect(schedulingProfileValue[0].structureId).toEqual(
+    defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId,
   );
 });
 
@@ -174,11 +196,13 @@ test('anonymize tournament with person requests extension', () => {
     drawProfiles: [{ drawSize: 4 }],
   });
 
-  const individualParticipant = tournamentRecord.participants.find((p) => p.participantType === INDIVIDUAL);
-  const personId = individualParticipant.person.personId;
+  const individualParticipant = defined(tournamentRecord.participants, 'participants').find(
+    (p) => p.participantType === INDIVIDUAL,
+  );
+  const personId = defined(defined(individualParticipant, 'individualParticipant').person, 'person').personId;
 
   // Add a person requests extension to the tournament record
-  if (!tournamentRecord.extensions) tournamentRecord.extensions = [];
+  tournamentRecord.extensions ??= [];
   tournamentRecord.extensions.push({
     name: 'personRequests',
     value: [
@@ -195,9 +219,10 @@ test('anonymize tournament with person requests extension', () => {
   // Verify the person requests personId was updated via idMap
   const personRequests = tournamentRecord.extensions.find((e) => e.name === 'personRequests');
   expect(personRequests).toBeDefined();
+  const personRequestsValue: any = defined(personRequests, 'personRequests').value;
   // The personId should have been mapped to the new personId
-  expect(personRequests.value[0].personId).not.toEqual(personId);
-  expect(personRequests.value[0].personId).toBeDefined();
+  expect(personRequestsValue[0].personId).not.toEqual(personId);
+  expect(personRequestsValue[0].personId).toBeDefined();
 });
 
 // Covers the seedAssignments branch + lineUp.map callback + birthYear path
@@ -210,22 +235,28 @@ test('anonymize covers v5 NATIVE-mode + birthDate + non-gendered paths', () => {
   });
 
   // Seed assignments — populate so the participantId-rewrite branch runs.
-  const drawDef = tournamentRecord.events[0].drawDefinitions[0];
-  const structure = drawDef.structures[0];
-  const participant = tournamentRecord.participants[0];
+  const drawDef = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const structure: any = defined(drawDef.structures, 'structures')[0];
+  const participant = defined(tournamentRecord.participants, 'participants')[0];
   structure.seedAssignments = [{ seedNumber: 1, participantId: participant.participantId }];
 
   // lineUp on a matchUp side — exercises the .map() row callback.
-  const matchUp = structure.matchUps[0];
+  const matchUp = defined(structure.matchUps, 'matchUps')[0];
   matchUp.sides = matchUp.sides ?? [{ sideNumber: 1 }, { sideNumber: 2 }];
   matchUp.sides[0].lineUp = [
-    { participantId: tournamentRecord.participants[0].participantId, collectionAssignments: [] },
-    { participantId: tournamentRecord.participants[1].participantId, collectionAssignments: [] },
+    {
+      participantId: defined(tournamentRecord.participants, 'participants')[0].participantId,
+      collectionAssignments: [],
+    },
+    {
+      participantId: defined(tournamentRecord.participants, 'participants')[1].participantId,
+      collectionAssignments: [],
+    },
   ];
 
   // First-class flightProfile (CODES Phase 3) — picked up alongside the
   // legacy extension form.
-  tournamentRecord.events[0].flightProfile = {
+  defined(tournamentRecord.events, 'events')[0].flightProfile = {
     flights: [{ flightNumber: 1, drawId: drawDef.drawId, drawEntries: [] }],
   };
 
@@ -235,19 +266,21 @@ test('anonymize covers v5 NATIVE-mode + birthDate + non-gendered paths', () => {
   };
 
   // Give a participant a birthDate so the year-preserving branch runs.
-  participant.person.birthDate = '1990-04-15';
+  defined(participant.person, 'person').birthDate = '1990-04-15';
 
   // Knock another participant's sex out so the non-gendered counter branch hits.
-  const anotherParticipant = tournamentRecord.participants.find((p, i) => i > 0 && p.participantType === INDIVIDUAL);
+  const anotherParticipant = defined(tournamentRecord.participants, 'participants').find(
+    (p, i) => i > 0 && p.participantType === INDIVIDUAL,
+  );
   if (anotherParticipant?.person) anotherParticipant.person.sex = undefined;
 
   const result = mocksEngine.anonymizeTournamentRecord({ tournamentRecord });
   expect(result.success).toEqual(true);
 
   // birthDate preserved its year but rewrote month/day from the generated person
-  expect(participant.person.birthDate?.startsWith('1990-')).toBe(true);
+  expect(defined(participant.person, 'person').birthDate?.startsWith('1990-')).toBe(true);
 
   // flightProfile + scheduling.profile remain present after anonymization
-  expect(Array.isArray(tournamentRecord.events[0].flightProfile?.flights)).toBe(true);
+  expect(Array.isArray(defined(tournamentRecord.events, 'events')[0].flightProfile?.flights)).toBe(true);
   expect(Array.isArray(tournamentRecord.scheduling?.profile)).toBe(true);
 });

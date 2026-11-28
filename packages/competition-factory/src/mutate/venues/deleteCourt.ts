@@ -12,7 +12,7 @@ import { bulkItem } from '@Mutate/bulkItem';
 import { COURT_ID, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { MODIFY_VENUE } from '@Constants/topicConstants';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import {
@@ -29,7 +29,7 @@ type DeleteCourtArgs = {
   courtId: string;
   force?: boolean;
 };
-export function deleteCourt(params: DeleteCourtArgs) {
+export function deleteCourt(params: DeleteCourtArgs): ResultType {
   const { courtId, disableNotice, force } = params;
   const tournamentRecords = resolveTournamentRecords(params);
   const paramsCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORDS]: true, [COURT_ID]: true }]);

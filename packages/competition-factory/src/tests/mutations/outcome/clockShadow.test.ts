@@ -1,4 +1,5 @@
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
+import { defined } from '@Tests/helpers/defined';
 import { compileTemporalPhases } from '@Mutate/matchUps/outcome/apply';
 import { prepareTemporalShadow } from '@Mutate/matchUps/outcome/shadow';
 import { takeVerificationFailures } from '@Mutate/matchUps/outcome/differential';
@@ -173,8 +174,8 @@ function play(
   setOutcomePipeline('v1');
   setClock('2026-01-01T00:00:00.000Z');
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ nonRandom: 1, drawProfiles: [{ drawSize: 2 }] });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const matchUp = drawDefinition.structures[0].matchUps[0];
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const matchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
   const date = new Date(surface === 'invalid-date' ? Number.NaN : Date.parse('2025-01-01T00:00:00Z'));
   let callbacks = 0;
   const set = new Set([date]);

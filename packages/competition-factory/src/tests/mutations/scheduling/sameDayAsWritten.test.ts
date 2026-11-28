@@ -1,4 +1,5 @@
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Tests/fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -44,10 +45,10 @@ function setup() {
     endDate: '2026-09-11',
   });
   tournamentEngine.setState(tournamentRecord);
-  const event = tournamentRecord.events[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
   const round = {
     tournamentId: tournamentRecord.tournamentId,
-    structureId: event.drawDefinitions[0].structures[0].structureId,
+    structureId: defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].structureId,
     eventId: event.eventId,
     drawId: 'd',
   };

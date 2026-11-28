@@ -15,6 +15,7 @@
  * setupFiles pin; these tests own the new behavior.
  */
 import { describe, expect, it } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import { getTimeItem } from '@Query/base/timeItems';
@@ -35,7 +36,7 @@ function setupSingleMatchUpTournament() {
   });
   tournamentEngine.setState(tournamentRecord);
 
-  const drawId = tournamentRecord.events[0].drawDefinitions[0].drawId;
+  const drawId = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId;
   const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
   const matchUp =
     matchUps.find((m: any) => m.sides?.every((s: any) => s?.participantId) && m.roundNumber === 1) ??
@@ -105,7 +106,7 @@ describe.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('matchUp.schedule.*
   it('assignMatchUpVenue routes correctly', () => {
     setSchemaWriteMode(mode);
     const { tournamentRecord, drawId, matchUpId } = setupSingleMatchUpTournament();
-    const venueId = tournamentRecord.venues[0].venueId;
+    const venueId = defined(tournamentRecord.venues, 'venues')[0].venueId;
 
     const r = tournamentEngine.assignMatchUpVenue({ drawId, matchUpId, venueId });
     expect(r.success).toEqual(true);
@@ -115,8 +116,8 @@ describe.each([NATIVE, BRIDGE, LEGACY] as SchemaWriteMode[])('matchUp.schedule.*
   it('assignMatchUpCourt routes correctly', () => {
     setSchemaWriteMode(mode);
     const { tournamentRecord, drawId, matchUpId } = setupSingleMatchUpTournament();
-    const venue = tournamentRecord.venues[0];
-    const courtId = venue.courts[0].courtId;
+    const venue = defined(tournamentRecord.venues, 'venues')[0];
+    const courtId = defined(venue.courts, 'courts')[0].courtId;
 
     const r = tournamentEngine.assignMatchUpCourt({
       drawId,

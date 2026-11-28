@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
@@ -29,11 +30,11 @@ function setup(parentFormat = FORMAT_STANDARD) {
     nonRandom: 1,
     setState: true,
   });
-  for (const event of tournamentRecord.events) {
-    for (const draw of event.drawDefinitions) {
+  for (const event of defined(tournamentRecord.events, 'events')) {
+    for (const draw of defined(event.drawDefinitions, 'drawDefinitions')) {
       draw.matchUpFormat = parentFormat;
-      for (const structure of draw.structures) {
-        for (const matchUp of structure.matchUps) {
+      for (const structure of defined(draw.structures, 'structures')) {
+        for (const matchUp of defined(structure.matchUps, 'matchUps')) {
           matchUp.matchUpFormat = FORMAT_STANDARD;
           matchUp.schedule = { scheduledDate: nextDate };
         }
@@ -43,7 +44,10 @@ function setup(parentFormat = FORMAT_STANDARD) {
   tournamentEngine.setState(tournamentRecord);
   const drawId = drawIds[0];
   const eventId = eventIds[0];
-  const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+  const structureId = defined(
+    defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+    'structures',
+  )[0].structureId;
   return { drawId, drawIds, eventId, structureId };
 }
 

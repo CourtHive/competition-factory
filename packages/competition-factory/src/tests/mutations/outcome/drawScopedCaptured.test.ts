@@ -1,4 +1,5 @@
 import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { defined } from '@Tests/helpers/defined';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { captureShadow, compareShadow } from '@Mutate/matchUps/outcome/shadow';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
@@ -96,7 +97,7 @@ afterEach(() => {
   setClock();
 });
 
-function fixture(scope: Scope) {
+function fixture(scope: Scope): { args: any; record: any } {
   setOutcomePipeline('v1');
   setSubscriptions({ subscriptions: {} });
   setClock(epoch - 86400000);
@@ -106,8 +107,8 @@ function fixture(scope: Scope) {
     setState: true,
   });
   const record = generated.tournamentRecord;
-  const event = record.events[0];
-  const heldDraw = event.drawDefinitions[0];
+  const event = defined(record.events, 'events')[0];
+  const heldDraw = defined(event.drawDefinitions, 'drawDefinitions')[0];
   const drawDefinition = ['held', 'record-only', 'held-draw-detached-event'].includes(scope)
     ? heldDraw
     : structuredClone(heldDraw);
@@ -125,7 +126,12 @@ function fixture(scope: Scope) {
   ].includes(scope)
     ? record
     : undefined;
-  const matchUpId = drawDefinition.structures[0].matchUps.find((matchUp: any) => matchUp.roundNumber === 1).matchUpId;
+  const matchUpId = defined(
+    defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps').find(
+      (matchUp: any) => matchUp.roundNumber === 1,
+    ),
+    'value',
+  ).matchUpId;
   deleteNotices();
   return { args: { drawDefinition, event: suppliedEvent, tournamentRecord, matchUpId }, record };
 }
@@ -218,8 +224,8 @@ it.each(SCOPES)(
 it('a wrong detached shadow diverges and restores the original draw objects', () => {
   const { args, record } = fixture('detached-record');
   const before = canonicalJson({ args, record });
-  const matchUps = args.drawDefinition.structures[0].matchUps;
-  const first = matchUps.find((matchUp: any) => matchUp.matchUpId === args.matchUpId);
+  const matchUps = defined(args.drawDefinition.structures, 'structures')[0].matchUps;
+  const first = defined(matchUps, 'matchUps').find((matchUp: any) => matchUp.matchUpId === args.matchUpId);
   setClock(epoch);
   setOutcomePipeline('differential');
   observed.fault = true;
@@ -227,9 +233,9 @@ it('a wrong detached shadow diverges and restores the original draw objects', ()
     /shadow-applied.*drawName/,
   );
   expect(canonicalJson({ args, record })).toEqual(before);
-  expect(args.drawDefinition.structures[0].matchUps).toBe(matchUps);
-  expect(matchUps.find((matchUp: any) => matchUp.matchUpId === args.matchUpId)).toBe(first);
-  expect(first.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(defined(args.drawDefinition.structures, 'structures')[0].matchUps).toBe(matchUps);
+  expect(defined(matchUps, 'matchUps').find((matchUp: any) => matchUp.matchUpId === args.matchUpId)).toBe(first);
+  expect(defined(first, 'first').matchUpStatus).toEqual(TO_BE_PLAYED);
 });
 
 it('a captured partial score is owned with identical delivered notices', () => {
@@ -258,7 +264,7 @@ it.each(['drawDefinition', 'event', 'tournamentRecord'] as const)(
 
 function throwPrefix(mode: OutcomePipelineMode, throwAt: number) {
   const { args } = fixture('draw-only');
-  const first = args.drawDefinition.structures[0].matchUps[0];
+  const first = defined(defined(args.drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
   const notices: string[] = [];
   setSubscriptions({
     subscriptions: Object.fromEntries(
@@ -288,7 +294,7 @@ function throwPrefix(mode: OutcomePipelineMode, throwAt: number) {
   // Observe the surviving prefix after the call has thrown, without changing the caller's clock reads.
   setClock(epoch);
   notifySubscribers();
-  expect(args.drawDefinition.structures[0].matchUps[0]).toBe(first);
+  expect(defined(defined(args.drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0]).toBe(first);
   expect(getCapturedClock()).toBeUndefined();
   expect(getCapturedStamps()).toBeUndefined();
   return { roots, buffered, notices, reads, thrown, plans: observed.plans };

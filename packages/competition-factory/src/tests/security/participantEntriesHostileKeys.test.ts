@@ -1,4 +1,5 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -28,8 +29,8 @@ const seededDraw = () =>
 
 /** A record whose event type is replaced. */
 const withEventType = (eventType: string) => {
-  const record = structuredClone(seededDraw());
-  record.events[0].eventType = eventType;
+  const record: any = structuredClone(seededDraw());
+  defined(record.events, 'events')[0].eventType = eventType;
   return record;
 };
 
@@ -98,11 +99,13 @@ describe('a scale format that reads as present on a plain object', () => {
   for (const reserved of RESERVED)
     it(`"${reserved}" on a participant in a record`, () => {
       const record = structuredClone(seededDraw());
-      record.participants[0].timeItems = [{ itemType: `SCALE.RANKING.${reserved}.WTN`, itemValue: 12 }];
+      defined(record.participants, 'participants')[0].timeItems = [
+        { itemType: `SCALE.RANKING.${reserved}.WTN`, itemValue: 12 },
+      ];
       tournamentEngine.setState(record);
       const result: any = tournamentEngine.getParticipants({ withScaleValues: true, withEvents: true });
       expect(pollution()).toEqual([]);
-      const { participantId } = record.participants[0];
+      const { participantId } = defined(record.participants, 'participants')[0];
       const participant = result.participants.find((p: any) => p.participantId === participantId);
       expect(own(participant.rankings, reserved)?.[0].scaleValue).toEqual(12);
     });
@@ -114,7 +117,13 @@ describe('a scheduled date that reads as present on a plain object', () => {
   for (const reserved of RESERVED)
     it(`"${reserved}"`, () => {
       const record = structuredClone(seededDraw());
-      const matchUps = record.events[0].drawDefinitions[0].structures[0].matchUps.slice(0, 2);
+      const matchUps = defined(
+        defined(
+          defined(defined(record.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+          'structures',
+        )[0].matchUps,
+        'matchUps',
+      ).slice(0, 2);
       matchUps.forEach((matchUp: any) => {
         matchUp.timeItems = [
           { itemType: 'SCHEDULE.DATE', itemValue: reserved },

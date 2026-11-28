@@ -1,4 +1,5 @@
 import { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
@@ -171,15 +172,15 @@ function buildRichRecord() {
 
   // auto-scheduling times matchUps at a venue; put the unplayed doubles on courts too, through the engine (a
   // completed matchUp's schedule is not edited)
-  const venue = tournamentRecord.venues[0];
+  const venue = defined(tournamentRecord.venues, 'venues')[0];
   const scheduled = tournamentEngine
     .allTournamentMatchUps({ inContext: true })
     .matchUps.filter((m) => m.schedule?.scheduledTime && !m.winningSide);
-  scheduled.slice(0, venue.courts.length).forEach((matchUp, i) => {
+  scheduled.slice(0, defined(venue.courts, 'courts').length).forEach((matchUp, i) => {
     let result: any = tournamentEngine.addMatchUpScheduleItems({
       schedule: {
         scheduledDate: matchUp.schedule.scheduledDate,
-        courtId: venue.courts[i].courtId,
+        courtId: defined(venue.courts, 'courts')[i].courtId,
         venueId: venue.venueId,
       },
       matchUpId: matchUp.matchUpId,

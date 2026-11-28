@@ -28,7 +28,7 @@ function generateMatchUpOutcome(params: { matchUpFormat: string }) {
   return {
     tournamentRecord,
     drawId: drawIds[0],
-    eventId: tournamentRecord.events[0].eventId,
+    eventId: defined(tournamentRecord.events, 'events')[0].eventId,
     matchUps,
   };
 }

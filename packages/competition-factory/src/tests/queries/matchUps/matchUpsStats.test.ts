@@ -1,4 +1,5 @@
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { eventMatchUps } from '@Query/matchUps/getEventMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -197,7 +198,7 @@ describe('allEventMatchUps branch coverage', () => {
     });
 
     // Create an event object with no drawDefinitions
-    const event = { ...tournamentRecord.events[0] };
+    const event = { ...defined(tournamentRecord.events, 'events')[0] };
     delete event.drawDefinitions;
 
     const result = allEventMatchUps({ event, tournamentRecord });
@@ -213,7 +214,7 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     // Call without participants — should hydrate from tournamentRecord
     const result = allEventMatchUps({ event, tournamentRecord });
     expect(result.matchUps).toBeDefined();
@@ -228,7 +229,7 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     // Provide participants so hydration is skipped
     const result = allEventMatchUps({
       event,
@@ -250,7 +251,7 @@ describe('allEventMatchUps branch coverage', () => {
       completeAllMatchUps: true,
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     const result = allEventMatchUps({
       event,
       tournamentRecord,
@@ -268,9 +269,9 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     // Set an endDate on the event to exercise the endDate branch
-    event.endDate = '2025-12-31';
+    defined(event, 'event').endDate = '2025-12-31';
     const result = allEventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.matchUps).toBeDefined();
     // Verify context includes the event endDate
@@ -288,10 +289,10 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    event.surfaceCategory = CLAY;
-    event.indoorOutdoor = OUTDOOR;
-    event.gender = MALE;
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
+    defined(event, 'event').surfaceCategory = CLAY;
+    defined(event, 'event').indoorOutdoor = OUTDOOR;
+    defined(event, 'event').gender = MALE;
 
     const result = allEventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.matchUps).toBeDefined();
@@ -311,9 +312,9 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    delete event.surfaceCategory;
-    delete event.indoorOutdoor;
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
+    delete defined(event, 'event').surfaceCategory;
+    delete defined(event, 'event').indoorOutdoor;
     tournamentRecord.surfaceCategory = HARD;
     tournamentRecord.indoorOutdoor = INDOOR;
 
@@ -334,7 +335,7 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     // Provide a participantMap (empty) — hydration should be skipped
     const result = allEventMatchUps({
       event,
@@ -354,8 +355,8 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    delete event.endDate;
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
+    delete defined(event, 'event').endDate;
     tournamentRecord.endDate = '2025-12-31';
 
     const result = allEventMatchUps({ event, tournamentRecord, inContext: true });
@@ -374,8 +375,8 @@ describe('allEventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    event.matchUpFormat = 'SET3-S:6/TB7';
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
+    defined(event, 'event').matchUpFormat = 'SET3-S:6/TB7';
 
     const result = allEventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.matchUps).toBeDefined();
@@ -397,7 +398,7 @@ describe('eventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = { ...tournamentRecord.events[0] };
+    const event = { ...defined(tournamentRecord.events, 'events')[0] };
     delete event.drawDefinitions;
 
     const result = eventMatchUps({ event, tournamentRecord });
@@ -412,7 +413,7 @@ describe('eventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     // Call without participants — triggers hydration branch
     const result = eventMatchUps({ event, tournamentRecord });
     expect(result.success).toBeDefined();
@@ -426,7 +427,7 @@ describe('eventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     const result = eventMatchUps({
       event,
       tournamentRecord,
@@ -446,7 +447,7 @@ describe('eventMatchUps branch coverage', () => {
       completeAllMatchUps: true,
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     const result = eventMatchUps({
       event,
       tournamentRecord,
@@ -463,9 +464,9 @@ describe('eventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    event.surfaceCategory = GRASS;
-    event.indoorOutdoor = OUTDOOR;
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
+    defined(event, 'event').surfaceCategory = GRASS;
+    defined(event, 'event').indoorOutdoor = OUTDOOR;
     tournamentRecord.surfaceCategory = HARD;
     tournamentRecord.indoorOutdoor = INDOOR;
 
@@ -481,9 +482,9 @@ describe('eventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    delete event.surfaceCategory;
-    delete event.indoorOutdoor;
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
+    delete defined(event, 'event').surfaceCategory;
+    delete defined(event, 'event').indoorOutdoor;
     tournamentRecord.surfaceCategory = HARD;
     tournamentRecord.indoorOutdoor = INDOOR;
 
@@ -499,7 +500,7 @@ describe('eventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
     const result = eventMatchUps({
       event,
       tournamentRecord,
@@ -517,8 +518,8 @@ describe('eventMatchUps branch coverage', () => {
       drawProfiles: [{ drawSize: 8 }],
     });
 
-    const event = tournamentRecord.events.find((e) => e.eventId === eventId);
-    event.endDate = '2025-06-15';
+    const event = defined(tournamentRecord.events, 'events').find((e) => e.eventId === eventId);
+    defined(event, 'event').endDate = '2025-06-15';
 
     const result = eventMatchUps({ event, tournamentRecord, inContext: true });
     expect(result.success).toBeDefined();

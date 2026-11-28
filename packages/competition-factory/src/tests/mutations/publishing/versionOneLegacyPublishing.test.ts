@@ -1,4 +1,5 @@
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 
@@ -21,8 +22,8 @@ test('versionOneLegacyPublishing', () => {
   const result = tournamentEngine.addTimeItem({ eventId, timeItem });
   expect(result.success).toEqual(true);
 
-  const event = tournamentEngine.getEvent({ eventId }).event;
-  expect(event.timeItems.length).toEqual(1);
+  const event = defined(tournamentEngine.getEvent({ eventId }).event, 'event');
+  expect(defined(event.timeItems, 'timeItems').length).toEqual(1);
 
   publishState = tournamentEngine.getPublishState().publishState;
   expect(publishState[eventId].status.published).toEqual(true);

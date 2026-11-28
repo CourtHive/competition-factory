@@ -13,6 +13,7 @@ import { FEMALE, MALE } from '@Constants/genderConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { genParticipantId } from './genParticipantId';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 type AddTournamentParticipantsArgs = {
   participantsProfile?: MockParticipantsProfile;
@@ -31,7 +32,7 @@ export function addTournamentParticipants({
   startDate,
   random,
   uuids,
-}: AddTournamentParticipantsArgs) {
+}: AddTournamentParticipantsArgs): ResultType & { addedCount?: number } {
   if (participantsProfile?.participantsCount === 0) return { addedCount: 0, ...SUCCESS };
 
   const { participantsCount, participantType, largestTeamDraw, largestTeamSize, gendersCount, teamGenders } =
@@ -61,7 +62,7 @@ export function addTournamentParticipants({
   let addedCount = 0;
   let result = addParticipantsRecorded({ tournamentRecord, participants });
   if (result.error) return result;
-  addedCount += result.addedCount;
+  addedCount += result.addedCount!;
 
   if (teamKey) {
     // the teams are built, then added as a client adds participants: the build writes nothing itself
@@ -120,7 +121,7 @@ export function addTournamentParticipants({
     tournamentRecord,
   });
   if (result.error) return result;
-  addedCount += result.addedCount;
+  addedCount += result.addedCount!;
 
   return { addedCount, ...SUCCESS };
 }

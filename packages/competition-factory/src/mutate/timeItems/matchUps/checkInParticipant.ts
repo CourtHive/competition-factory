@@ -7,7 +7,7 @@ import { resolveFromParameters } from '@Acquire/resolveFromParameters';
 import { buildAttestation } from '@Mutate/presence/buildAttestation';
 
 // constants and types
-import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
+import { CheckInOutParticipantArgs, ResultType } from '@Types/factoryTypes';
 import { CHECKED_IN } from '@Constants/presenceConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -39,7 +39,7 @@ import {
  * players stored different state for one physical fact. Side-level presence is still DERIVED on read
  * by `getCheckedInParticipantIds`, in both directions, exactly as before.
  */
-export function checkInParticipant(params: CheckInOutParticipantArgs) {
+export function checkInParticipant(params: CheckInOutParticipantArgs): ResultType & { checkedIn?: boolean } {
   const requiredParams = [
     { [TOURNAMENT_RECORD]: true },
     { [DRAW_DEFINITION]: true },

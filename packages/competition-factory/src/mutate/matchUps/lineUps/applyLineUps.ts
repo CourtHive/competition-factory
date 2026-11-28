@@ -17,7 +17,7 @@ import { ARRAY, DRAW_DEFINITION, MATCHUP_ID, OF_TYPE, TOURNAMENT_RECORD } from '
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
-import type { ResultWarning } from '@Types/factoryTypes';
+import type { ResultWarning, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
@@ -38,7 +38,7 @@ type ApplyLineUps = {
   event: Event;
 };
 
-export function applyLineUps(params: ApplyLineUps) {
+export function applyLineUps(params: ApplyLineUps): ResultType & { lineUp?: unknown } {
   const { tournamentRecord, drawDefinition, matchUpId, lineUps, event } = params;
   const stack = 'applyLineUps';
 
@@ -227,7 +227,7 @@ function ensureDoublesPairParticipants({
   collectionParticipantIds,
   tournamentParticipants,
   tournamentRecord,
-}: EnsureDoublesPairParticipantsArgs) {
+}: EnsureDoublesPairParticipantsArgs): ResultType | void {
   const collectionParticipantIdPairs: string[][] = Object.values(collectionParticipantIds);
   for (const participantIds of collectionParticipantIdPairs) {
     if (participantIds.length === 2) {

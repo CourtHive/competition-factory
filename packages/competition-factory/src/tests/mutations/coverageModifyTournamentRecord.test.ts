@@ -11,6 +11,7 @@
  */
 
 import { mocksEngine } from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
@@ -89,8 +90,8 @@ describe('modifyTournamentRecord coverage - venueProfiles', () => {
     });
     expect(result.success).toEqual(true);
     expect(result.venueIds).toBeDefined();
-    expect(tournamentRecord.venues.length).toEqual(1);
-    expect(tournamentRecord.venues[0].courts.length).toEqual(4);
+    expect(defined(tournamentRecord.venues, 'venues').length).toEqual(1);
+    expect(defined(defined(tournamentRecord.venues, 'venues')[0].courts, 'courts').length).toEqual(4);
   });
 });
 
@@ -152,7 +153,7 @@ describe('modifyTournamentRecord coverage - participantsProfile.idPrefix with ex
       participantsProfile: { participantsCount: 10 },
     });
 
-    const initialCount = tournamentRecord.participants.length;
+    const initialCount = defined(tournamentRecord.participants, 'participants').length;
     expect(initialCount).toBeGreaterThan(0);
 
     let result: any = mocksEngine.modifyTournamentRecord({
@@ -255,7 +256,7 @@ describe('modifyTournamentRecord coverage - publish on existing event', () => {
     expect(result.success).toEqual(true);
 
     tournamentEngine.setState(tournamentRecord);
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     expect(event.timeItems?.length).toBeGreaterThan(0);
   });
 });

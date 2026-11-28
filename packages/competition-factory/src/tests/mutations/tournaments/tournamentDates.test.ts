@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { addDays, extractDate } from '@Tools/dateTime';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -148,7 +149,7 @@ it('blocks tournament date changes when matchUps are scheduled outside the new d
     endDate,
   });
 
-  expect(Object.values(schedulerResult.matchUpScheduleTimes).length).toEqual(60);
+  expect(Object.values(defined(schedulerResult, 'schedulerResult').matchUpScheduleTimes).length).toEqual(60);
 
   const matchUpModifyNotices: any[] = [];
   const drawModifyNotices: any[] = [];

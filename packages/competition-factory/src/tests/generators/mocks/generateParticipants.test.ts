@@ -1,4 +1,5 @@
 import { generatePersonData } from '@Assemblies/generators/mocks/generatePersonData';
+import { defined } from '@Tests/helpers/defined';
 import { setDevContext } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import { generateRange } from '@Tools/arrays';
@@ -13,8 +14,8 @@ import { UTR, WTN } from '@Constants/ratingConstants';
 it('can generate unique participants', () => {
   const defaultPersonData = generatePersonData().personData;
   const participantsCount = (defaultPersonData?.length ?? 0) + 10;
-  const { participants } = mocksEngine.generateParticipants({ participantsCount });
-  expect(participants[participants.length - 1].person.firstName).not.toEqual('GivenName');
+  const { participants }: any = mocksEngine.generateParticipants({ participantsCount });
+  expect(defined(participants[participants.length - 1].person, 'person').firstName).not.toEqual('GivenName');
 });
 
 it('can use idPrefix when generating participantIds', () => {
@@ -35,23 +36,25 @@ test('generateTournamentRecord passes participantsProfile.personIds', () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     participantsProfile,
   });
-  expect(tournamentRecord.participants[0].person.personId).toEqual(personIds[0]);
+  expect(defined(defined(tournamentRecord.participants, 'participants')[0].person, 'person').personId).toEqual(
+    personIds[0],
+  );
 });
 
 it('can generate use pre-defined personIds', () => {
   const defaultPersonData = generatePersonData().personData;
   const participantsCount = (defaultPersonData?.length ?? 0) + 10;
   const personIds = generateRange(0, 9).map(() => UUID());
-  const { participants } = mocksEngine.generateParticipants({
+  const { participants }: any = mocksEngine.generateParticipants({
     participantsCount,
     personIds,
   });
-  expect(participants[participants.length - 1].person.firstName).not.toEqual('GivenName');
-  expect(participants[0].person.personId).toEqual(personIds[0]);
+  expect(defined(participants[participants.length - 1].person, 'person').firstName).not.toEqual('GivenName');
+  expect(defined(participants[0].person, 'person').personId).toEqual(personIds[0]);
 });
 
 it('can generate sexed participants', () => {
-  let { participants } = mocksEngine.generateParticipants({
+  let { participants }: any = mocksEngine.generateParticipants({
     participantsCount: 10,
     sex: FEMALE,
   });
@@ -92,8 +95,8 @@ it('can generate sexed participants', () => {
   sexes = participants
     .filter((p) => p.participantType === PAIR)
     .reduce((sexes, participant) => {
-      const pairSexes = participant.individualParticipants
-        .map((p) => p.person.sex)
+      const pairSexes = defined(participant.individualParticipants, 'individualParticipants')
+        .map((p) => defined(p.person, 'person').sex)
         .sort()
         .join('/');
       if (!sexes.includes(pairSexes)) sexes.push(pairSexes);
@@ -111,8 +114,8 @@ it('can generate sexed participants', () => {
   sexes = participants
     .filter((p) => p.participantType === PAIR)
     .reduce((sexes, participant) => {
-      const pairSexes = participant.individualParticipants
-        .map((p) => p.person.sex)
+      const pairSexes = defined(participant.individualParticipants, 'individualParticipants')
+        .map((p) => defined(p.person, 'person').sex)
         .sort()
         .join('/');
       if (!sexes.includes(pairSexes)) sexes.push(pairSexes);
@@ -128,8 +131,8 @@ it('can generate sexed participants', () => {
   sexes = participants
     .filter((p) => p.participantType === PAIR)
     .reduce((sexes, participant) => {
-      const pairSexes = participant.individualParticipants
-        .map((p) => p.person.sex)
+      const pairSexes = defined(participant.individualParticipants, 'individualParticipants')
+        .map((p) => defined(p.person, 'person').sex)
         .sort()
         .join('/');
       if (!sexes.includes(pairSexes)) sexes.push(pairSexes);
@@ -155,15 +158,18 @@ it('can accept custom personData', () => {
   });
   expect(error).toBeUndefined();
   const samIndex = participants.findIndex(
-    ({ person }) => person.standardGivenName === 'Sam' && person.standardFamilyName === 'Smith',
+    ({ person }) =>
+      defined(person, 'person').standardGivenName === 'Sam' && defined(person, 'person').standardFamilyName === 'Smith',
   );
   const jennyIndex = participants.findIndex(
-    ({ person }) => person.standardGivenName === 'Jennifer' && person.standardFamilyName === 'Jameson',
+    ({ person }) =>
+      defined(person, 'person').standardGivenName === 'Jennifer' &&
+      defined(person, 'person').standardFamilyName === 'Jameson',
   );
   expect([samIndex, jennyIndex].sort((a, b) => a - b)).toEqual([0, 1]);
 
-  expect(participants[0].person.iocNationalityCode).not.toBeUndefined();
-  expect(participants[0].person.countryName).not.toBeUndefined();
+  expect(defined(participants[0].person, 'person').iocNationalityCode).not.toBeUndefined();
+  expect(defined(participants[0].person, 'person').countryName).not.toBeUndefined();
 });
 
 it('can generate participants with both UTR and WTN ratings', () => {
@@ -176,5 +182,5 @@ it('can generate participants with both UTR and WTN ratings', () => {
       { ratingType: WTN, ratingMin: 10, ratingMax: 14 },
     ],
   });
-  expect(result.participants[0].timeItems.length).toEqual(2);
+  expect(defined(result.participants[0].timeItems, 'timeItems').length).toEqual(2);
 });

@@ -1,4 +1,5 @@
 import { TEMPLATE_RANKING_POINTS_WTA, resolveTieFormat } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { AvailabilityEngine } from '@Assemblies/engines/availability/AvailabilityEngine';
 import * as availabilityExport from '@Assemblies/engines/availability';
 import { officiatingEngine } from '@Assemblies/engines/officiating';
@@ -98,8 +99,10 @@ const final = singles.find((m) => m.roundNumber === 3);
 const firstRound = singles.filter((m) => m.roundNumber === 1);
 const dual = hydrated.find((m) => m.drawId === teamDrawId && m.matchUpType === TEAM_EVENT);
 const tieFormat = teamEvent.tieFormat;
-const participant = tournamentRecord.participants.find((p: any) => p.participantType === 'INDIVIDUAL');
-const venue = tournamentRecord.venues[0];
+const participant = defined(tournamentRecord.participants, 'participants').find(
+  (p: any) => p.participantType === 'INDIVIDUAL',
+);
+const venue = defined(tournamentRecord.venues, 'venues')[0];
 const roundRobinAssignment = roundRobinDraw.structures[0].structures[0].positionAssignments.find((a: any) => a.tally);
 
 const FORMAT = 'SET3-S:6/TB7';
@@ -383,7 +386,7 @@ const NEEDS_STATE: Record<string, () => Params> = {
     structureId: eliminationDraw.structures[0].structureId,
     drawPosition: 1,
   }),
-  publicFindCourt: () => ({ courtId: venue.courts[0].courtId }),
+  publicFindCourt: () => ({ courtId: defined(venue.courts, 'courts')[0].courtId }),
   tournamentMatchUps: () => ({}),
 };
 

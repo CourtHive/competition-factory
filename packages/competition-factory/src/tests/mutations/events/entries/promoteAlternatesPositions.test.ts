@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
@@ -99,7 +100,7 @@ describe('promoteAlternates entryPositions', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       participantsProfile: { participantsCount: 5 },
     });
-    const ids = tournamentRecord.participants.map(({ participantId }) => participantId);
+    const ids = defined(tournamentRecord.participants, 'participants').map(({ participantId }) => participantId);
     // a record whose entries carry no entryPosition at all
     const entries = ids.map((participantId, index) => ({
       entryStatus: index < 4 ? DIRECT_ACCEPTANCE : ALTERNATE,

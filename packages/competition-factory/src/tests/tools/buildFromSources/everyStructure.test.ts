@@ -1,4 +1,5 @@
 import { buildFromSources } from '@Generators/ingestion/buildFromSources/buildFromSources';
+import { defined } from '@Tests/helpers/defined';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -51,7 +52,10 @@ function generated(drawProfile: Record<string, any>, playoffPositions?: number[]
     nonRandom: 1,
   });
   if (playoffPositions) {
-    const structureId = tournamentRecord.events[0].drawDefinitions[0].structures[0].structureId;
+    const structureId = defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structureId;
     expect(tournamentEngine.addPlayoffStructures({ drawId, structureId, playoffPositions }).success).toEqual(true);
   }
   // complete every matchUp, playoffs included, on the record itself

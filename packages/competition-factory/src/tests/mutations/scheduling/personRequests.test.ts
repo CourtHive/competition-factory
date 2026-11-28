@@ -1,4 +1,5 @@
 import { extractTime, timeStringMinutes } from '@Tools/dateTime';
+import { defined } from '@Tests/helpers/defined';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import competitionEngine from '@Engines/syncEngine';
@@ -13,7 +14,7 @@ it('can add, query, amd remove personRequests across multiple tournaments', () =
   const { tournamentRecord: tournament1 } = mocksEngine.generateTournamentRecord();
   const { tournamentRecord: tournament2 } = mocksEngine.generateTournamentRecord();
 
-  const personId = tournament1.participants[0].person.personId;
+  const personId = defined(defined(tournament1.participants, 'participants')[0].person, 'person').personId;
 
   competitionEngine.setState([tournament1, tournament2]);
   const { startDate, endDate } = competitionEngine.getCompetitionDateRange();
@@ -97,9 +98,9 @@ it('can identify conflicts with person requests', () => {
     participantsProfile: { participantsCount },
   });
 
-  expect(tournamentRecord.participants.length).toEqual(participantsCount);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(participantsCount);
 
-  const personId = tournamentRecord.participants[0].person.personId;
+  const personId = defined(defined(tournamentRecord.participants, 'participants')[0].person, 'person').personId;
 
   competitionEngine.setState([tournamentRecord]);
   let { matchUps } = competitionEngine.allCompetitionMatchUps();

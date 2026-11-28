@@ -1,4 +1,5 @@
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { defined } from '@Tests/helpers/defined';
 import { attachFlightProfile } from '@Mutate/events/attachFlightProfile';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -18,7 +19,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result: any = attachFlightProfile({
       flightProfile: null,
@@ -32,7 +33,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const result: any = attachFlightProfile({
       flightProfile: undefined,
@@ -75,7 +76,7 @@ describe('attachFlightProfile', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
     };
@@ -95,7 +96,7 @@ describe('attachFlightProfile', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const flightProfile1 = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
     };
@@ -127,7 +128,7 @@ describe('attachFlightProfile', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
     };
@@ -141,7 +142,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
@@ -156,7 +157,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     delete event.drawDefinitions;
 
     const flightProfile = {
@@ -173,7 +174,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [
@@ -193,7 +194,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
@@ -212,7 +213,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [
@@ -248,7 +249,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [
@@ -270,7 +271,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flights = Array.from({ length: 10 }, (_, i) => ({
       drawId: `d${i + 1}`,
@@ -290,7 +291,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
@@ -313,7 +314,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = { flights: [] };
 
@@ -327,7 +328,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
@@ -346,7 +347,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
@@ -365,7 +366,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const flightProfile = {
       flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
@@ -391,7 +392,7 @@ describe('attachFlightProfile', () => {
       setState: true,
     });
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     const flightProfile = {
       flights: [
         { drawId: 'd1', drawName: 'Flight 1', drawEntries: [] },
@@ -416,7 +417,7 @@ describe('attachFlightProfile', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       eventProfiles: [{ eventType: SINGLES_EVENT }],
     });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     const profile1 = { flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }] };
     const profile2 = { flights: [{ drawId: 'd2', drawName: 'Flight 2', drawEntries: [] }] };

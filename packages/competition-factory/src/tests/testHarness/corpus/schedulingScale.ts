@@ -1,4 +1,5 @@
 import { SCHEDULING_REPORT_PROPERTIES } from '../scheduling/schedulingReportProperties';
+import { defined } from '@Tests/helpers/defined';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
 import tournamentEngine from '@Engines/syncEngine';
@@ -98,12 +99,12 @@ export function scaleScenario(cell: ScaleCell) {
   tournamentEngine.setState(tournamentRecord);
 
   const { tournamentId } = tournamentRecord;
-  const event = tournamentRecord.events[0];
-  const drawDefinition = event.drawDefinitions[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
+  const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
   const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
   const directives: Directive[] = [];
   // each top-level structure's rounds, the earlier half of them on day 1 when there are two days
-  for (const [index, structure] of drawDefinition.structures.entries()) {
+  for (const [index, structure] of defined(drawDefinition.structures, 'structures').entries()) {
     const roundNumbers = [
       ...new Set(
         matchUps

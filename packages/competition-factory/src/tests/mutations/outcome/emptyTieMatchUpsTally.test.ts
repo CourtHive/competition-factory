@@ -1,4 +1,5 @@
 import { setOutcomePipeline } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -82,8 +83,15 @@ function playGroup(emptyArrays: boolean) {
       { drawType: ROUND_ROBIN, drawSize: 5, structureOptions: { groupSize: 5 }, matchUpFormat: 'SET1-S:T20' },
     ],
   });
-  const group = tournamentRecord.events[0].drawDefinitions[0].structures[0].structures[0];
-  if (emptyArrays) for (const matchUp of group.matchUps) Object.assign(matchUp, { tieMatchUps: [] });
+  const group = defined(
+    defined(
+      defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
+      'structures',
+    )[0].structures,
+    'structures',
+  )[0];
+  if (emptyArrays)
+    for (const matchUp of defined(group.matchUps, 'matchUps')) Object.assign(matchUp, { tieMatchUps: [] });
   tournamentEngine.setState(tournamentRecord);
   expect(tournamentEngine.attachPolicies({ policyDefinitions: GROUP_TOTALS }).success).toEqual(true);
 

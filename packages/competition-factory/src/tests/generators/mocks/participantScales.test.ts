@@ -1,4 +1,5 @@
 import { getParticipantId } from '@Functions/global/extractors';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { mockProfile } from './mockScaleProfile';
@@ -39,7 +40,7 @@ test.each(rankingsScenarios)('it can generate rankings for participants', (scena
     expect(timeItem.itemType).toEqual(scenario.expectation.timeItem.itemType);
     const { ratingMin, ratingMax, ratingType } = scenario.category;
     const accessor = ratingType && ratingsParameters[ratingType]?.accessor;
-    const itemValue = timeItem.itemValue;
+    const itemValue: any = timeItem.itemValue;
     const value = accessor ? itemValue[accessor] : itemValue;
 
     expect(value).not.toBeUndefined();
@@ -205,7 +206,9 @@ it('can assess predictive accuracy of scaleValues', () => {
   tournamentEngine.setState(tournamentRecord);
 
   const participants = tournamentRecord.participants;
-  const participantsWithTimeItemsCount = participants.filter(({ timeItems }) => timeItems?.length).length;
+  const participantsWithTimeItemsCount = defined(participants, 'participants').filter(
+    ({ timeItems }) => timeItems?.length,
+  ).length;
 
   expect(participantsWithTimeItemsCount).toEqual(drawSize - 4);
 

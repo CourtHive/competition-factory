@@ -1,5 +1,5 @@
 import { checkProfileKeys, GENERATE_ENGINE_SUPPLIED_KEYS, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
-import { recordMethod, startRecording, stopRecording } from '@Mutate/simulation/scenarioRecorder';
+import { recordMethod, startRecording, stopRecording, RecordedMethod } from '@Mutate/simulation/scenarioRecorder';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
@@ -29,6 +29,8 @@ import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import type { GenerateTournamentRecordArgs } from '@Types/mocksTypes';
 import type { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
+import type { ScheduledProfile } from '@Mutate/matchUps/schedule/pipeline/scheduleProfile';
 
 // SELECTED WITH `randomMember`, NEVER `randomPop`. `randomPop` SPLICES, and this array is a
 // module-level constant — so popping from it permanently consumed one name per call and, after the
@@ -58,7 +60,22 @@ const mockTournamentNames = [
   'Stats Fail',
 ];
 
-export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
+/**
+ * Typed as succeeding: the mocks are test and development tooling, so the generated record and ids are declared
+ * present. A refusal still returns `{ error }` at runtime, and `error` stays readable.
+ */
+export type GenerateTournamentRecordResult = ResultType & {
+  scenarioResult?: ResultType & { shiftMinutes?: number; shiftedCount?: number };
+  methods?: RecordedMethod[];
+  scheduledRounds?: ReturnType<typeof generateScheduledRounds>['scheduledRounds'];
+  schedulerResult?: ScheduledProfile;
+  tournamentRecord: Tournament;
+  eventIds: string[];
+  venueIds: string[];
+  drawIds: string[];
+};
+
+export function generateTournamentRecord(params: GenerateTournamentRecordArgs): GenerateTournamentRecordResult {
   // the generators write to the tieFormats they work from; the caller's stay as given
   const owned = withOwnTieFormats(params);
   if (!owned?.recordMethods) return buildTournamentRecord(owned);
@@ -200,7 +217,7 @@ function buildTournamentRecord(params: GenerateTournamentRecordArgs) {
   });
 }
 
-function processDrawProfiles(params) {
+function processDrawProfiles(params): ResultType | void {
   const { tournamentRecord, drawProfiles, allUniqueParticipantIds, eventIds, drawIds } = params;
   let drawIndex = 0;
   for (const drawProfile of drawProfiles) {

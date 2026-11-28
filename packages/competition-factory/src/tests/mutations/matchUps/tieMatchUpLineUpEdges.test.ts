@@ -1,4 +1,5 @@
 import { getCollectionPositionAssignments } from '@Query/hierarchical/tieFormats/getCollectionPositionAssignments';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -123,21 +124,33 @@ function setUpTeamDualWithStoredLineUp(buildLineUp: (memberIds: string[], collec
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 2, eventType: TEAM_EVENT }],
   });
-  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-  const dualMatchUp = drawDefinition.structures[0].matchUps[0];
-  const singles = dualMatchUp.tieMatchUps.find(({ matchUpType }) => matchUpType === SINGLES_MATCHUP);
-  const teamParticipantId = drawDefinition.structures[0].positionAssignments[0].participantId;
-  const teamParticipant = tournamentRecord.participants.find(
+  const drawDefinition = defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0];
+  const dualMatchUp = defined(defined(drawDefinition.structures, 'structures')[0].matchUps, 'matchUps')[0];
+  const singles = defined(dualMatchUp.tieMatchUps, 'tieMatchUps').find(
+    ({ matchUpType }) => matchUpType === SINGLES_MATCHUP,
+  );
+  const teamParticipantId = defined(
+    defined(defined(drawDefinition.structures, 'structures')[0].positionAssignments, 'positionAssignments')[0]
+      .participantId,
+    'teamParticipantId',
+  );
+  const teamParticipant = defined(tournamentRecord.participants, 'participants').find(
     ({ participantId }) => participantId === teamParticipantId,
   );
-  const memberIds: string[] = teamParticipant.individualParticipantIds;
+  const memberIds: string[] = defined(
+    defined(teamParticipant, 'teamParticipant').individualParticipantIds,
+    'individualParticipantIds',
+  );
 
-  const collectionAssignment = { collectionId: singles.collectionId, collectionPosition: singles.collectionPosition };
+  const collectionAssignment = {
+    collectionId: defined(singles, 'singles').collectionId,
+    collectionPosition: defined(singles, 'singles').collectionPosition,
+  };
   drawDefinition.lineUps = { [teamParticipantId]: buildLineUp(memberIds, collectionAssignment) };
 
   tournamentEngine.setState(tournamentRecord);
 
-  return { drawId: drawDefinition.drawId, tieMatchUpId: singles.matchUpId, memberIds };
+  return { drawId: drawDefinition.drawId, tieMatchUpId: defined(singles, 'singles').matchUpId, memberIds };
 }
 
 it('a substitution reads a line-up entry with no collection assignments as empty', () => {
@@ -185,7 +198,7 @@ it('a matchUp that is not a tieMatchUp is refused by each line-up mutation', () 
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }], setState: true });
   const tieMatchUpId = tournamentEngine.allDrawMatchUps({ drawId }).matchUps[0].matchUpId;
-  const [participantId, newParticipantId] = tournamentRecord.participants.map(
+  const [participantId, newParticipantId] = defined(tournamentRecord.participants, 'participants').map(
     (participant) => participant.participantId,
   );
 

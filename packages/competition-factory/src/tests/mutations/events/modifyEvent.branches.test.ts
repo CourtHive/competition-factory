@@ -1,4 +1,5 @@
 import { modifyEvent } from '@Mutate/events/modifyEvent';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -315,7 +316,7 @@ describe('modifyEvent - uncovered branch coverage', () => {
     });
     tournamentEngine.setState(tournamentRecord);
 
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
 
     // Modify with a broad category that should be compatible with tieFormat collection categories
     const result = modifyEvent({

@@ -7,6 +7,7 @@ import {
 
 // types
 import { HydratedMatchUp } from '@Types/hydrated';
+import type { ResultType } from '@Types/factoryTypes';
 
 /**
  * THE PUBLIC BYE PLACEMENT: planned against a draft of the draw, every rule asked before the first write, then
@@ -23,7 +24,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
  * draw's map and in-context matchUps (the planner's hydration of the seat) and the planner's answer on the seat's
  * activity, so it does not build or ask them again.
  */
-export function assignDrawPositionBye(params: AssignDrawPositionByeArgs) {
+export function assignDrawPositionBye(params: AssignDrawPositionByeArgs): ResultType {
   const { structure, matchUpsMap, inContextDrawMatchUps, loserMatchUp, byeFromPropagation } = params;
   if (structure || matchUpsMap || inContextDrawMatchUps || loserMatchUp || byeFromPropagation)
     return placeDrawPositionBye(params);

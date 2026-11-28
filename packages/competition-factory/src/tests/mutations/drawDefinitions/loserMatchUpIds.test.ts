@@ -37,7 +37,7 @@ test.each([tournamentEngineSync, tournamentEngineAsync])(
     ];
     const mockProfile = { drawProfiles };
 
-    let result = mocksEngine.generateTournamentRecord(mockProfile);
+    let result: any = mocksEngine.generateTournamentRecord(mockProfile);
     const { tournamentRecord } = result;
 
     await tournamentEngine.setState(tournamentRecord);

@@ -17,7 +17,7 @@ import { UUID } from '@Tools/UUID';
 import { GROUP, INDIVIDUAL, PAIR, participantTypes, TEAM } from '@Constants/participantConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   INVALID_PARTICIPANT_TYPE,
@@ -103,14 +103,17 @@ function individualIdsOf(tournamentParticipants: Participant[], participantsInde
   );
 }
 
+/** The participant added (when asked for), or the one already present; or the refusal. */
+export type AddParticipantResult = ResultType & { participant?: Participant; existingParticipant?: boolean };
+
 type ParticipantPlan = {
-  result: ReturnType<typeof definedAttributes>;
+  result: AddParticipantResult;
   writes?: (() => void)[];
   notice?: Parameters<typeof addNotice>[0];
-  committedResult?: () => ReturnType<typeof definedAttributes>;
+  committedResult?: () => AddParticipantResult;
 };
 
-export function addParticipant(params: AddParticipantType) {
+export function addParticipant(params: AddParticipantType): AddParticipantResult {
   const plan = planAddParticipant(params);
   for (const write of plan.writes ?? []) write();
   if (plan.notice) addNotice(plan.notice);

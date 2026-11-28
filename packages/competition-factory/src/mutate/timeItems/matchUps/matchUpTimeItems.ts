@@ -12,6 +12,7 @@ import { CHECK_IN, CHECK_OUT } from '@Constants/timeItemConstants';
 import type { PresenceAttestation } from '@Types/presenceTypes';
 import { CHECKED_IN } from '@Constants/presenceConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 /*
   generic function to addMatchUpTimeItem
@@ -40,7 +41,7 @@ export function addMatchUpTimeItem({
   timeItem,
   event,
   workingMatchUp,
-}: AddMatchUpTimeItem) {
+}: AddMatchUpTimeItem): ResultType {
   const matchUp = workingMatchUp ?? findDrawMatchUp({ drawDefinition, event, matchUpId }).matchUp;
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
 

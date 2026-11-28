@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -170,7 +171,10 @@ it('keeps broader conversion refused and disallows combining a type and count ch
   const f = fixture();
   let result: any = tournamentEngine.modifyCollectionDefinition({ ...f.params, matchUpId: undefined });
   expect(result.error).toBe(NOT_IMPLEMENTED);
-  result = tournamentEngine.modifyCollectionDefinition({ ...f.params, matchUpCount: f.collection.matchUpCount + 1 });
+  result = tournamentEngine.modifyCollectionDefinition({
+    ...f.params,
+    matchUpCount: defined(f.collection.matchUpCount, 'matchUpCount') + 1,
+  });
   expect(result.error).toBe(INVALID_VALUES);
 });
 

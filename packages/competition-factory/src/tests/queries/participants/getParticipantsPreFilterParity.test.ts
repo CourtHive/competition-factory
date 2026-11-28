@@ -1,4 +1,5 @@
 import { canPreFilter, getMissingParticipantIds } from '@Query/participants/getPreFilteredParticipants';
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -68,7 +69,7 @@ function generate({ nonRandom, completeAllMatchUps }) {
   expect(result.success).toEqual(true);
 
   // two new individuals, entered in the doubles event without a partner
-  const doubles = tournamentRecord.events.find(({ eventType }) => eventType === DOUBLES);
+  const doubles = defined(tournamentRecord.events, 'events').find(({ eventType }) => eventType === DOUBLES);
   const unpaired = [0, 1].map((index) => {
     const added: any = tournamentEngine.addParticipant({
       participant: {
@@ -83,7 +84,7 @@ function generate({ nonRandom, completeAllMatchUps }) {
   });
   result = tournamentEngine.addEventEntries({
     participantIds: unpaired.map(({ participantId }) => participantId),
-    eventId: doubles.eventId,
+    eventId: defined(doubles, 'doubles').eventId,
     entryStatus: UNPAIRED,
   });
   expect(result.error).toBeUndefined();

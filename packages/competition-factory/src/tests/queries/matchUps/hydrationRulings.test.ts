@@ -1,4 +1,5 @@
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
@@ -140,14 +141,16 @@ describe('a dual without drawPositions finds its sides’ lineUps on the draw', 
     expect(dual).toBeDefined();
     expect(dual.drawPositions ?? []).toEqual([]);
     const line = matchUps.find((m: any) => m.matchUpTieId === dual.matchUpId && m.matchUpType === 'SINGLES');
-    const team = tournamentRecord.participants.find((p: any) => p.participantId === dual.sides[0].participantId);
-    const [playerId] = team.individualParticipantIds;
+    const team = defined(tournamentRecord.participants, 'participants').find(
+      (p: any) => p.participantId === dual.sides[0].participantId,
+    );
+    const [playerId] = defined(defined(team, 'team').individualParticipantIds, 'individualParticipantIds');
 
     // the side's lineUp kept only on the draw (no lineUp on the matchUp's side), in the record the engine holds
     const record = tournamentEngine.getTournament().tournamentRecord;
     const drawDefinition = record.events[0].drawDefinitions[0];
     drawDefinition.lineUps = {
-      [team.participantId]: [
+      [defined(team, 'team').participantId]: [
         {
           participantId: playerId,
           collectionAssignments: [{ collectionId: line.collectionId, collectionPosition: line.collectionPosition }],

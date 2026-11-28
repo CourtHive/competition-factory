@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
@@ -17,7 +18,7 @@ describe('scaleDate validation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { participants } = tournamentRecord;
-    const { participantId } = participants[0];
+    const { participantId } = defined(participants, 'participants')[0];
 
     let result: any = tournamentEngine.setParticipantScaleItem({
       participantId,
@@ -39,7 +40,7 @@ describe('scaleDate validation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { participants } = tournamentRecord;
-    const { participantId } = participants[0];
+    const { participantId } = defined(participants, 'participants')[0];
 
     let result: any = tournamentEngine.setParticipantScaleItem({
       participantId,
@@ -61,7 +62,7 @@ describe('scaleDate validation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { participants } = tournamentRecord;
-    const { participantId } = participants[0];
+    const { participantId } = defined(participants, 'participants')[0];
 
     let result: any = tournamentEngine.setParticipantScaleItem({
       participantId,
@@ -83,7 +84,7 @@ describe('scaleDate validation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { participants } = tournamentRecord;
-    const { participantId } = participants[0];
+    const { participantId } = defined(participants, 'participants')[0];
 
     let result: any = tournamentEngine.setParticipantScaleItem({
       participantId,
@@ -259,7 +260,7 @@ describe('timeItem itemDate validation', () => {
     tournamentEngine.setState(tournamentRecord);
 
     const { participants } = tournamentRecord;
-    const { participantId } = participants[0];
+    const { participantId } = defined(participants, 'participants')[0];
 
     let result: any = tournamentEngine.addParticipantTimeItem({
       participantId,

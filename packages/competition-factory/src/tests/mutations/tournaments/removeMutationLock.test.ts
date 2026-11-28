@@ -121,7 +121,7 @@ describe('removeMutationLock direct coverage', () => {
     const venue = { venueName: 'Test Venue' };
     const addVenueResult = tournamentEngine.addVenue({ venue });
     expect(addVenueResult.success).toEqual(true);
-    const venueId = addVenueResult.venue.venueId;
+    const venueId = defined(addVenueResult.venue, 'venue').venueId;
 
     const { lockId } = tournamentEngine.addMutationLock({
       scope: 'SCHEDULING',

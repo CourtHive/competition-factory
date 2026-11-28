@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { extractDate } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
@@ -47,7 +48,7 @@ it('thows an error if a venue has scheduled matchUps', () => {
     startDate,
   });
 
-  expect(schedulerResult.scheduledMatchUpIds[startDate].length).toEqual(30);
+  expect(defined(schedulerResult, 'schedulerResult').scheduledMatchUpIds[startDate].length).toEqual(30);
 
   const myCourts = { venueName: 'My Courts' };
   let result = tournamentEngine.addVenue({ venue: myCourts });

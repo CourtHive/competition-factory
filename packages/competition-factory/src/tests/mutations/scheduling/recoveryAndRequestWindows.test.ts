@@ -1,4 +1,5 @@
 import { checkParticipantProfileInitialization } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkParticipantProfileInitialization';
+import { defined } from '@Tests/helpers/defined';
 import { checkRecoveryTime } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRecoveryTime';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { timeStringMinutes } from '@Tools/dateTime';
@@ -41,9 +42,9 @@ it('separates a SINGLES and a DOUBLES matchUp by the type-change recovery', () =
   competitionEngine.setState(tournamentRecord);
 
   const { tournamentId } = tournamentRecord;
-  const [singles, doubles] = tournamentRecord.events.map((event) => ({
-    structureId: event.drawDefinitions[0].structures[0].structureId,
-    drawId: event.drawDefinitions[0].drawId,
+  const [singles, doubles] = defined(tournamentRecord.events, 'events').map((event) => ({
+    structureId: defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].structureId,
+    drawId: defined(event.drawDefinitions, 'drawDefinitions')[0].drawId,
     eventId: event.eventId,
     tournamentId,
   }));
@@ -164,11 +165,17 @@ it.each([
     setState: true,
   });
   const { tournamentId } = tournamentRecord;
-  const { eventId, drawDefinitions } = tournamentRecord.events[0];
-  const { drawId, structures } = drawDefinitions[0];
+  const { eventId, drawDefinitions } = defined(tournamentRecord.events, 'events')[0];
+  const { drawId, structures } = defined(drawDefinitions, 'drawDefinitions')[0];
   for (const roundNumber of [1, 2]) {
     const result: any = competitionEngine.addSchedulingProfileRound({
-      round: { tournamentId, eventId, drawId, structureId: structures[0].structureId, roundNumber },
+      round: {
+        tournamentId,
+        eventId,
+        drawId,
+        structureId: defined(structures, 'structures')[0].structureId,
+        roundNumber,
+      },
       scheduleDate,
       venueId,
     });

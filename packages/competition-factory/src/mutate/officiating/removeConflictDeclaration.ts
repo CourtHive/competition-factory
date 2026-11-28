@@ -6,15 +6,16 @@ import { nowIso } from '@Tools/clock';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
-type RemoveConflictDeclarationArgs = {
+type RemoveDeclarationArgs = {
   officialRecord: OfficialRecord;
   declarationId: string;
 };
 
-export function removeConflictDeclaration({ officialRecord, declarationId }: RemoveConflictDeclarationArgs) {
+export function removeConflictDeclaration({ officialRecord, declarationId }: RemoveDeclarationArgs): ResultType {
   if (!officialRecord) return { error: MISSING_OFFICIAL_RECORD };
-  if (!declarationId) return { error: INVALID_VALUES, context: { message: 'Missing declarationId' } } as any;
+  if (!declarationId) return { error: INVALID_VALUES, context: { message: 'Missing declarationId' } };
 
   const declarations = officialRecord.conflictDeclarations ?? [];
   const index = declarations.findIndex((declaration) => declaration.declarationId === declarationId);

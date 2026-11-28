@@ -1,4 +1,5 @@
 import { definedAttributes } from '@Tools/definedAttributes';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { installCopySnapshot, copySnapshot } from '@Tools/runtime';
 import { afterEach, expect, it } from 'vitest';
@@ -83,8 +84,8 @@ const crafted = {
 const sources: any[] = [
   crafted,
   tournamentRecord,
-  ...tournamentRecord.participants,
-  tournamentRecord.events[0],
+  ...defined(tournamentRecord.participants, 'participants'),
+  defined(tournamentRecord.events, 'events')[0],
   [crafted, 'x', null],
   'text',
   7,

@@ -1,8 +1,11 @@
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { MISSING_MATCHUP, ErrorType } from '@Constants/errorConditionConstants';
 import type { MatchUp } from '@Types/tournamentTypes';
 
 type CheckMatchUpIsCompleteArgs = { matchUp?: any };
+
+/** `true` or the winningSide when the matchUp is complete; the refusal when no matchUp is given. */
+type MatchUpCompleteResult = { error: ErrorType } | boolean | number | undefined;
 
 /**
  * Whether a matchUp has a result.
@@ -28,7 +31,7 @@ type CheckMatchUpIsCompleteArgs = { matchUp?: any };
  * guard exists to close. Predicate callers must use `matchUpCompletion` below rather than guarding
  * at each site: three hand-rolled guards is how two of them end up disagreeing.
  */
-export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) {
+export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs): MatchUpCompleteResult {
   if (typeof matchUp !== 'object' || matchUp === null || !matchUp.matchUpId) return { error: MISSING_MATCHUP };
   return completedMatchUpStatuses.includes(matchUp.matchUpStatus) || matchUp.winningSide;
 }
@@ -43,8 +46,8 @@ export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) 
  * `undefined` rather than `false` is deliberate and load-bearing: `tallyParticipantResults`
  * separates "not complete" from "no answer" with `?? matchUp.matchUpType === TEAM`.
  */
-export function matchUpCompletion(matchUp: Partial<MatchUp> | undefined) {
+export function matchUpCompletion(matchUp: Partial<MatchUp> | undefined): boolean | number | undefined {
   if (!matchUp) return undefined;
   const result = checkMatchUpIsComplete({ matchUp });
-  return result?.error ? undefined : result;
+  return (result as { error?: ErrorType })?.error ? undefined : (result as boolean | number | undefined);
 }

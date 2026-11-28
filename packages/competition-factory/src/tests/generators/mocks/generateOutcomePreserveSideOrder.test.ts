@@ -5,6 +5,7 @@
  * the exact side order that users enter, rather than normalizing to winner-first
  */
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
+import { defined } from '@Tests/helpers/defined';
 import { describe, it, expect } from 'vitest';
 
 describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
@@ -18,10 +19,10 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
 
       // Default behavior: normalizes to winner-first
       // "3-6 4-6" becomes "6-3 6-4" (side 2 won, shown as side 1)
-      expect(outcome.score.sets[0].side1Score).toBe(6);
-      expect(outcome.score.sets[0].side2Score).toBe(3);
-      expect(outcome.score.sets[1].side1Score).toBe(6);
-      expect(outcome.score.sets[1].side2Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[1].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[1].side2Score).toBe(4);
       expect(outcome.winningSide).toBe(2);
     });
 
@@ -33,8 +34,8 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Normalized to winner-first: "6-2 6-3"
-      expect(outcome.score.sets[0].side1Score).toBe(6);
-      expect(outcome.score.sets[0].side2Score).toBe(2);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(2);
       expect(outcome.winningSide).toBe(2);
     });
   });
@@ -49,10 +50,10 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Preserves order: side1 lost 3-6, 4-6
-      expect(outcome.score.sets[0].side1Score).toBe(3);
-      expect(outcome.score.sets[0].side2Score).toBe(6);
-      expect(outcome.score.sets[1].side1Score).toBe(4);
-      expect(outcome.score.sets[1].side2Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[1].side1Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[1].side2Score).toBe(6);
 
       // winningSide still calculated correctly (side 2 won)
       expect(outcome.winningSide).toBe(2);
@@ -67,10 +68,10 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Preserves order: side1 won 6-3, 6-4
-      expect(outcome.score.sets[0].side1Score).toBe(6);
-      expect(outcome.score.sets[0].side2Score).toBe(3);
-      expect(outcome.score.sets[1].side1Score).toBe(6);
-      expect(outcome.score.sets[1].side2Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[1].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[1].side2Score).toBe(4);
       expect(outcome.winningSide).toBe(1);
     });
 
@@ -83,12 +84,12 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Preserves exact order: side1 won set 1, lost set 2, won set 3
-      expect(outcome.score.sets[0].side1Score).toBe(6);
-      expect(outcome.score.sets[0].side2Score).toBe(3);
-      expect(outcome.score.sets[1].side1Score).toBe(4);
-      expect(outcome.score.sets[1].side2Score).toBe(6);
-      expect(outcome.score.sets[2].side1Score).toBe(6);
-      expect(outcome.score.sets[2].side2Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[1].side1Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[1].side2Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[2].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[2].side2Score).toBe(4);
       expect(outcome.winningSide).toBe(1);
     });
   });
@@ -102,8 +103,8 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Aggregate already preserves order
-      expect(outcome.score.sets[0].side1Score).toBe(30);
-      expect(outcome.score.sets[0].side2Score).toBe(1);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(30);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(1);
       expect(outcome.winningSide).toBe(1); // Aggregate: 30-3
     });
 
@@ -116,8 +117,8 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Still preserves order (side 2 wins aggregate 32-3)
-      expect(outcome.score.sets[0].side1Score).toBe(1);
-      expect(outcome.score.sets[0].side2Score).toBe(30);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(1);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(30);
       expect(outcome.winningSide).toBe(2); // Aggregate: 3-32
     });
   });
@@ -132,8 +133,8 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
 
       // Bracket notation at start triggers side-order preservation
       // Note: For tiebreak-only format, these are tiebreak scores, not regular scores
-      expect(outcome.score.sets[0].side1TiebreakScore).toBe(5);
-      expect(outcome.score.sets[0].side2TiebreakScore).toBe(10);
+      expect(defined(outcome.score.sets, 'sets')[0].side1TiebreakScore).toBe(5);
+      expect(defined(outcome.score.sets, 'sets')[0].side2TiebreakScore).toBe(10);
       expect(outcome.winningSide).toBe(2);
     });
   });
@@ -148,8 +149,8 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Explicit false: normalizes to winner-first
-      expect(outcome.score.sets[0].side1Score).toBe(6);
-      expect(outcome.score.sets[0].side2Score).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(3);
       expect(outcome.winningSide).toBe(2);
     });
 
@@ -162,10 +163,10 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Preserves: side1 lost both tiebreaks
-      expect(outcome.score.sets[0].side1Score).toBe(6);
-      expect(outcome.score.sets[0].side2Score).toBe(7);
-      expect(outcome.score.sets[0].side1TiebreakScore).toBe(3);
-      expect(outcome.score.sets[0].side2TiebreakScore).toBe(7);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(7);
+      expect(defined(outcome.score.sets, 'sets')[0].side1TiebreakScore).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[0].side2TiebreakScore).toBe(7);
       expect(outcome.winningSide).toBe(2);
     });
 
@@ -178,16 +179,16 @@ describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {
       });
 
       // Preserves all 5 sets: side1 lost first 2, won last 3
-      expect(outcome.score.sets[0].side1Score).toBe(4);
-      expect(outcome.score.sets[0].side2Score).toBe(6);
-      expect(outcome.score.sets[1].side1Score).toBe(3);
-      expect(outcome.score.sets[1].side2Score).toBe(6);
-      expect(outcome.score.sets[2].side1Score).toBe(6);
-      expect(outcome.score.sets[2].side2Score).toBe(4);
-      expect(outcome.score.sets[3].side1Score).toBe(6);
-      expect(outcome.score.sets[3].side2Score).toBe(3);
-      expect(outcome.score.sets[4].side1Score).toBe(6);
-      expect(outcome.score.sets[4].side2Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[0].side1Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[0].side2Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[1].side1Score).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[1].side2Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[2].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[2].side2Score).toBe(4);
+      expect(defined(outcome.score.sets, 'sets')[3].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[3].side2Score).toBe(3);
+      expect(defined(outcome.score.sets, 'sets')[4].side1Score).toBe(6);
+      expect(defined(outcome.score.sets, 'sets')[4].side2Score).toBe(4);
       expect(outcome.winningSide).toBe(1);
     });
 

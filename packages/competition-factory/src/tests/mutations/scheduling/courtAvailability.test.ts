@@ -1,4 +1,5 @@
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { extractDate } from '@Tools/dateTime';
 import { mocksEngine } from '../../..';
 import { expect, test } from 'vitest';
@@ -108,12 +109,12 @@ test.each(scenarios)('varying court availability is properly considered', (scena
     expect(courts[index].dateAvailability[0].endTime).toEqual(expectation.endTime);
   });
 
-  const matchUpsAtStartTime = Object.values(schedulerResult.matchUpScheduleTimes).filter(
+  const matchUpsAtStartTime = Object.values(defined(schedulerResult, 'schedulerResult').matchUpScheduleTimes).filter(
     (scheduleTime) => scheduleTime === startTime,
   ).length;
   expect(matchUpsAtStartTime).toEqual(scenario.matchUpsAtStartTime);
 
-  const scheduledMatchUpIds = Object.keys(schedulerResult.matchUpScheduleTimes);
+  const scheduledMatchUpIds = Object.keys(defined(schedulerResult, 'schedulerResult').matchUpScheduleTimes);
   const lastScheduledMatchUpId = scheduledMatchUpIds[scheduledMatchUpIds.length - 1];
   expect(lastScheduledMatchUpId).toEqual(scenario.lastScheduledMatchUpId);
 });

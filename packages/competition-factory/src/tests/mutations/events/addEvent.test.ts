@@ -1,4 +1,5 @@
 import { setSubscriptions } from '@Global/state/globalState';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -25,7 +26,7 @@ it('can generate an event with a draw and attach it to a tournamentRecord', () =
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     participantsProfile: { participantsCount: 100 },
   });
-  expect(tournamentRecord.participants.length).toEqual(100);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(100);
 
   tournamentEngine.setState(tournamentRecord);
 

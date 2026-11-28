@@ -1,4 +1,5 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { defined } from '@Tests/helpers/defined';
 import { getStructureData } from '@Query/drawDefinition/getStructureData';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -56,20 +57,20 @@ function getDraw(drawType: string) {
     drawProfiles: [{ drawSize: 32, drawType }],
     completeAllMatchUps: true,
   });
-  const event = tournamentRecord.events[0];
-  const drawDefinition = event.drawDefinitions[0];
+  const event = defined(tournamentRecord.events, 'events')[0];
+  const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
   return { tournamentRecord, event, drawDefinition };
 }
 
 test.each([COMPASS, FIRST_MATCH_LOSER_CONSOLATION])('%s: draw-wide inputs are built once per draw', (drawType) => {
   const { tournamentRecord, event, drawDefinition } = getDraw(drawType);
-  expect(drawDefinition.structures.length).toBeGreaterThan(1);
+  expect(defined(drawDefinition.structures, 'structures').length).toBeGreaterThan(1);
 
   const { result, counts } = counted(() => getDrawData({ tournamentRecord, event, drawDefinition }));
-  expect(result.structures.length).toEqual(drawDefinition.structures.length);
+  expect(result.structures.length).toEqual(defined(drawDefinition.structures, 'structures').length);
   expect(counts).toEqual({ hydrateParticipants: 1, getMatchUpsMap: 1, getExitProfiles: 1 });
 
-  const structureId = drawDefinition.structures.at(-1).structureId;
+  const structureId = defined(defined(drawDefinition.structures, 'structures').at(-1), 'value').structureId;
   expect(counted(() => getStructureData({ tournamentRecord, event, drawDefinition, structureId })).counts).toEqual({
     hydrateParticipants: 1,
     getMatchUpsMap: 1,
@@ -92,9 +93,13 @@ test.each([COMPASS, FIRST_MATCH_LOSER_CONSOLATION])(
     const drawData: any = getDrawData({ tournamentRecord, event, drawDefinition });
 
     for (const structureData of drawData.structures) {
-      const structure = drawDefinition.structures.find((s) => s.structureId === structureData.structureId);
+      const structure = defined(drawDefinition.structures, 'structures').find(
+        (s) => s.structureId === structureData.structureId,
+      );
       const alone: any = getAllStructureMatchUps({
-        seedAssignments: structure.seedAssignments?.length ? undefined : structureData.seedAssignments,
+        seedAssignments: defined(structure, 'structure').seedAssignments?.length
+          ? undefined
+          : structureData.seedAssignments,
         context: { drawId: drawDefinition.drawId },
         inContext: true,
         tournamentRecord,

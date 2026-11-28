@@ -1,4 +1,5 @@
 import { calculatePressureRatings } from '@Query/matchUps/roundRobinTally/calculatePressureRatings';
+import { defined } from '@Tests/helpers/defined';
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 import { getSourceDrawPositionRanges } from '@Query/matchUps/getSourceDrawPositionRanges';
 import { countSets, countGames } from '@Query/matchUps/roundRobinTally/scoreCounters';
@@ -51,7 +52,7 @@ describe('setTournamentDates uncovered branches', () => {
     });
 
     // Manually set event dates that will be outside the new range
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     event.startDate = '2025-06-25';
     event.endDate = '2025-06-28';
 
@@ -77,7 +78,7 @@ describe('setTournamentDates uncovered branches', () => {
     });
 
     // Set event dates so event.endDate < new startDate => line 90-91
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     event.startDate = '2025-06-02';
     event.endDate = '2025-06-05';
 

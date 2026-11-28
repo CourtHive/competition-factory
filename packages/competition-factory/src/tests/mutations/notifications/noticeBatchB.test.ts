@@ -1,4 +1,5 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
+import { defined } from '@Tests/helpers/defined';
 import { captureNotices, conformanceViolations } from './noticeConformance/harness';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -250,8 +251,11 @@ describe('tieFormat writers announce the event whose tieFormats they change', ()
       drawProfiles: [{ drawSize: 2, eventType: TEAM, tieFormat: resolveTieFormat(COLLEGE_D3) }],
     });
     // a draw carrying its own inline tieFormat, as a record from before aggregation would
-    const event = tournamentRecord.events[0];
-    event.drawDefinitions[0].tieFormat = { ...structuredClone(event.tieFormat), tieFormatName: 'Draw Format' };
+    const event: any = defined(tournamentRecord.events, 'events')[0];
+    defined(event.drawDefinitions, 'drawDefinitions')[0].tieFormat = {
+      ...structuredClone(event.tieFormat),
+      tieFormatName: 'Draw Format',
+    };
     tournamentEngine.setState(tournamentRecord);
 
     const observed = observe(() => tournamentEngine.aggregateTieFormats());
@@ -491,10 +495,10 @@ describe('entries writers announce the entries, and the flight profile, they cha
 
       const { drawDefinition } = tournamentEngine.getEvent({ drawId });
       const enteredIds = drawDefinition.entries.map(({ participantId }) => participantId);
-      const enteredIndividualIds = tournamentRecord.participants
+      const enteredIndividualIds = defined(tournamentRecord.participants, 'participants')
         .filter(({ participantId }) => enteredIds.includes(participantId))
         .flatMap(({ individualParticipantIds }) => individualParticipantIds);
-      const ungroupedIds = tournamentRecord.participants
+      const ungroupedIds = defined(tournamentRecord.participants, 'participants')
         .filter(
           ({ participantType, participantId }) =>
             participantType !== PAIR && !enteredIndividualIds.includes(participantId),
@@ -609,12 +613,12 @@ describe('entries writers announce the entries, and the flight profile, they cha
 
   it('deleteDrawDefinitions announces an event whose only change is the deletion record', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
-    const event = tournamentRecord.events[0];
+    const event = defined(tournamentRecord.events, 'events')[0];
     // no flight profile: before this change only a pruned flight profile was announced
     event.extensions = event.extensions?.filter(({ name }) => name !== FLIGHT_PROFILE);
     delete (event as any).flightProfile;
     tournamentEngine.setState(tournamentRecord);
-    const drawId = event.drawDefinitions[0].drawId;
+    const drawId = defined(event.drawDefinitions, 'drawDefinitions')[0].drawId;
 
     const observed = observe(() =>
       tournamentEngine.deleteDrawDefinitions({ eventId: event.eventId, drawIds: [drawId] }),

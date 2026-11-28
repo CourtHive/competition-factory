@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { defined } from '@Tests/helpers/defined';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getParticipantId } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -80,10 +81,10 @@ it('can tally points when different finalSet format', () => {
     scoreString: '6-1 1-6 [23-45]',
   }).outcome;
   outcome.winningSide = 2;
-  let thirdSet = outcome.score.sets.find(({ setNumber }) => setNumber === 3);
-  expect(thirdSet.winningSide).toEqual(2);
-  expect(thirdSet.side1TiebreakScore).toEqual(23);
-  expect(thirdSet.side2TiebreakScore).toEqual(45);
+  let thirdSet = defined(outcome.score.sets, 'sets').find(({ setNumber }) => setNumber === 3);
+  expect(defined(thirdSet, 'thirdSet').winningSide).toEqual(2);
+  expect(defined(thirdSet, 'thirdSet').side1TiebreakScore).toEqual(23);
+  expect(defined(thirdSet, 'thirdSet').side2TiebreakScore).toEqual(45);
 
   // no square brackets denotes games...
   // ...but in this case the matchUpFormat will ensure result is calculated as points
@@ -91,10 +92,10 @@ it('can tally points when different finalSet format', () => {
     scoreString: '6-1 1-6 23-45',
   }).outcome;
   outcome.winningSide = 2;
-  thirdSet = outcome.score.sets.find(({ setNumber }) => setNumber === 3);
-  expect(thirdSet.winningSide).toEqual(2);
-  expect(thirdSet.side1Score).toEqual(23);
-  expect(thirdSet.side2Score).toEqual(45);
+  thirdSet = defined(outcome.score.sets, 'sets').find(({ setNumber }) => setNumber === 3);
+  expect(defined(thirdSet, 'thirdSet').winningSide).toEqual(2);
+  expect(defined(thirdSet, 'thirdSet').side1Score).toEqual(23);
+  expect(defined(thirdSet, 'thirdSet').side2Score).toEqual(45);
 
   const { matchUpId, drawId } = matchUp;
   result = tournamentEngine.setMatchUpStatus({ matchUpId, outcome, drawId });

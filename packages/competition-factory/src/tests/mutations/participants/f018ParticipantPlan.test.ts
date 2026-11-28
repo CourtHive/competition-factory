@@ -1,4 +1,5 @@
 import { addParticipant, planAddParticipant } from '@Mutate/participants/addParticipant';
+import { defined } from '@Tests/helpers/defined';
 import { captureNotices } from '../notifications/noticeConformance/harness';
 import { indexParticipants } from '@Mutate/participants/participantsIndex';
 import { ADD_PARTICIPANTS, MUTATIONS } from '@Constants/topicConstants';
@@ -123,7 +124,7 @@ it('binds the generated ID and index without editing either input during plannin
     individualParticipantIds: [],
     participantId: expect.any(String),
   });
-  expect(participantsIndex.positions.get(result.participant.participantId)).toBe(0);
+  expect(participantsIndex.positions.get(defined(result.participant, 'participant').participantId)).toBe(0);
 });
 
 it.each([true, false])(

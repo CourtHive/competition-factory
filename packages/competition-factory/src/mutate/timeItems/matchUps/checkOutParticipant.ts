@@ -8,7 +8,7 @@ import { buildAttestation } from '@Mutate/presence/buildAttestation';
 
 // constants and types
 import { activeMatchUpStatuses, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
+import { CheckInOutParticipantArgs, ResultType } from '@Types/factoryTypes';
 import { CHECKED_OUT } from '@Constants/presenceConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -37,7 +37,7 @@ import {
  * action, reconciled by nothing. With only individuals writable there is one fact per person, and
  * `getCheckedInParticipantIds` still derives the side's state from its members.
  */
-export function checkOutParticipant(params: CheckInOutParticipantArgs) {
+export function checkOutParticipant(params: CheckInOutParticipantArgs): ResultType & { checkedOut?: boolean } {
   const requiredParams = [
     { [TOURNAMENT_RECORD]: true },
     { [DRAW_DEFINITION]: true },

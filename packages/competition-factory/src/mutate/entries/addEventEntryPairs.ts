@@ -20,6 +20,7 @@ import { isFemale } from '@Validators/isFemale';
 import { isMixed } from '@Validators/isMixed';
 import { isMale } from '@Validators/isMale';
 import { isAny } from '@Validators/isAny';
+import type { ResultType } from '@Types/factoryTypes';
 
 /**
  * Add PAIR participant to an event
@@ -38,7 +39,12 @@ type AddEventEntryPairsArgs = {
   drawId?: string;
   event: Event;
 };
-export function addEventEntryPairs(params: AddEventEntryPairsArgs) {
+export function addEventEntryPairs(params: AddEventEntryPairsArgs): ResultType & {
+  invalidParticipantIdPairs?: string[][];
+  removedEntriesCount?: number;
+  addedEntriesCount?: number;
+  newParticipantIds?: string[];
+} {
   const paramsCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORD]: true, [EVENT]: true }]);
   if (paramsCheck.error) return paramsCheck;
 

@@ -12,7 +12,7 @@ import { isString } from '@Tools/objects';
 
 // constants and types
 import { ERROR, EVENT, TOURNAMENT_RECORD, UUIDS, VALIDATE } from '@Constants/attributeConstants';
-import { DrawDefinition, Event, PositionAssignment, Structure } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, PositionAssignment, Structure, Participant } from '@Types/tournamentTypes';
 import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { PAIR } from '@Constants/participantConstants';
@@ -24,8 +24,13 @@ import {
   INVALID_PARTICIPANT_ID,
   MISSING_PARTICIPANT_ID,
 } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
-export function modifyPairAssignment(params) {
+export function modifyPairAssignment(params): ResultType & {
+  participantOtherEntries?: boolean;
+  newPairParticipantId?: string;
+  participant?: Participant;
+} {
   const paramsCheck = checkRequiredParameters(params, [
     { [EVENT]: true, [TOURNAMENT_RECORD]: true, [UUIDS]: false },
     {
@@ -92,7 +97,7 @@ export function modifyPairAssignment(params) {
       tournamentRecord,
     });
     if (result.error) return result;
-    newPairParticipantId = result.participant.participantId;
+    newPairParticipantId = result.participant!.participantId;
   } else {
     newPairParticipantId = existingPairParticipant.participantId;
   }

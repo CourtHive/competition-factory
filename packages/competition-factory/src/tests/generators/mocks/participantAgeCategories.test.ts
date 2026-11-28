@@ -1,4 +1,5 @@
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
+import { defined } from '@Tests/helpers/defined';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { test, expect } from 'vitest';
 
@@ -41,5 +42,5 @@ test.each(ageCategoryScenarios)('can generate partiicpants with category details
   } = mocksEngine.generateParticipants(participantsProfile);
 
   if (Object.keys(scenario.expectation).length && !scenario.expectation.combinedAge)
-    expect(participant.person.birthDate).not.toBeUndefined();
+    expect(defined(participant.person, 'person').birthDate).not.toBeUndefined();
 });

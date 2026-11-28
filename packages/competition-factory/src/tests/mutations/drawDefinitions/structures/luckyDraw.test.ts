@@ -1,4 +1,5 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { defined } from '@Tests/helpers/defined';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -127,5 +128,5 @@ test.each([5, 6, 7, 8, 9])('drawProfile participant generation', (drawSize) => {
 
   const filledDrawPositions = positionAssignments?.filter((assignment) => assignment.participantId);
   expect(filledDrawPositions?.length).toEqual(drawSize);
-  expect(tournamentRecord.participants.length).toEqual(drawSize);
+  expect(defined(tournamentRecord.participants, 'participants').length).toEqual(drawSize);
 });

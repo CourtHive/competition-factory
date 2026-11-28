@@ -1,8 +1,11 @@
-import { getAvailablePlayoffProfiles } from './getAvailablePlayoffProfiles';
+import { getAvailablePlayoffProfiles, type AvailablePlayoffProfile } from './getAvailablePlayoffProfiles';
 import { isString } from '@Tools/objects';
 
 // constants
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+
+type PositionRange = NonNullable<AvailablePlayoffProfile['playoffFinishingPositionRanges']>[number];
+type PositionRangeMap = { [finishingPosition: number]: PositionRange };
 
 export function getPositionRangeMap({ playoffGroups, drawDefinition, structureId }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
@@ -21,7 +24,7 @@ export function getPositionRangeMap({ playoffGroups, drawDefinition, structureId
     playoffGroupFinishingPostions.includes(r.finishingPosition),
   );
 
-  const positionRangeMap = playoffFinishingPositionRanges?.reduce((positionMap, positionDetail) => {
+  const positionRangeMap = playoffFinishingPositionRanges?.reduce<PositionRangeMap>((positionMap, positionDetail) => {
     positionMap[positionDetail.finishingPosition] = positionDetail;
     return positionMap;
   }, {});

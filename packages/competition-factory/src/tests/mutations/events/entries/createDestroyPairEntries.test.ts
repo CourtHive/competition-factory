@@ -1,4 +1,5 @@
 import { isUngrouped } from '@Query/entries/isUngrouped';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { chunkArray, unique } from '@Tools/arrays';
@@ -45,7 +46,7 @@ it('can add doubles events to a tournament record', () => {
   const { eventId } = eventResult;
   expect(success).toEqual(true);
 
-  const participantIds = tournamentRecord.participants
+  const participantIds = defined(tournamentRecord.participants, 'participants')
     .filter((participant) => participant.participantType === PAIR)
     .map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({ eventId, participantIds });
@@ -129,7 +130,7 @@ it('can destroy pair entries in doubles events', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const pairParticipantIds = tournamentRecord.participants
+  const pairParticipantIds = defined(tournamentRecord.participants, 'participants')
     .filter((participant) => participant.participantType === PAIR)
     .map((p) => p.participantId);
   result = tournamentEngine.addEventEntries({

@@ -1267,7 +1267,7 @@ export function addMatchUpStartTime({
   matchUpId,
   startTime,
   event,
-}: AddScheduleAttributeArgs & { startTime?: string; recordedOrderChecked?: boolean }) {
+}: AddScheduleAttributeArgs & { startTime?: string; recordedOrderChecked?: boolean }): ResultType {
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   if (!validTimeValue(startTime)) return { error: INVALID_TIME };
 
@@ -1369,7 +1369,7 @@ export function addMatchUpEndTime({
   recordedOrderChecked?: boolean;
   validateTimeSeries?: boolean;
   endTime?: string;
-}) {
+}): ResultType {
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   if (!validTimeValue(endTime)) return { error: INVALID_TIME };
 
@@ -1515,7 +1515,7 @@ export function addMatchUpStopTime({
   event,
 }: AddScheduleAttributeArgs & {
   stopTime?: string;
-}) {
+}): ResultType {
   return addChronologicalTimeItem({
     invalidError: INVALID_STOP_TIME,
     timeValue: stopTime,
@@ -1541,7 +1541,7 @@ export function addMatchUpResumeTime({
   event,
 }: AddScheduleAttributeArgs & {
   resumeTime?: string;
-}) {
+}): ResultType {
   return addChronologicalTimeItem({
     invalidError: INVALID_RESUME_TIME,
     timeValue: resumeTime,

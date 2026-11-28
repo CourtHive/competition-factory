@@ -1,4 +1,5 @@
 import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -84,19 +85,19 @@ function generate({ nonRandom, completeAllMatchUps }) {
   });
   tournamentEngine.setState(tournamentRecord);
 
-  const doubles = tournamentRecord.events.find(({ eventType }) => eventType === DOUBLES);
+  const doubles = defined(tournamentRecord.events, 'events').find(({ eventType }) => eventType === DOUBLES);
   const paired = new Set(
-    tournamentRecord.participants
+    defined(tournamentRecord.participants, 'participants')
       .filter(({ participantType }) => participantType === PAIR)
       .flatMap(({ individualParticipantIds }) => individualParticipantIds),
   );
-  const singlesIds = tournamentRecord.events[0].entries
+  const singlesIds = defined(defined(tournamentRecord.events, 'events')[0].entries, 'entries')
     .map(({ participantId }) => participantId)
     .filter((participantId) => !paired.has(participantId))
     .slice(0, 3);
   expect(singlesIds.length).toEqual(3);
   const result = tournamentEngine.addEventEntries({
-    eventId: doubles.eventId,
+    eventId: defined(doubles, 'doubles').eventId,
     participantIds: singlesIds,
     entryStatus: UNPAIRED,
   });
