@@ -506,6 +506,7 @@ and earlier carry no tags at all.
 - **Penalties refuse the old label spellings and the two misspelled type values** (the deprecated aliases of `EQUIPMENT_VIOLATION` and `FAILURE_TO_SIGN_IN`). Store `PenaltyTypeEnum` codes.
 - **Date helpers need the instant.** Exported date helpers lose their implicit "now" in 8.0.0. In 7.x, pass a Date or ISO date string as the second argument to `tools.plainDate.isDateInPast(dateString, asOf)` and `tools.generateTimeCode(index, asOf)`. When omitted, both still read the call clock.
 - **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
+- **A scoring policy's `stage` rules apply.** `requireAllPositionsAssigned` set under `scoring.stage[stage].stageSequence[n]`, as `POLICY_SCORING_DEFAULT` and the catalogue's `POLICY_SCORING_USTA` set it for MAIN stage sequence 1, was never read in 7.x. Under such a policy, a matchUp in a structure that is not fully positioned is no longer `readyToScore`, and `matchUpActions` no longer offers `SCORE` for it, until every position holds a participant, a BYE or a qualifier. Structures the rule does not name, such as consolation and playoff structures, are unaffected.
 
 ### Records written before 8.0.0
 

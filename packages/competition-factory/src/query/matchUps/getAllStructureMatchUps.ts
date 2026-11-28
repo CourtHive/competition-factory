@@ -178,8 +178,8 @@ function getAllStructureMatchUpsUnredacted(params: GetAllStructureMatchUps): All
     ...params.policyDefinitions,
   };
 
-  const structureScoringPolicies = appliedPolicies?.scoring?.structures;
-  const stageSpecificPolicies = structure.stage && structureScoringPolicies?.stage?.[structure.stage];
+  // the stage-scoped rules sit at the top of the scoring policy (`scoring.stage`), as every bundled policy states them
+  const stageSpecificPolicies = structure.stage && appliedPolicies?.scoring?.stage?.[structure.stage];
   const sequenceSpecificPolicies =
     structure.stageSequence && stageSpecificPolicies?.stageSequence?.[structure.stageSequence];
   const requireAllPositionsAssigned =
