@@ -51,13 +51,16 @@
   "scripts": {
     "build": "node build.mjs",
     "check-types": "tsc --noEmit -p tsconfig.json",
-    "verify": "pnpm check-types && pnpm build && node scripts/verify-dist.mjs",
+    "test": "vitest run --coverage",
+    "verify": "pnpm check-types && pnpm test && pnpm build && node scripts/verify-dist.mjs",
     "prepublishOnly": "pnpm verify"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "5.1.1",
     "esbuild": "0.28.2",
     "rollup": "4.68.7",
     "rollup-plugin-dts": "6.5.1",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "5.1.1"
   }
 }
