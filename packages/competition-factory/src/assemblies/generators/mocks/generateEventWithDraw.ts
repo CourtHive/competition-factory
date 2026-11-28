@@ -831,7 +831,7 @@ export function generateEventWithDraw(params): GenerateEventWithDrawResult {
   const eventType = drawProfile.eventType || drawProfile.matchUpType || SINGLES;
   // a tieFormat, tieFormatName or tieFormatId on a profile that is not TEAM is refused before anything is generated
   const tieFormatRefusal = nonTeamTieFormatRefusal(drawProfile, eventType);
-  if (tieFormatRefusal) return tieFormatRefusal;
+  if (tieFormatRefusal) return tieFormatRefusal as GenerateEventWithDrawResult;
   const isHybrid = eventType === HYBRID;
   const participantType = eventType === DOUBLES ? PAIR : INDIVIDUAL;
 

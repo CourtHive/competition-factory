@@ -1,4 +1,5 @@
 import { expectRefusalLeavesRecord, OUTCOME_MODES, withPipeline } from '../atomicity/refusalGate';
+import { defined } from '@Tests/helpers/defined';
 import { tieFormats } from '@courthive/competition-catalogue';
 import { canonicalJson } from '@Tools/canonicalJson';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -43,9 +44,9 @@ function cleanRecord(eventType: string) {
 // the same record as a 7.x write could leave it: a tieFormat on the non-TEAM events, at `where`
 function legacyRecord(eventType: string, where: Where, clean = cleanRecord(eventType)) {
   const record = structuredClone(clean);
-  for (const event of record.events.filter((e) => e.eventType !== TEAM)) {
-    const drawDefinition = event.drawDefinitions[0];
-    const targets = { event, drawDefinition, structure: drawDefinition.structures[0] };
+  for (const event of defined(record.events, 'events').filter((e) => e.eventType !== TEAM)) {
+    const drawDefinition = defined(event.drawDefinitions, 'drawDefinitions')[0];
+    const targets = { event, drawDefinition, structure: defined(drawDefinition.structures, 'structures')[0] };
     targets[where].tieFormat = tieFormat();
   }
   return record;
@@ -206,8 +207,10 @@ describe('tools.removeNonTeamTieFormats', () => {
 
   it('removes a tieFormatId too, and returns nothing to remove for a clean record', () => {
     const record = cleanRecord(SINGLES);
-    record.events[0].tieFormatId = 'tf-1';
-    record.events[0].drawDefinitions[0].structures[0].tieFormat = tieFormat('tf-2');
+    const event = defined(record.events, 'events')[0];
+    event.tieFormatId = 'tf-1';
+    defined(defined(event.drawDefinitions, 'drawDefinitions')[0].structures, 'structures')[0].tieFormat =
+      tieFormat('tf-2');
     let result: any = tools.removeNonTeamTieFormats({ tournamentRecord: record });
     expect(result.removed).toEqual([
       { eventId: 'e1' },

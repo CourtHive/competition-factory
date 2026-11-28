@@ -1,4 +1,5 @@
 import { expectRefusalLeavesRecord, OUTCOME_MODES, withPipeline } from '../atomicity/refusalGate';
+import { defined } from '@Tests/helpers/defined';
 import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
 import { createSanctioningRecord } from '@Mutate/sanctioning/createSanctioningRecord';
 import { updateEventProposal } from '@Mutate/sanctioning/updateEventProposal';
@@ -48,7 +49,7 @@ function recordWith(eventType: string) {
 // a record written before 8.0.0, whose non-TEAM event was stored with a tieFormat
 function legacyRecordWith(eventType: string) {
   const tournamentRecord = recordWith(eventType);
-  tournamentRecord.events[0].tieFormat = tieFormat();
+  defined(tournamentRecord.events, 'events')[0].tieFormat = tieFormat();
   return tournamentRecord;
 }
 
