@@ -15,6 +15,7 @@ export function removeMatchUpOutcome({ tournamentRecord, drawId, matchUpId, even
     const result = findEvent({ tournamentRecord, drawId });
     if (result.error) return result;
     drawDefinition = result.drawDefinition;
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- any falsy event is replaced by the one found, not only a missing one
     if (!event) event = result.event;
   }
 

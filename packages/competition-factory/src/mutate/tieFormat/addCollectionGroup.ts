@@ -56,6 +56,7 @@ function addGroup({
   if (result?.error) return decorateResult({ result, stack });
 
   const structure = result?.structure;
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- any falsy matchUp falls back to the one found
   matchUp = matchUp || result?.matchUp;
   const existingTieFormat = result?.tieFormat;
   const originalValueGoal = existingTieFormat?.winCriteria.valueGoal;

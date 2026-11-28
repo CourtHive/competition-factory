@@ -28,6 +28,7 @@ export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }: G
     }).policy;
 
   const bandProfiles =
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- falsy profileBands fall back to the next source too
     profileBands ||
     policy?.profileBands ||
     POLICY_COMPETITIVE_BANDS_DEFAULT[POLICY_TYPE_COMPETITIVE_BANDS].profileBands;
