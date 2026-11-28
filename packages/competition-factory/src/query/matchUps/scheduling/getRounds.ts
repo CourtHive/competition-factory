@@ -10,7 +10,7 @@ import { chunkArray } from '@Tools/arrays';
 // constants and types
 import { SUCCESS } from '@Constants/resultConstants';
 import { MatchUpFilters } from '@Types/factoryTypes';
-import { Tournament } from '@Types/tournamentTypes';
+import { Tournament, ScheduleProfileDate } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   INVALID_TOURNAMENT_RECORD,
@@ -28,7 +28,7 @@ type GetRoundsArgs = {
   matchUpFilters?: MatchUpFilters;
   tournamentRecord?: Tournament;
   withSplitRounds?: boolean;
-  schedulingProfile?: any;
+  schedulingProfile?: ScheduleProfileDate[];
   scheduleDate?: string;
   withRoundId?: boolean;
   venueId?: string;
@@ -96,7 +96,7 @@ export function getRounds({
 
   const profileRoundsMap =
     excludeScheduleDateProfileRounds &&
-    Object.assign({}, ...profileRounds.map((profile) => ({ [profile.id]: profile })));
+    Object.assign({}, ...profileRounds!.map((profile) => ({ [profile.id]: profile })));
 
   const consideredMatchUps =
     inContextMatchUps ??

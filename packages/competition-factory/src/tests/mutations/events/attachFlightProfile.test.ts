@@ -330,7 +330,7 @@ describe('attachFlightProfile', () => {
     const event = tournamentRecord.events[0];
 
     const flightProfile = {
-      flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
+      flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [], flightNumber: 1 }],
     };
 
     const result = attachFlightProfile({
@@ -349,7 +349,7 @@ describe('attachFlightProfile', () => {
     const event = tournamentRecord.events[0];
 
     const flightProfile = {
-      flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
+      flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [], flightNumber: 1 }],
     };
 
     const result = attachFlightProfile({
@@ -368,7 +368,7 @@ describe('attachFlightProfile', () => {
     const event = tournamentRecord.events[0];
 
     const flightProfile = {
-      flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }],
+      flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [], flightNumber: 1 }],
     };
 
     // First attachment
@@ -419,8 +419,8 @@ describe('attachFlightProfile', () => {
     const event = tournamentRecord.events[0];
 
     const profile1 = { flights: [{ drawId: 'd1', drawName: 'Flight 1', drawEntries: [] }] };
-    const profile2 = { flights: [{ drawId: 'd2', drawName: 'Flight 2', drawEntries: [] }] };
-    const profile3 = { flights: [{ drawId: 'd3', drawName: 'Flight 3', drawEntries: [] }] };
+    const profile2 = { flights: [{ drawId: 'd2', drawName: 'Flight 2', drawEntries: [], flightNumber: 2 }] };
+    const profile3 = { flights: [{ drawId: 'd3', drawName: 'Flight 3', drawEntries: [], flightNumber: 3 }] };
 
     attachFlightProfile({ event, flightProfile: profile1 } as any);
     attachFlightProfile({ event, flightProfile: profile2, deleteExisting: true });

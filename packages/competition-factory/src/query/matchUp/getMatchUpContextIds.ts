@@ -3,7 +3,11 @@ import { validMatchUps } from '@Validators/validMatchUp';
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
-export function getMatchUpContextIds({ matchUps, matchUpId }) {
+type GetMatchUpContextIdsArgs = {
+  matchUps: any;
+  matchUpId: string;
+};
+export function getMatchUpContextIds({ matchUps, matchUpId }: GetMatchUpContextIdsArgs) {
   if (!validMatchUps(matchUps)) return { error: INVALID_VALUES };
 
   const matchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);

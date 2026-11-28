@@ -37,7 +37,7 @@ type GenerateQualifyingStructureArgs = {
   targetStructureId: string;
   qualifyingOnly?: boolean;
   drawType?: DrawTypeUnion;
-  structureOptions?: any;
+  structureOptions?: { groupSize?: number; [key: string]: unknown };
   matchUpFormat?: string;
   structureName?: string;
   tieFormat?: TieFormat;

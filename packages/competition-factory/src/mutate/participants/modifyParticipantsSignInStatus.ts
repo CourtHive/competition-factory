@@ -12,7 +12,7 @@ import { SIGNED_IN, SIGNED_OUT } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import type { Attribution } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant } from '@Types/tournamentTypes';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 import {
   INVALID_ATTRIBUTION,
   INVALID_VALUES,
@@ -44,7 +44,7 @@ export function modifyParticipantsSignInStatus({
   occurredAt,
   notes,
 }: {
-  tournamentRecord: any;
+  tournamentRecord?: Tournament;
   participantIds: string[];
   attributedTo?: Attribution;
   signInState: string;
@@ -58,7 +58,7 @@ export function modifyParticipantsSignInStatus({
   const validSignInState = [SIGNED_IN, SIGNED_OUT].includes(signInState);
   if (!validSignInState) return { error: INVALID_VALUES, signInState };
 
-  const participants = tournamentRecord.participants ?? [];
+  const participants = tournamentRecord!.participants ?? [];
   if (!participants.length) return { error: MISSING_PARTICIPANTS };
 
   const allParticipantIds = new Set(participants.map(getParticipantId));
@@ -111,7 +111,7 @@ export function modifyParticipantsSignInStatus({
       disableNotice: true, // this fn batch-dispatches MODIFY_PARTICIPANTS below
       tournamentRecord,
       participantId,
-    });
+    } as Parameters<typeof addParticipantPresenceAttestation>[0]);
     if (result.error) return result;
     modifiedParticipants.push(participant);
   }
@@ -120,7 +120,7 @@ export function modifyParticipantsSignInStatus({
   // record depended on who was listening
   if (modifiedParticipants.length) {
     modifyParticipantsNotice({
-      tournamentId: tournamentRecord.tournamentId,
+      tournamentId: tournamentRecord!.tournamentId,
       participants: modifiedParticipants,
     });
   }

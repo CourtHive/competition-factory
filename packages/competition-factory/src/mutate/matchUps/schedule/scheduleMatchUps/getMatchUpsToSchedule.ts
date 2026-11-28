@@ -22,7 +22,7 @@ type GetMatchUpsToScheduleArgs = {
   dateScheduledMatchUpIds?: string[];
   orderedMatchUpIds?: string[];
   clearDate?: boolean;
-  matchUps: any[];
+  matchUps: any;
 };
 
 export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {

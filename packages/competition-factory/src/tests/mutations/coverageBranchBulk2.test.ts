@@ -53,6 +53,7 @@ import {
   INVALID_STRUCTURE,
   MISSING_VENUE_ID,
 } from '@Constants/errorConditionConstants';
+import { defined } from '@Tests/helpers/defined';
 
 // ----------------------------------------------------------------
 // 1. getRandomQualifierList — 2 uncovered branches
@@ -746,7 +747,7 @@ describe('getCompetitionParticipants branch coverage', () => {
 // ----------------------------------------------------------------
 describe('refreshEventDrawOrder branch coverage', () => {
   it('returns error when tournamentRecord is missing', () => {
-    const result = refreshEventDrawOrder({ tournamentRecord: undefined, event: {} });
+    const result = refreshEventDrawOrder({ tournamentRecord: undefined, event: { eventId: 'e1' } });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
@@ -776,6 +777,7 @@ describe('getCourts branch coverage', () => {
   it('returns all courts when no venueId or venueIds filter', () => {
     const result = getCourts({
       tournamentRecord: {
+        tournamentId: 't1',
         venues: [
           { venueId: 'v1', courts: [{ courtId: 'c1' }] },
           { venueId: 'v2', courts: [{ courtId: 'c2' }] },
@@ -790,6 +792,7 @@ describe('getCourts branch coverage', () => {
   it('filters by venueId', () => {
     const result = getCourts({
       tournamentRecord: {
+        tournamentId: 't1',
         venues: [
           { venueId: 'v1', courts: [{ courtId: 'c1' }] },
           { venueId: 'v2', courts: [{ courtId: 'c2' }] },
@@ -799,12 +802,13 @@ describe('getCourts branch coverage', () => {
       venueIds: undefined,
     });
     expect(result.courts?.length).toBe(1);
-    expect(result.courts[0].courtId).toBe('c1');
+    expect(defined(result.courts)[0].courtId).toBe('c1');
   });
 
   it('filters by venueIds array', () => {
     const result = getCourts({
       tournamentRecord: {
+        tournamentId: 't1',
         venues: [
           { venueId: 'v1', courts: [{ courtId: 'c1' }] },
           { venueId: 'v2', courts: [{ courtId: 'c2' }] },
@@ -903,7 +907,7 @@ type EventPropertiesResult = ResultType & { entryScaleAttributes?: { participant
 
 describe('getEventProperties branch coverage', () => {
   it('returns error when tournamentRecord is missing', () => {
-    const result: EventPropertiesResult = getEventProperties({ tournamentRecord: undefined, event: {} });
+    const result: EventPropertiesResult = getEventProperties({ tournamentRecord: undefined, event: { eventId: 'e1' } });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 

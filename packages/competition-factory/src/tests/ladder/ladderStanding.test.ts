@@ -46,7 +46,7 @@ const setup = ({ policy, participants }: any) => {
     structures: [structure],
     extensions: [{ name: 'appliedPolicies', value: { [POLICY_TYPE_LADDER]: policy } }],
   };
-  return { drawDefinition, structure, tournamentRecord: { participants } };
+  return { drawDefinition, structure, tournamentRecord: { tournamentId: 't1', participants } };
 };
 
 const order = (standing: any[]) => standing.map((s) => s.participantId);

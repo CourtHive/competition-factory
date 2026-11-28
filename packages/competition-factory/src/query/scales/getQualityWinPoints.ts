@@ -19,7 +19,7 @@ type GetQualityWinPointsArgs = {
   mappedMatchUps: Record<string, any>;
   participantId?: string;
   participantSideMap: Record<string, number>; // matchUpId → sideNumber
-  tournamentParticipants: any[];
+  tournamentParticipants: Participant[];
   tournamentStartDate?: string;
   level?: number;
 };

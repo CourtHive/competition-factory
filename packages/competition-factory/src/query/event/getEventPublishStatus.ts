@@ -2,11 +2,16 @@ import { getEventTimeItem } from '@Query/base/timeItems';
 
 // constants
 import { PUBLIC, PUBLISH, STATUS } from '@Constants/timeItemConstants';
+import type { Event } from '@Types/tournamentTypes';
 
-export function getEventPublishStatus({ event, status = PUBLIC }) {
+type GetEventPublishStatusArgs = {
+  event?: Event;
+  status?: string;
+};
+export function getEventPublishStatus({ event, status = PUBLIC }: GetEventPublishStatusArgs) {
   const itemType = `${PUBLISH}.${STATUS}`;
   return getEventTimeItem({
     itemType,
     event,
-  })?.timeItem?.itemValue?.[status];
+  } as Parameters<typeof getEventTimeItem>[0])?.timeItem?.itemValue?.[status];
 }

@@ -93,7 +93,7 @@ type SetParticipantScaleItemsArgs = {
   context?: { [key: string]: any };
   tournamentRecord: Tournament;
   removePriorValues?: boolean;
-  auditData?: any;
+  auditData?: object;
 };
 
 export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {

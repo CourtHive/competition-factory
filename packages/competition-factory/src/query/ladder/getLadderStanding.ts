@@ -6,18 +6,26 @@ import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isObject } from '@Tools/objects';
 
 // constants and types
-import type { EventTypeUnion, Participant, PositionAssignment } from '@Types/tournamentTypes';
+import type {
+  DrawDefinition,
+  Event,
+  EventTypeUnion,
+  Participant,
+  PositionAssignment,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { DYNAMIC, RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RANK, RATING } from '@Constants/ladderConstants';
 
 type StandingArgs = {
-  tournamentRecord?: any;
-  drawDefinition: any;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
   /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
-  structure?: any;
+  structure?: Structure;
   structureId?: string;
-  event?: any;
+  event?: Event;
 };
 
 export type LadderStanding = { position: number; participantId: string; ratingValue?: number }[];

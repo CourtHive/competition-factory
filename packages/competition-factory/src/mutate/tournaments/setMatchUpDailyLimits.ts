@@ -7,12 +7,13 @@ import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SCHEDULE_LIMITS } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import type { DailyLimits } from '@Types/dailyLimitTypes';
 
 type SetMatchUpDailyLimitsArgs = {
   tournamentRecords?: TournamentRecords;
   tournamentRecord?: Tournament;
   tournamentId: string;
-  dailyLimits: any;
+  dailyLimits: DailyLimits;
 };
 export function setMatchUpDailyLimits(params: SetMatchUpDailyLimitsArgs): ResultType {
   const { tournamentRecord, tournamentId, dailyLimits } = params;

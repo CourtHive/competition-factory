@@ -19,7 +19,7 @@ type GetMatchUpCompetitivenessArgs = {
   sideNumber?: number;
   ascending?: boolean;
   scaleName?: string;
-  profileBands?: any;
+  profileBands?: { [band: string]: number };
   matchUp: MatchUp;
 };
 

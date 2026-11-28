@@ -8,6 +8,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, CertificationRequirement, RequirementItem } from '@Types/officiatingTypes';
+import type { Extension } from '@Types/tournamentTypes';
 
 type AddCertificationRequirementArgs = {
   officialRecord: OfficialRecord;
@@ -21,7 +22,7 @@ type AddCertificationRequirementArgs = {
   minimumAssignments?: number;
   minimumEvaluationScore?: number;
   validityPeriodMonths?: number;
-  extensions?: any[];
+  extensions?: Extension[];
 };
 
 export function addCertificationRequirement({

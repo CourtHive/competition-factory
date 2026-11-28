@@ -5,7 +5,7 @@ import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 
 // constants
 import { MATCHUP_NOT_FOUND, SCHEDULE_LOCKED } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ALLOCATE_COURTS,
@@ -72,7 +72,7 @@ export function clearMatchUpSchedule({
 }: {
   overrideScheduleLock?: boolean;
   scheduleAttributes?: string[];
-  tournamentRecord?: any;
+  tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   matchUpId: string;
   event?: Event;

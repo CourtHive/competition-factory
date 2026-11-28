@@ -7,6 +7,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, OfficialSuspension } from '@Types/officiatingTypes';
+import type { Extension } from '@Types/tournamentTypes';
 
 type AddSuspensionArgs = {
   officialRecord: OfficialRecord;
@@ -16,7 +17,7 @@ type AddSuspensionArgs = {
   suspensionNotes?: string;
   suspendedFrom?: string;
   suspendedUntil?: string;
-  extensions?: any[];
+  extensions?: Extension[];
 };
 
 export function addSuspension({

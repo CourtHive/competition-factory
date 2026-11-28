@@ -6,9 +6,10 @@ import { modifiedVenueNotices, venueSnapshot } from './venueNotices';
 import { TOURNAMENT_RECORDS, VENUE_IDS } from '@Constants/attributeConstants';
 import { DISABLED } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { TournamentRecords } from '@Types/factoryTypes';
 
 type DisableVenuesArgs = {
-  tournamentRecords: any;
+  tournamentRecords: TournamentRecords;
   tournamentId?: string;
   venueIds: string[];
 };

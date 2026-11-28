@@ -13,7 +13,7 @@ import {
 } from '@Constants/officiatingConstants';
 
 // types
-import type { Participant } from '@Types/tournamentTypes';
+import type { Extension, Participant } from '@Types/tournamentTypes';
 import type {
   ConflictEvaluationInputs,
   OfficialConflict,
@@ -31,7 +31,7 @@ type AssignOfficialArgs = ConflictEvaluationInputs & {
   endDate?: string;
   assignedBy?: string;
   notes?: string;
-  extensions?: any[];
+  extensions?: Extension[];
   /** Conflict-of-interest gate — opt-in. Supply a policy (via ConflictEvaluationInputs) AND the
    *  tournament's participants to have the assignment checked; a BLOCK-severity conflict refuses it.
    *  Omitting policyDefinitions skips the check entirely. The rest of the conflict inputs come from

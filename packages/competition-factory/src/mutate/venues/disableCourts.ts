@@ -7,9 +7,10 @@ import { modifiedVenueNotices, venueSnapshot } from './venueNotices';
 import { COURT_IDS, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { DISABLED } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { TournamentRecords } from '@Types/factoryTypes';
 
 type DisableCourtsArgs = {
-  tournamentRecords: any;
+  tournamentRecords: TournamentRecords;
   tournamentId?: string;
   courtIds: string[];
   dates?: string[];

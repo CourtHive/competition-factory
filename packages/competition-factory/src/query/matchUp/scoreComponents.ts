@@ -1,4 +1,5 @@
 import { COMPETITIVE, DECISIVE, ROUTINE, WALKOVER } from '@Constants/statsConstants';
+import type { Score } from '@Types/tournamentTypes';
 
 const add = (a, b) => (a || 0) + (b || 0);
 
@@ -12,7 +13,7 @@ export function getBand(spread: number | number[] | undefined, bandProfiles: { [
   );
 }
 
-export function getScoreComponents({ score }) {
+export function getScoreComponents({ score }: { score?: Score }) {
   const sets = score?.sets ?? [];
 
   const games = sets.reduce(

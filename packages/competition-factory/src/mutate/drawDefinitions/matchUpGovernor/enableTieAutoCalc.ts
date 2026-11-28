@@ -8,8 +8,15 @@ import {
   INVALID_MATCHUP,
 } from '@Constants/errorConditionConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
-export function enableTieAutoCalc({ tournamentRecord, drawDefinition, matchUpId, event }) {
+type EnableTieAutoCalcArgs = {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  matchUpId: string;
+  event?: Event;
+};
+export function enableTieAutoCalc({ tournamentRecord, drawDefinition, matchUpId, event }: EnableTieAutoCalcArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const { matchUp } = findDrawMatchUp({
@@ -26,7 +33,7 @@ export function enableTieAutoCalc({ tournamentRecord, drawDefinition, matchUpId,
     drawDefinition,
     matchUpId,
     event,
-  });
+  } as Parameters<typeof setMatchUpStatus>[0]);
 
   // This API has always reported the stored dual when enabling would change a winner already played on.
   // The selector's refusal names its projection instead; keep the public enableTieAutoCalc envelope.

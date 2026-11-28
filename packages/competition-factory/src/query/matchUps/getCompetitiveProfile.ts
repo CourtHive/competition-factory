@@ -42,7 +42,7 @@ type GetCompetitiveProfileArgs = {
   scaleAccessor?: string;
   participantId?: string;
   ascending?: boolean;
-  profileBands?: any;
+  profileBands?: { [band: string]: number };
   scaleName?: string;
   matchUps: HydratedMatchUp[];
 };

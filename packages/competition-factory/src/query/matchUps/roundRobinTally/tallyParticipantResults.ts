@@ -30,7 +30,7 @@ type TallyParticipantResultsArgs = {
   pressureRating?: boolean;
   matchUpFormat?: string;
   perPlayer?: number;
-  subOrderMap?: any;
+  subOrderMap?: { [participantId: string]: number };
   matchUps: (MatchUp & { structureId?: string })[];
   /** values from outside the results, by key and then participantId, read by `external` tally directives */
   externalValues?: Record<string, Record<string, number>>;

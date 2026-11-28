@@ -5,23 +5,28 @@ import { updateDrawIdsOrder } from './updateDrawIdsOrder';
 // constants
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
 
-export function refreshEventDrawOrder({ tournamentRecord, event }) {
+type RefreshEventDrawOrderArgs = {
+  tournamentRecord?: Tournament;
+  event?: Event;
+};
+export function refreshEventDrawOrder({ tournamentRecord, event }: RefreshEventDrawOrderArgs) {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 
-  const { flightProfile } = getFlightProfile({ event });
+  const { flightProfile } = getFlightProfile({ event } as Parameters<typeof getFlightProfile>[0]);
   // a flight is placed by its draw's display order, else its own, else its number (its level). A copy: sorting the
   // stored array reordered the flights in the profile itself
-  const drawOrderOf = new Map((event.drawDefinitions ?? []).map(({ drawId, drawOrder }) => [drawId, drawOrder]));
+  const drawOrderOf = new Map((event!.drawDefinitions ?? []).map(({ drawId, drawOrder }) => [drawId, drawOrder]));
   const placement = (flight) => drawOrderOf.get(flight.drawId) ?? flight.drawOrder ?? flight.flightNumber;
   const orderedFlightDrawIds = [...(flightProfile?.flights ?? [])]
     .sort((a, b) => placement(a) - placement(b))
     .map((f) => f.drawId)
     .filter(Boolean);
   const orderedDrawIds =
-    event.drawDefinitions
-      ?.sort((a, b) => a.drawOrder - b.drawOrder)
+    event!.drawDefinitions
+      ?.sort((a, b) => a.drawOrder! - b.drawOrder!)
       .map((d) => d.drawId)
       .filter(Boolean)
       .filter((drawId) => !orderedFlightDrawIds.includes(drawId)) ?? [];

@@ -1,6 +1,10 @@
 import { findExtension } from '@Helpers/extensions/findExtension';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 
-export function getDrawParticipantRepresentativeIds({ drawDefinition }) {
+type GetDrawParticipantRepresentativeIdsArgs = {
+  drawDefinition?: DrawDefinition;
+};
+export function getDrawParticipantRepresentativeIds({ drawDefinition }: GetDrawParticipantRepresentativeIdsArgs) {
   const result = findExtension({
     name: 'participantRepresentatives',
     element: drawDefinition,

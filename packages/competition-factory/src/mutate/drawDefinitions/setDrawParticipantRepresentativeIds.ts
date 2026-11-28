@@ -6,14 +6,22 @@ import { intersection } from '@Tools/arrays';
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { PARTICIPANT_REPRESENTATIVES } from '@Constants/extensionConstants';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
+type SetDrawParticipantRepresentativeIdsArgs = {
+  representativeParticipantIds: string[];
+  drawDefinition: DrawDefinition;
+  tournamentRecord?: Tournament;
+  disableNotice?: boolean;
+  event?: Event;
+};
 export function setDrawParticipantRepresentativeIds({
   representativeParticipantIds,
   drawDefinition,
   tournamentRecord,
   disableNotice,
   event,
-}) {
+}: SetDrawParticipantRepresentativeIdsArgs) {
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
   if (!Array.isArray(representativeParticipantIds)) return { error: INVALID_VALUES };
 

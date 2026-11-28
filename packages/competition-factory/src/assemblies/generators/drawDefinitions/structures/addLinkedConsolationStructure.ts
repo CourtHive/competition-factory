@@ -14,6 +14,7 @@ import {
   MISSING_STRUCTURE,
   UNRECOGNIZED_DRAW_TYPE,
 } from '@Constants/errorConditionConstants';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 
 type LoserLinkDefinition = {
   sourceRoundNumber: number;
@@ -29,7 +30,7 @@ type GenerateConsolationArgs = {
 };
 
 type AddLinkedConsolationStructureArgs = GenerateConsolationArgs & {
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
   structureId?: string;
   links: LoserLinkDefinition[];
 };

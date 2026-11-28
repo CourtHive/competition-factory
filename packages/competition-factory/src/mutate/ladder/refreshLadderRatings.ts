@@ -9,7 +9,7 @@ import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } fr
 import { RATING as RATING_ORDERING } from '@Constants/ladderConstants';
 import { RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
-import type { Structure } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -18,10 +18,10 @@ type RefreshArgs = {
   ratings: Record<string, number>;
   /** The instant these values were true, which becomes their `scaleDate`. */
   refreshedAt: string;
-  tournamentRecord: any;
-  drawDefinition: any;
-  structure?: any;
-  event?: any;
+  tournamentRecord: Tournament;
+  drawDefinition: DrawDefinition;
+  structure?: Structure;
+  event?: Event;
 };
 
 /**

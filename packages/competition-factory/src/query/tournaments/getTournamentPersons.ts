@@ -2,8 +2,14 @@ import { filterParticipants } from '@Query/participants/filterParticipants';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
+import type { ParticipantFilters } from '@Types/factoryTypes';
 
-export function getTournamentPersons({ tournamentRecord, participantFilters }) {
+type GetTournamentPersonsArgs = {
+  tournamentRecord: Tournament;
+  participantFilters?: ParticipantFilters;
+};
+export function getTournamentPersons({ tournamentRecord, participantFilters }: GetTournamentPersonsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   let tournamentParticipants = tournamentRecord.participants ?? [];
 

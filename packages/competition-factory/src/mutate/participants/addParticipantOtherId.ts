@@ -7,6 +7,7 @@ import { nowIso } from '@Tools/clock';
 import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
 /**
  * Upsert a `UnifiedParticipantID` entry into the participant's
@@ -34,7 +35,7 @@ export function addParticipantOtherId({
   otherParticipantId,
   uniqueOrganisationName,
 }: {
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   organisationId: string;
   participantId: string;
   // the OTHER organisation's id for this participant. Named distinctly from
