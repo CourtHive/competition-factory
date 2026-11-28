@@ -16,10 +16,11 @@ export const POLICY_SCORING_DEFAULT = {
      */
     requireParticipantsForScoring: false,
     /**
-     * without a SCORING_POLICY which sets { requireAllPositionsAssigned: false },  all stage:MAIN, stageSequence:1 drawPositions must be assigned **BEFORE** scoring is enabled,
-     * scoring is enabled in consolation and compass/playoff structures when not all drawPositions have been filled
+     * Whether every drawPosition of a structure must be assigned (a participant, a BYE or a qualifier) before its
+     * matchUps can be scored. `true` here applies to every structure; `stage[stage].stageSequence[n]` below applies to
+     * one stage sequence. A draw still being positioned can be scored by default: a policy that requires it says so.
      */
-    requireAllPositionsAssigned: undefined, // default is true; NOT required when value is false
+    requireAllPositionsAssigned: undefined, // absent or false: not required
     /**
      * The three propagation flags are SILENT here on purpose (the policy governs,
      * both ways). A policy that says `true` or `false` on one of these overrules the call; a policy
@@ -59,7 +60,8 @@ export const POLICY_SCORING_DEFAULT = {
       [MAIN]: {
         stageSequence: {
           1: {
-            requireAllPositionsAssigned: true,
+            // the default does not require MAIN to be fully positioned; a policy that does sets this true
+            requireAllPositionsAssigned: false,
           },
         },
       },

@@ -8,14 +8,16 @@ import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN } from '@Constants/dra
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { SCORE } from '@Constants/matchUpActionConstants';
 
-// The stage-scoped rule sits at the top of the scoring policy, as POLICY_SCORING_DEFAULT states it: the MAIN draw's first
-// stage sequence must be fully positioned before it is scored, and no other structure is held to that.
+// A policy can require every MAIN position to be assigned before scoring; the default does not. The stage-scoped rule
+// sits at the top of the scoring policy (`scoring.stage`), where every bundled policy states it.
 const stageScopedOnly = {
   [POLICY_TYPE_SCORING]: {
     requireAllPositionsAssigned: false,
     stage: { [MAIN]: { stageSequence: { 1: { requireAllPositionsAssigned: true } } } },
   },
 };
+// the policy-level flag, which applies to every structure
+const policyLevel = { [POLICY_TYPE_SCORING]: { requireAllPositionsAssigned: true } };
 
 function partlyPositionedMain(policyDefinitions) {
   const {
@@ -49,10 +51,10 @@ function partlyPositionedMain(policyDefinitions) {
   return { assign, firstMatchUp, actionTypes };
 }
 
-describe('a stage-scoped requireAllPositionsAssigned', () => {
+describe('requireAllPositionsAssigned', () => {
   for (const [name, policyDefinitions] of [
-    ['POLICY_SCORING_DEFAULT', POLICY_SCORING_DEFAULT],
-    ['a policy that states the rule only per stage', stageScopedOnly],
+    ['a policy that requires it for MAIN stage sequence 1', stageScopedOnly],
+    ['a policy that requires it at the top', policyLevel],
   ] as const) {
     it(`holds scoring in a partly positioned MAIN draw under ${name}`, () => {
       const { assign, firstMatchUp, actionTypes } = partlyPositionedMain(policyDefinitions);
@@ -68,18 +70,23 @@ describe('a stage-scoped requireAllPositionsAssigned', () => {
     });
   }
 
-  it('scores a partly positioned MAIN draw when no policy speaks', () => {
-    const { firstMatchUp, actionTypes } = partlyPositionedMain(undefined);
-    expect(firstMatchUp().readyToScore).toEqual(true);
-    expect(actionTypes()).toContain(SCORE);
-  });
+  for (const [name, policyDefinitions] of [
+    ['POLICY_SCORING_DEFAULT', POLICY_SCORING_DEFAULT],
+    ['no policy', undefined],
+  ] as const) {
+    it(`scores a partly positioned MAIN draw under ${name}`, () => {
+      const { firstMatchUp, actionTypes } = partlyPositionedMain(policyDefinitions);
+      expect(firstMatchUp().readyToScore).toEqual(true);
+      expect(actionTypes()).toContain(SCORE);
+    });
+  }
 
-  it('does not reach a consolation structure that is not fully positioned', () => {
+  it('a MAIN-only requirement does not reach a consolation that is not fully positioned', () => {
     const {
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
-      policyDefinitions: POLICY_SCORING_DEFAULT,
+      policyDefinitions: stageScopedOnly,
       setState: true,
     });
     const stageMatchUps = (stage) =>
