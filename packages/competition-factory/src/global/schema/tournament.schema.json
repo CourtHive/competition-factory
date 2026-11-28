@@ -2573,6 +2573,12 @@
         },
         "byeFromPropagation": {
           "type": "boolean"
+        },
+        "declinedParticipantId": {
+          "type": "string"
+        },
+        "declinedMatchUpId": {
+          "type": "string"
         }
       },
       "required": ["drawPosition"],

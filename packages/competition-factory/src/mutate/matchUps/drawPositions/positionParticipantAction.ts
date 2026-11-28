@@ -1,6 +1,7 @@
 import { conditionallyDisableLinkPositioning } from '@Mutate/drawDefinitions/positionGovernor/conditionallyDisableLinkPositioning';
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
+import { dueParticipantRefusal, reservedSeatRefusal } from '@Query/drawDefinition/positionActionRefusal';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -59,6 +60,34 @@ export function positionParticipantAction(params) {
     structureId,
   });
   const positionAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
+
+  // a seat a matchUp not yet decided still owes is not filled by hand, where its arrival would then be refused; the
+  // placement disables the seat's own links outside a first-stage MAIN or QUALIFYING structure
+  const placedStructure = findStructure({ drawDefinition, structureId }).structure;
+  const reserved =
+    !isQualifierPosition &&
+    reservedSeatRefusal({
+      disablesSeat: !(
+        ['MAIN', 'QUALIFYING'].includes(placedStructure?.stage as string) && placedStructure?.stageSequence === 1
+      ),
+      inContextDrawMatchUps: () => inContextDrawMatchUps,
+      placing: 'PARTICIPANT',
+      drawDefinition,
+      drawPosition,
+      structureId,
+      stack,
+    });
+  if (reserved) return reserved;
+  const due =
+    !isQualifierPosition &&
+    dueParticipantRefusal({
+      inContextDrawMatchUps: () => inContextDrawMatchUps,
+      drawDefinition,
+      participantId,
+      structureId,
+      stack,
+    });
+  if (due) return due;
 
   if (positionAssignment?.participantId) {
     const removedParticipantId = positionAssignment.participantId;

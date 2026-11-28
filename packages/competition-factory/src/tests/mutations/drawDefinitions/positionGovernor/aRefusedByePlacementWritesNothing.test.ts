@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 // constants
 import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
-import { DRAW_POSITION_ASSIGNED } from '@Constants/errorConditionConstants';
+import { CONTRADICTORY_POSITION_ACTION, DRAW_POSITION_ASSIGNED } from '@Constants/errorConditionConstants';
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -257,7 +257,10 @@ describe('a BYE placement refused past its first write leaves the record as it w
       drawPosition: 8,
     });
 
-    expect(result.error).toEqual(DRAW_POSITION_ASSIGNED);
+    // 8.0.0 refuses it sooner: West 8 is a seat an East result not yet decided still owes (reservedFor), asked before
+    // the exit walk. Either way the refusal writes nothing and announces nothing
+    expect(result.error).toEqual(CONTRADICTORY_POSITION_ACTION);
+    expect(result.context.reservedFor.length).toBeGreaterThan(0);
     expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).toBe(before);
     expect(notices).toEqual([]);
   });

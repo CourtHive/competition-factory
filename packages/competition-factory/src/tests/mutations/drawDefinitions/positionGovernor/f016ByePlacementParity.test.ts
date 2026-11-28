@@ -8,6 +8,7 @@ import { setClock } from '@Tools/clock';
 
 // constants
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   COMPASS,
@@ -37,7 +38,7 @@ import {
  */
 useEngineCatch();
 
-const counts = { planned: 0, unplanned: 0, refused: 0, steps: 0 };
+const counts = { planned: 0, unplanned: 0, refused: 0, reserved: 0, steps: 0 };
 const reasons: Record<string, number> = {};
 vi.mock('@Mutate/matchUps/drawPositions/planDrawPositionBye', async (original) => {
   const actual = await original<typeof import('@Mutate/matchUps/drawPositions/planDrawPositionBye')>();
@@ -102,6 +103,14 @@ function compare(state: any, params: any, viaAssignDrawPosition: boolean) {
   // the mutation notice names the directive: the imported writer's name stands for the public one
   base.notices = base.notices.replaceAll(`"${legacyMethod}"`, `"${method}"`);
   const candidate = run(state, method, { ...params, ...extra });
+  if (candidate.result?.error?.code === CONTRADICTORY_POSITION_ACTION.code) {
+    // 8.0.0: the public placement refuses a seat a matchUp not yet decided still owes, where the writer accepts it
+    // (aHandPlacementOnAReservedSeatIsRefused.test.ts); the refusal writes nothing and names the feeders
+    expect(candidate.result.context.reservedFor.length).toBeGreaterThan(0);
+    expect(JSON.stringify(candidate.record)).toBe(JSON.stringify(run(state, 'getTournament', {}).record));
+    counts.reserved += 1;
+    return candidate.record;
+  }
   expect(candidate.result).toEqual(base.result);
   expect(JSON.stringify(candidate.record)).toBe(JSON.stringify(base.record));
   if (candidate.notices !== base.notices) {

@@ -9,7 +9,10 @@ import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstant
  * A consolation seat whose arrived loser is removed and replaced with a BYE is marked `disableLinks`, so its feeder's
  * loser is no longer sent there. `resetDrawDefinition` keeps that BYE (it empties only the seats results filled) and
  * used to clear its marker: the BYE then sat unmarked on a seat the link feeds, and once the draw was replayed the
- * consolation matchUp's second loser was refused with ERR_OCCUPIED_DRAW_POSITION. The marker now stays with the BYE.
+ * consolation matchUp's second loser was refused with ERR_OCCUPIED_DRAW_POSITION. In 7.x the marker stays with the BYE.
+ *
+ * 8.0.0: that BYE is a declined consolation, and a decline lapses with its result (`aDeclineLapsesWithItsResult`): the
+ * reset removes the BYE and its marker, and the replayed loser arrives. A BYE with no decline keeps its marker.
  */
 
 const played = (winningSide: 1 | 2) => ({
@@ -24,7 +27,7 @@ const played = (winningSide: 1 | 2) => ({
   winningSide,
 });
 
-it('a reset keeps the disabled links of a BYE placed by hand, and the draw replays', () => {
+it('a reset lapses the decline a BYE placed by hand records, and the draw replays', () => {
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId: 'd', drawType: FIRST_ROUND_LOSER_CONSOLATION, drawSize: 8 }],
     setState: true,
@@ -56,12 +59,12 @@ it('a reset keeps the disabled links of a BYE placed by hand, and the draw repla
 
   expect(tournamentEngine.resetDrawDefinition({ drawId: 'd' }).success).toEqual(true);
   const byeSeat = consolation().positionAssignments.find((assignment: any) => assignment.drawPosition === seat);
-  expect(byeSeat).toMatchObject({ bye: true, disableLinks: true });
+  expect([byeSeat.bye, byeSeat.disableLinks]).toEqual([undefined, undefined]);
 
-  // replayed: both results are accepted, and the second loser takes the open seat beside the BYE
+  // replayed: both results are accepted, and both losers arrive
   expect(score(1).success).toEqual(true);
   expect(score(2).success).toEqual(true);
-  expect(consolation().positionAssignments.filter((assignment: any) => assignment.participantId).length).toEqual(1);
+  expect(consolation().positionAssignments.filter((assignment: any) => assignment.participantId).length).toEqual(2);
   const errors = (tournamentEngine.getDrawInconsistencies({ drawId: 'd' }).inconsistencies ?? []).filter(
     (inconsistency: any) => inconsistency.severity === 'error',
   );

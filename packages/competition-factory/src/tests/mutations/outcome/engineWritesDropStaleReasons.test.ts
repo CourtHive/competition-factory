@@ -36,6 +36,8 @@ import {
   TO_BE_PLAYED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
+import { CONTRADICTORY_POSITION_ACTION } from '@Constants/errorConditionConstants';
+import { ARRIVED_FROM_RESULT } from '@Query/drawDefinition/positionActionRefusal';
 
 /**
  * AN ENGINE WRITE KEEPS ONLY THE REASONS THAT STILL DESCRIBE THE RESULT IT LEAVES.
@@ -327,6 +329,20 @@ function play(mode: OutcomePipelineMode, row: Row) {
         const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
         const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
         result = tournamentEngine.swapDrawPositionAssignments({ drawId: 'd', drawPositions, structureId });
+        // 8.0.0 refuses a swap that would contradict the draw's results (aContradictorySwapIsRefused.test.ts); a record
+        // stored by an earlier release can still hold its result, so the record is given that state directly
+        if (result.error?.code === CONTRADICTORY_POSITION_ACTION.code) {
+          const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+          const stored = record.events[0].drawDefinitions[0].structures.find(
+            (structure: any) => structure.structureId === structureId,
+          );
+          const [a, b] = drawPositions.map((drawPosition: number) =>
+            stored.positionAssignments.find((assignment: any) => assignment.drawPosition === drawPosition),
+          );
+          [a.participantId, b.participantId] = [b.participantId, a.participantId];
+          tournamentEngine.setState(record);
+          result = { success: true };
+        }
       } else result = tournamentEngine.resetDrawDefinition({ drawId: 'd' });
       results.push(result);
       undescribedAfter.push(
@@ -562,23 +578,6 @@ const REDUCTION_ROWS: [string, Row][] = [
     },
   ],
   [
-    "a double walkover reduced to a pending walkover when one exit's position is removed",
-    {
-      drawType: FEED_IN_CHAMPIONSHIP_TO_SF,
-      drawSize: 8,
-      participantsCount: 5,
-      nonRandom: 7078,
-      propagateExitStatus: true,
-      steps: [
-        { at: 'Main|1|2', outcome: walkover(1) },
-        { at: 'Main|2|1', outcome: walkover(1) },
-        { at: 'Main|2|2', outcome: defaulted(1) },
-        { remove: ['Consolation', 2] },
-      ],
-      then: ['Consolation|3|1', WALKOVER],
-    },
-  ],
-  [
     "a double walkover reduced to a pending walkover when one exit's source is cleared keeps the standing exit's reason",
     {
       drawType: MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -654,6 +653,48 @@ describe('an exit reduced or relabelled keeps only the reasons that describe it'
     expect(v2.undescribedAfter).toEqual(v1.undescribedAfter);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+    expect(differential.divergence).toBeUndefined();
+    expect(differential.record).toEqual(v1.record);
+  });
+});
+
+/**
+ * A removal that would reduce a double exit by withdrawing a participant a result sent to the consolation is refused
+ * in 8.0.0 (`aHandPlacementOnAReservedSeatIsRefused.test.ts`): the arrival and the exit that depends on it are named
+ * for the director to clear first. The refusal writes nothing, and the double exit stands, the same under each
+ * pipeline.
+ */
+const REFUSED_REDUCTION: Row = {
+  drawType: FEED_IN_CHAMPIONSHIP_TO_SF,
+  drawSize: 8,
+  participantsCount: 5,
+  nonRandom: 7078,
+  propagateExitStatus: true,
+  steps: [
+    { at: 'Main|1|2', outcome: walkover(1) },
+    { at: 'Main|2|1', outcome: walkover(1) },
+    { at: 'Main|2|2', outcome: defaulted(1) },
+    { remove: ['Consolation', 2] },
+  ],
+  then: ['Consolation|3|1', WALKOVER],
+};
+
+describe('a removal that would reduce an exit by withdrawing an arrival is refused', () => {
+  it("a double walkover reduced to a pending walkover when one exit's position is removed", () => {
+    const v1 = play(OUTCOME_PIPELINE_V1, REFUSED_REDUCTION);
+    const v2 = play(OUTCOME_PIPELINE_V2, REFUSED_REDUCTION);
+    const differential = play(OUTCOME_PIPELINE_DIFFERENTIAL, REFUSED_REDUCTION);
+    const before = play(OUTCOME_PIPELINE_V1, { ...REFUSED_REDUCTION, steps: REFUSED_REDUCTION.steps.slice(0, -1) });
+
+    const refused: any = v1.results[v1.results.length - 1];
+    expect(refused.error).toEqual(CONTRADICTORY_POSITION_ACTION);
+    expect(refused.context.mustClear.map(({ reason }: any) => reason)).toContain(ARRIVED_FROM_RESULT);
+    expect(v1.results.slice(0, -1).map((result: any) => result.success)).toEqual([true, true, true]);
+    expect(v1.record).toEqual(before.record);
+    expect(v1.then?.matchUpStatus).toEqual(DOUBLE_WALKOVER);
+
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
     expect(differential.divergence).toBeUndefined();
     expect(differential.record).toEqual(v1.record);
   });

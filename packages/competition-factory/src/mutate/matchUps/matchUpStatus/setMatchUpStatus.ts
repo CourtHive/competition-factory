@@ -31,6 +31,19 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { isDoubleExit } from '@Validators/isExit';
+import { lapsingDeclines, type DeclinedSeat } from '@Query/drawDefinition/positionActionRefusal';
+import { removeAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import {
+  cycleModifiedTournamentIds,
+  cycleModifiedTopics,
+  restoreMutationStatus,
+  readMutationStatus,
+  getNoticeBuffer,
+  setNoticeBuffer,
+  markModified,
+} from '@Global/state/globalState';
+import { lapseDeclines } from '@Mutate/drawDefinitions/resetDrawDefinition';
 import { findPolicy } from '@Acquire/findPolicy';
 import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
@@ -147,6 +160,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // here instead lets the preflight, the before-snapshot and the warning below read the same flat array
   // the cascade writes through, so none of them walks the draw again. Its matchUps are the live objects.
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // a result whose loser declined the consolation (their seat replaced with a BYE) lapses that decline when it is
+  // cleared or its winner changes: the BYE is removed and the seat's links re-enabled, then the result is entered in
+  // the same pass; a refusal restores the draw from a copy taken first, so it writes nothing (every pipeline alike)
+  const lapsing = lapsingDeclines({ drawDefinition, matchUpsMap, matchUpId, winningSide: params.outcome?.winningSide });
+  if (lapsing.length) return lapseThenSet(params, lapsing);
   const rotating = preflightOutcome(params, matchUpsMap);
   if (rotating.error) return rotating;
   params = { ...params, ...rotating, outcome: params.outcome && { ...params.outcome, ...rotating } };
@@ -770,4 +788,43 @@ function ownedResult({ owned, params, matchUpsMap, neverPlayedBefore, stack }: O
   const { disableScoreValidation, outcome } = params;
   const warnings = callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome });
   return decorateResult({ result: warnings.length ? { ...owned, warnings } : owned, stack });
+}
+
+/**
+ * the declines `seats` lapse (each BYE removed, its seat fed again), then the call itself, in one pass over the stored
+ * draw. Only this draw is copied first, and only for a call that lapses a decline; a refusal anywhere restores it in
+ * place, so the refused call leaves the record as it was.
+ */
+function lapseThenSet(params: SetMatchUpStatusArgs, seats: DeclinedSeat[]): ResultType {
+  const { tournamentRecord, drawDefinition, event } = params;
+  const draw = drawDefinition as DrawDefinition;
+  // the draw, the notice buffer and the modified marks as they stand: a refusal puts all three back
+  const saved = makeDeepCopy(draw, false, true);
+  const notices = getNoticeBuffer();
+  const status = readMutationStatus();
+  const tournamentIds = cycleModifiedTournamentIds();
+  const topics = cycleModifiedTopics();
+  const remark = () => {
+    for (const tournamentId of tournamentIds ?? []) markModified(tournamentId, [...(topics ?? [])][0]);
+    for (const topic of topics ?? []) markModified([...(tournamentIds ?? [])][0], topic);
+  };
+  const refuse = (result: ResultType) => {
+    for (const key of Object.keys(draw)) delete (draw as any)[key];
+    Object.assign(draw, saved);
+    setNoticeBuffer(notices);
+    cycleModifiedTournamentIds();
+    cycleModifiedTopics();
+    remark();
+    restoreMutationStatus(status);
+    return result;
+  };
+  for (const { structureId, drawPosition } of seats) {
+    const removed = removeAssignment({ tournamentRecord, drawDefinition, event, structureId, drawPosition });
+    if (removed.error) return refuse(removed);
+  }
+  lapseDeclines(draw, seats);
+  const result = setMatchUpStatus({ ...params, matchUpsMap: undefined } as SetMatchUpStatusArgs);
+  if (result.error) return refuse(result);
+  remark();
+  return result;
 }

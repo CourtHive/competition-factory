@@ -507,6 +507,125 @@ and earlier carry no tags at all.
 - **Date helpers need the instant.** Exported date helpers lose their implicit "now" in 8.0.0. In 7.x, pass a Date or ISO date string as the second argument to `tools.plainDate.isDateInPast(dateString, asOf)` and `tools.generateTimeCode(index, asOf)`. When omitted, both still read the call clock.
 - **`asOf` is required** on `tools.publishing` (`isEmbargoed`, `isVisiblyPublished`, `getRoundVisibilityState`).
 - **A policy can require every MAIN position to be assigned before scoring; the default does not.** (#6717) `requireAllPositionsAssigned` set under `scoring.stage[stage].stageSequence[n]` was never read in 7.x and now is: under a policy that sets it `true` for MAIN stage sequence 1, as the catalogue's `POLICY_SCORING_USTA` does, a MAIN matchUp is not `readyToScore` and `matchUpActions` does not offer `SCORE`, `EXIT` or `CLEAR_SCORE` for it until every position holds a participant, a BYE or a qualifier. `POLICY_SCORING_DEFAULT` now sets that flag `false`, so a draw still being positioned can be scored by default, as in 7.x. The top-level `requireAllPositionsAssigned` is unchanged.
+- **A swap or hand placement that would contradict the draw is refused** with `CONTRADICTORY_POSITION_ACTION`. `context.mustClear` names what to clear first, and `context.reservedFor` names the matchUps a seat is still owed to. See [Contradictory position swaps](#contradictory-position-swaps) and [Seats a pending result still owes](#seats-a-pending-result-still-owes).
+
+### Contradictory position swaps
+
+A structure records its results against drawPositions. A participant it has sent on, such as a loser directed to a
+consolation or backdraw, a group finisher placed in a playoff, or a qualifier placed in the main draw, is recorded in the
+target structure by who they are. Before 8.0.0, `swapDrawPositionAssignments` accepted a swap of such a seat. The
+results then moved to the other participant, but the target structure still held the first one. The draw contradicted
+itself, and a later valid call on either seat was refused, often with `ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`
+or `ERR_OCCUPIED_DRAW_POSITION`. For example, in a `FIRST_ROUND_LOSER_CONSOLATION` draw of 16, a director could score
+Main R1P4 and R1P1, swap positions 1 and 7, and then try to reverse R1P4.
+
+8.0.0 refuses that swap before it writes anything, with `CONTRADICTORY_POSITION_ACTION`
+(`ERR_CONTRADICTORY_POSITION_ACTION`). A swap is refused when:
+
+- a swapped seat's occupant was sent across a link by a decided result in the structure, or was placed in a link's
+  target (a playoff, the main draw for a qualifier);
+- a seat holding results is swapped with a seat that holds nobody, which would leave the results on an empty
+  drawPosition.
+
+The engine does not undo the downstream results itself. The refusal lists them in `context.mustClear`, in the order they
+can be cleared, with each result before the result it depends on:
+
+```ts
+const result = tournamentEngine.swapDrawPositionAssignments({ drawId, structureId, drawPositions: [1, 7] });
+if (result.error?.code === 'ERR_CONTRADICTORY_POSITION_ACTION') {
+  for (const item of result.context.mustClear) {
+    // { matchUpId, structureId, roundNumber, roundPosition, reason }: a result to clear
+    // { structureId, drawPosition, participantId, reason }: a placement to remove
+  }
+}
+```
+
+`reason` is one of:
+
+| `reason`                 | Meaning                                                                                        | How it is cleared                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `LOSER_DIRECTED`         | this result sent the swapped seat's occupant to a consolation or backdraw seat                 | clear the result                                |
+| `WINNER_DIRECTED`        | this result sent the swapped seat's occupant on as a winner                                    | clear the result                                |
+| `RESULT_ON_POSITION`     | a result of the swapped seat that would be left on an empty drawPosition                       | clear the result                                |
+| `DEPENDS_ON_RESULT`      | a later result that depends on a result above, so it is cleared first                          | clear the result                                |
+| `PLACED_ACROSS_LINK`     | the occupant was placed in a playoff or main draw, which no result there undoes                | `removeDrawPositionAssignment` on that position |
+| `BYE_ADVANCEMENT_PLAYED` | a later result of the opponent who advanced through the BYE being swapped away                 | clear the result                                |
+| `ARRIVED_FROM_RESULT`    | the result that sent a consolation or playoff participant to the seat being removed or swapped | clear the result                                |
+
+When every listed item is cleared, the swap is accepted.
+
+**Surfacing it in a client.** Show the refusal as a list of the matchUps (by structure, round and position) and
+placements to clear, in the order given, and offer to clear them, for example as one `executionQueue` with
+`rollbackOnError: true`, followed by the swap. Do not clear them silently: each item is a recorded result. A client that
+offers swaps from `positionActions` meets this only on positions the policy allows to move after play.
+
+Swaps that relabel nothing outside their structure are unchanged: a swap before any result, a swap of seats whose
+results stay inside the structure (for example two first-round winners in single elimination), and a swap of two
+seats in a consolation or playoff structure, whose links the swap disables.
+
+_Shipped in #6678._
+
+### Seats a pending result still owes
+
+A seat in a consolation, playoff or backdraw is filled by the loser (or winner) of a matchUp in the structure that feeds
+it. Before 8.0.0, a director could fill such a seat by hand before that matchUp was decided: a BYE
+(`assignDrawPositionBye`, `assignDrawPosition` with `bye: true`, `removeDrawPositionAssignment` with
+`replaceWithBye: true`), a participant (`assignDrawPosition`), an alternate or a lucky loser. When the result was then
+entered, the arriving participant had nowhere to go, and the result was refused with `ERR_OCCUPIED_DRAW_POSITION` or
+`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`.
+
+8.0.0 refuses the placement before it writes anything, with `CONTRADICTORY_POSITION_ACTION`, where the arrival would be
+refused. An arriving participant takes any open seat of the matchUp it is sent to, so a placement is refused only when
+that matchUp would be left with fewer open seats than the participants still owed to it. `context.mustClear` is empty,
+because there is nothing to clear: `context.reservedFor` lists the feeding matchUps, each as
+`{ matchUpId, structureId, roundNumber, roundPosition, reason }` with `reason` `LOSER_DUE` or `WINNER_DUE`. The seat can
+be filled by hand once those results are entered, or once its links are disabled.
+
+These are refused the same way:
+
+- **a participant placed by hand in a structure linked with one where they are still playing**, whose next result
+  there would send them a second time (`reason: 'PARTICIPANT_DUE'`, naming their pending matchUps);
+- **a swap in a consolation or playoff of seats a pending result still owes** (`reservedFor`): the swap disables both
+  seats' links, so the arrival would be sent nowhere;
+- **a BYE swapped away from a seat whose opponent has played on through it** (`mustClear`, `reason:
+'BYE_ADVANCEMENT_PLAYED'`): their later results would no longer follow from a BYE.
+
+Two placements are unchanged:
+
+- **A BYE on the round-two seat of a `FIRST_MATCH_LOSER_CONSOLATION` consolation.** The round-two loser it is owed to
+  takes the lowest seat of that matchUp and replaces a BYE placed there, so the placement contradicts nothing. A
+  participant placed there by hand is refused like any other.
+- **A placement on a seat whose feeding matchUp is decided**, or one no result will reach (a double walkover, a BYE).
+
+`reservedFor` uses its own reasons:
+
+| `reason`          | Meaning                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `LOSER_DUE`       | this matchUp, not yet decided, sends its loser to the seat                                   |
+| `WINNER_DUE`      | this matchUp, not yet decided, sends its winner to the seat                                  |
+| `PARTICIPANT_DUE` | the participant being placed still plays this matchUp, in a structure linked with the target |
+
+**A participant who arrived from a result is moved only once that result is cleared.** Removing a consolation or
+playoff participant who was sent there by a result that still stands, without a BYE, or swapping them, is refused:
+reversing that result later would find someone else on the seat. `mustClear` names the result (`ARRIVED_FROM_RESULT`),
+anything depending on it first.
+
+**A declined consolation is recorded as before.** Replacing that participant with a BYE
+(`removeDrawPositionAssignment` with `replaceWithBye: true`) records that they declined the consolation, and is accepted:
+the seat's links are disabled, so no later loser is sent there.
+
+**A decline lapses when its result is cleared or reversed.** The BYE that records a declined consolation carries the
+decline (`declinedParticipantId`, `declinedMatchUpId` on the seat's position assignment). Clearing that result, or
+entering the other winner so the declining participant no longer lost (`setMatchUpStatus`, a bulk update or a queue),
+removes the decline's BYE and re-enables the seat's links in the same call: a reversal's new loser arrives in the seat
+at once, and a cleared result's loser arrives when it is entered again. The call is composed whole before it writes, so
+a refusal anywhere in it writes nothing and the decline stands. A score correction that keeps the winner keeps the
+decline. `resetDrawDefinition`, and `resetStructure` of the structure that holds the result, lapse it the same way. A
+record written before 8.0.0 carries no decline marker; a seat is read as a decline when it holds a hand-placed BYE with
+disabled links and exactly one decided matchUp sends its loser to that seat's matchUp without the loser being in the
+structure. Any other hand-placed BYE is closed before play: a reset keeps it and its disabled links.
+
+A client should present `reservedFor` as "this seat is reserved for the loser of …", and not offer to clear anything.
 
 ### Records written before 8.0.0
 

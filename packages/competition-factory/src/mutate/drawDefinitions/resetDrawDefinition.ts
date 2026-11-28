@@ -5,8 +5,9 @@ import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotificati
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
-import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { getDeclinedSeats } from '@Query/drawDefinition/positionActionRefusal';
 
 // constants and types
 import { MAIN, QUALIFYING, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
@@ -15,7 +16,7 @@ import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { TimeItem } from '@Types/tournamentTypes';
+import { DrawDefinition, TimeItem } from '@Types/tournamentTypes';
 import {
   ASSIGN_COURT,
   ASSIGN_VENUE,
@@ -31,6 +32,10 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
+  // a declined consolation lapses with its result: the reset clears every result, so each decline BYE goes, and its
+  // seat is fed again when the result is replayed. Read before the results are cleared (a 7.x record's decline is
+  // inferred from them). A BYE closed before play has no decline and stays, with its disabled links.
+  lapseDeclines(drawDefinition, getDeclinedSeats(drawDefinition));
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
 
   const getRawMatchUp = (matchUpId) => matchUpsMap?.drawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
@@ -93,6 +98,21 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
   return { ...SUCCESS };
 }
 
+/** remove each declined seat's BYE, its decline and its disabled links: the seat is empty and fed again */
+export function lapseDeclines(drawDefinition: DrawDefinition, seats: { structureId: string; drawPosition: number }[]) {
+  for (const { structureId, drawPosition } of seats) {
+    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
+    const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === drawPosition);
+    if (!assignment) continue;
+    delete assignment.bye;
+    delete assignment.byeFromPropagation;
+    delete assignment.declinedParticipantId;
+    delete assignment.declinedMatchUpId;
+    delete assignment.disableLinks;
+    if (Array.isArray(assignment.extensions)) removeExtension({ element: assignment, name: DISABLE_LINKS });
+  }
+}
+
 export function clearDisableLinks(structure) {
   for (const assignment of structure.positionAssignments ?? []) {
     // A BYE placed by hand (a removal replaced with a BYE, a swap with a BYE) survives the reset, and its marker is
@@ -147,6 +167,8 @@ function resetLuckyDrawAssignments({ structure, positionAssignments, isMainOrQua
       .map((a) => {
         if (removeAssignments) {
           delete a.bye;
+          delete a.declinedParticipantId; // a decline goes with its BYE
+          delete a.declinedMatchUpId;
           delete a.participantId;
         }
         return a;

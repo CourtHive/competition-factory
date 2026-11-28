@@ -219,6 +219,8 @@ export function drawPositionRemovals({
       // a cleared position is no longer a qualifier's: the flag goes with the participant (see positionSwap)
       delete assignment.qualifier;
       delete assignment.bye;
+      delete assignment.declinedParticipantId; // a decline goes with its BYE
+      delete assignment.declinedMatchUpId;
       // A BYE removed by ANY route — cascade unwind, a position action, or a hand edit — takes
       // its provenance marker with it. A marker outliving the BYE it describes would make the
       // next propagated BYE at this drawPosition look already-accounted-for.
