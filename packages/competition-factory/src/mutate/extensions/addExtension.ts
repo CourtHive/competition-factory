@@ -18,7 +18,7 @@ type AddExtensionArgs = {
   tournamentId?: string;
   extension: Extension;
   discover?: boolean;
-  element?: any;
+  element?: { extensions?: Extension[] };
 };
 
 export function addExtension(params?: AddExtensionArgs): {
@@ -54,6 +54,7 @@ export function addExtension(params?: AddExtensionArgs): {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- any falsy extensions value is replaced, not only a missing one
   if (!params.element.extensions) params.element.extensions = [];
 
   const creationTime = params?.creationTime ?? true;

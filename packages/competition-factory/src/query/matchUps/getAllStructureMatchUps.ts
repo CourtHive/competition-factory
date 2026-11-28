@@ -36,6 +36,7 @@ import {
   RoundProfile,
   ScheduleTiming,
   ScheduleVisibilityFilters,
+  EventPublishStatus,
 } from '@Types/factoryTypes';
 import {
   Participant,
@@ -84,7 +85,7 @@ type GetAllStructureMatchUps = {
   exitProfiles?: ExitProfiles;
   matchUpsMap?: MatchUpsMap;
   structure?: Structure;
-  publishStatus?: any;
+  publishStatus?: EventPublishStatus;
   inContext?: boolean;
   event?: Event;
 };

@@ -5,11 +5,12 @@ import { expect, test, describe } from 'vitest';
 // constants
 import { COMPLETED, IN_PROGRESS, RETIRED, SUSPENDED } from '@Constants/matchUpStatusConstants';
 import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
+import type { MatchUpOutcome } from '@Types/factoryTypes';
 
 const drawId = 'drawId';
 const matchUpId = 'm-1-1';
 
-const completedOutcome = {
+const completedOutcome: MatchUpOutcome = {
   score: {
     sets: [
       { setNumber: 1, side1Score: 6, side2Score: 2, winningSide: 1 },
@@ -70,7 +71,7 @@ describe('COMPLETED → live-status revert guard', () => {
       drawProfiles: [{ drawId, drawSize: 4, idPrefix: 'm' }],
       setState: true,
     });
-    const retiredOutcome = {
+    const retiredOutcome: MatchUpOutcome = {
       score: {
         sets: [{ setNumber: 1, side1Score: 3, side2Score: 1 }],
         scoreStringSide1: '3-1',

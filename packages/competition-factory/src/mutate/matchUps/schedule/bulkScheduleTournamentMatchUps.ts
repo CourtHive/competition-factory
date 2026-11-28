@@ -18,6 +18,7 @@ import {
   MISSING_TOURNAMENT_RECORD,
   ErrorType,
 } from '@Constants/errorConditionConstants';
+import type { MatchUpDependencies, MatchUpScheduleDetail, MatchUpScheduleRequest } from '@Types/factoryTypes';
 
 type BulkScheduleMachUpsArgs = {
   tournamentRecords?: { [key: string]: Tournament };
@@ -28,12 +29,12 @@ type BulkScheduleMachUpsArgs = {
   errorOnAnachronism?: boolean;
   removePriorValues?: boolean;
   checkChronology?: boolean;
-  matchUpDependencies?: any;
+  matchUpDependencies?: MatchUpDependencies;
   /** hydrated matchUps the caller already holds; without them each call hydrates the tournament again */
   inContextMatchUps?: HydratedMatchUp[];
   matchUpIds?: string[];
-  matchUpDetails?: any;
-  schedule?: any;
+  matchUpDetails?: MatchUpScheduleDetail[];
+  schedule?: MatchUpScheduleRequest;
   /** the batch's played order was checked by the caller, across every tournament it writes */
   playedOrderChecked?: boolean;
   /** check the batch's played order and write nothing (the caller's first pass over several tournaments) */

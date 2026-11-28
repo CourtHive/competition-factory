@@ -134,6 +134,7 @@ CertificationRequirement
 CertificationRequirementResult
 CertificationStatus
 CertificationStatusEnum
+ChallengeState
 CheckInOutParticipantArgs
 CollectionAssignment
 CollectionDefinition
@@ -189,6 +190,7 @@ CreateMatchUpOptions
 Credential
 CurrencyUnitEnum
 CurrencyUnitUnion
+DEFAULT_ROLLING_PERIOD_DAYS
 DEFERRED_PAYLOAD
 DRAFT
 DRAW_DEFINITION_NOT_FOUND
@@ -274,6 +276,7 @@ EXISTING_MATCHUP_ID
 EXISTING_OUTCOME
 EXISTING_PARTICIPANT
 EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT
+EXISTING_PERSON_OTHER_ID
 EXISTING_POLICY_TYPE
 EXISTING_PROFILE
 EXISTING_ROUND
@@ -301,6 +304,7 @@ EntriesOpts
 Entry
 EntryFee
 EntryNotPlaced
+EntryPlacement
 EntryQualifyingProfile
 EntryQualifyingStructureProfile
 EntryRestriction
@@ -334,6 +338,7 @@ EventNotFoundError
 EventPredicate
 EventProposal
 EventPublishState
+EventPublishStatus
 EventRegistration
 EventSeed
 EventTypeEnum
@@ -341,6 +346,7 @@ EventTypeUnion
 ExitProfiles
 ExplainResult
 Extension
+FOOTPRINT_NOT_LOADED
 FacilityTransitProposal
 FactoryBackend
 FactoryBackendCall
@@ -386,6 +392,8 @@ HydratedSide
 HydratedVenue
 INCOMPATIBLE_MATCHUP_STATUS
 INCOMPLETE_SOURCE_STRUCTURE
+INDIVIDUAL_MERGE_BLOCKED
+INDIVIDUAL_MERGE_STALE
 INSUFFICIENT_DRAW_POSITIONS
 INSUFFICIENT_UUIDS
 INVALID_ACTION
@@ -451,6 +459,19 @@ ISSUES_FLAGGED
 IdCollections
 IgnoredInput
 ImplemtationGlobalStateTypes
+IndividualMergeArgs
+IndividualMergeBlocker
+IndividualMergeBlockerCode
+IndividualMergeChoice
+IndividualMergeConflict
+IndividualMergeLedger
+IndividualMergePreview
+IndividualMergeProtectedIdPolicy
+IndividualMergeResolutions
+IndividualMergeResult
+IndividualMergeSnapshot
+IndividualMergeWarning
+IndividualMergeWarningCode
 IndoorOutdoorEnum
 IndoorOutdoorUnion
 InitialScoreOptions
@@ -469,6 +490,12 @@ LINK_PROVIDER_ID
 LINK_UNRESOLVED
 LUCKY_DRAW_BYE_LIMIT
 LadderCompetitionProfile
+LadderMovement
+LadderOrdering
+LapseConsequence
+LapseKind
+LapseWindow
+LegacyShapeCounts
 LengthUnitEnum
 LengthUnitUnion
 LevelKeyed
@@ -575,15 +602,20 @@ MappedMatchUps
 MappedParticipant
 MatchStatistics
 MatchUp
+MatchUpContextIds
+MatchUpDependencies
 MatchUpFilters
 MatchUpFinishingPositionRange
 MatchUpHistory
 MatchUpNotFoundError
+MatchUpOutcome
 MatchUpPublishState
 MatchUpRowContext
 MatchUpRowSet
 MatchUpSchedule
+MatchUpScheduleDetail
 MatchUpScheduleItems
+MatchUpScheduleRequest
 MatchUpState
 MatchUpStatusCodeElement
 MatchUpStatusCodeRecord
@@ -601,6 +633,7 @@ MissingTournamentRecordsError
 MissingValueError
 MonetaryAmount
 MoveBlockOptions
+MovementTrigger
 MutationKind
 MutationResult
 NATIONALITY_CODE_UNRECOGNIZED
@@ -643,6 +676,7 @@ OnlineResource
 OnlineResourceTypeEnum
 OnlineResourceTypeUnion
 OpponentOutcome
+OptionalStateProviderMembers
 Organisation
 OrganisationTypeEnum
 OrganisationTypeUnion
@@ -651,6 +685,7 @@ PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE
 PARTICIPANT_ENTRY_NOT_FOUND
 PARTICIPANT_EXPERIENCE_REPORT
 PARTICIPANT_ID_EXISTS
+PARTICIPANT_ID_RETIRED
 PARTICIPANT_NOT_CHECKED_IN
 PARTICIPANT_NOT_ENTERED_IN_STAGE
 PARTICIPANT_NOT_FOUND
@@ -734,11 +769,15 @@ PostEventRequirement
 PracticeRegistration
 PracticeRegistrationStatusEnum
 PracticeRegistrationStatusUnion
+PreviewImplementation
+PreviewParams
+PrivatePreviewEngine
 PrizeMoney
 PrizeMoneyAward
 ProposalChange
 PublicParticipant
 PublicParticipantDocument
+PublishedScheduleDetail
 QUALIFYING_CAPACITY_EXCEEDED
 QualityWinProfile
 QualityWinRange
@@ -795,6 +834,7 @@ ReportColumn
 ReportContext
 ReportDefinition
 ReportResult
+RequiredStateProviderMembers
 RequirementItem
 ResizeBlockOptions
 RestDailyLoad
@@ -804,6 +844,7 @@ RestSkipReason
 RestSourceKind
 RestStatus
 ResultType
+ResultValidation
 ResultWarning
 RetainScoreArgs
 RetainedScore
@@ -813,8 +854,11 @@ RotatingPartnerContribution
 RotatingPartnerRoundRecord
 RotatingPartnerScoreAnalysis
 RotatingPartnerScoreContract
+RotatingPartnerScoreContractWithTimed
+RotatingPartnerScoringConfiguration
 RotatingPartnerScoringPolicies
 RotatingPartnerScoringPolicy
+RotatingPartnerScoringPolicyWithTimed
 RotatingPartnerScoringVariant
 RotatingPartnerSettlement
 RotatingPartnerSettlementOutcome
@@ -885,6 +929,8 @@ SanctioningTier
 ScaleAttributes
 ScaleItem
 ScaleOption
+ScaleSortMethod
+ScaledEntry
 ScenarioPlacement
 ScheduleAnalysis
 ScheduleConflict
@@ -989,6 +1035,7 @@ StageTypeUnion
 StatCounters
 StatObject
 StateChangedEvent
+StateProvider
 Statistics
 StatisticsOptions
 StatusTransition
@@ -1015,6 +1062,7 @@ SurfaceCategoryEnum
 SurfaceCategoryUnion
 SwissParticipantRecord
 SwissPolicy
+SwissRoundResult
 SwissStanding
 SwissState
 SyncEngineSetup
@@ -1026,8 +1074,13 @@ TallyResult
 TargetMatchUpId
 Team
 TeamAttribute
+TeamColorRole
+TeamColorRoleEnum
+TeamColors
 TeamCompetitor
 TeamKey
+TeamPaletteColor
+TeamPresentation
 Template
 TemplateId
 TemplateOperation
@@ -1042,6 +1095,9 @@ TierMovementEnum
 TierMovementUnion
 TimeItem
 TimeRange
+TimedRotatingPartnerPolicy
+TimedRotatingPartnerScoreContract
+TimedRotatingPartnerVariant
 TimeoutRules
 TimeoutScope
 TimerProfile
@@ -1070,7 +1126,9 @@ TournamentStatusUnion
 TransitionGuard
 TransitionGuardType
 UNABLE_TO_ASSIGN_COURT
+UNANNOUNCED_WRITE
 UNAUTHORIZED_LOCK_OPERATION
+UNDECIDED_LEVEL_RESULT
 UNDER_REVIEW
 UNLINKED_STRUCTURES
 UNNAMED_TOURNAMENT
@@ -1078,6 +1136,7 @@ UNRECOGNIZED_DRAW_TYPE
 UNRECOGNIZED_EVENT_TYPE
 UNRECOGNIZED_MATCHUP_FORMAT
 UNRECOGNIZED_MATCHUP_STATUS
+UNREGISTERED_PREVIEW_METHOD
 UNSUPPORTED_IN_LEGACY_MODE
 UNWRITABLE_SCHEDULE_ATTRIBUTES
 UUID
@@ -1088,6 +1147,7 @@ UnifiedParticipantID
 UnifiedPersonID
 UnifiedTournamentID
 UnifiedVenueID
+UnplayedRound
 Unsubscribe
 Unwrap
 VALID_ASSIGNMENT_TRANSITIONS
@@ -1310,6 +1370,7 @@ competitionNow
 competitionScheduleMatchUps
 completeDrawMatchUps
 completedMatchUpStatuses
+computeAwardWindow
 computePlanItemId
 computeRatingDistributionStats
 conditionallyApprove
@@ -1334,6 +1395,7 @@ createSeededRandom
 createTeamsFromParticipantAttributes
 createTournamentRecord
 credits
+cycleModifiedTopics
 cycleModifiedTournamentIds
 cycleMutationStatus
 dateTime
@@ -1345,6 +1407,8 @@ deduceMatchUpFormat
 deepCopyEnabled
 default
 defaultEvaluators
+defaultsHash
+defaultsHashes
 definedAttributes
 dehydrateMatchUps
 deleteAdHocMatchUps
@@ -1360,8 +1424,10 @@ deleteParticipants
 deleteVenue
 deleteVenues
 deriveRailSegments
+deriveRankingList
 destroyPairEntries
 destroyPairEntry
+detectLegacyShape
 diffMinutes
 directingMatchUpStatuses
 disableCourts
@@ -1376,6 +1442,7 @@ drawMatchUps
 drawMatic
 drawOrigin
 drawRow
+draws
 drawsGovernor
 dryRun
 dualIssueConstants
@@ -1385,6 +1452,7 @@ enableTieAutoCalc
 enableVenues
 endorseApplication
 enrichPointHistory
+entries
 entriesGovernor
 entryRows
 entryStatusConstants
@@ -1416,12 +1484,14 @@ findMatchUpFormatTiming
 findParticipant
 findPolicy
 findVenue
+firstClassOrExtension
 fixtures
 flagComplianceIssues
 flattenJSON
 flightConstants
 forge
 formatConflicts
+formats
 garman
 genderConstants
 generate
@@ -1505,11 +1575,15 @@ getCompetitiveProfile
 getCompleteness
 getCourtInfo
 getCourts
+getDefaultsDrift
 getDevContext
 getDraftState
 getDrawCompleteness
+getDrawCompositionConstraints
 getDrawData
 getDrawDefinitionTimeItem
+getDrawFit
+getDrawFitProposals
 getDrawInconsistencies
 getDrawParticipantRepresentativeIds
 getDrawStructures
@@ -1547,6 +1621,7 @@ getFeedInQualifyingPositions
 getFlightProfile
 getHighestSeverity
 getHomeParticipantId
+getIndividualParticipantMergePreview
 getInvokeObserver
 getLadderMovement
 getLadderOrdering
@@ -1563,6 +1638,7 @@ getMatchUpDailyLimits
 getMatchUpDailyLimitsUpdate
 getMatchUpDependencies
 getMatchUpFormat
+getMatchUpFormatReport
 getMatchUpFormatTiming
 getMatchUpFormatTimingUpdate
 getMatchUpFormatVariance
@@ -1581,8 +1657,10 @@ getMaxEntryPosition
 getMaxSetScore
 getMethods
 getModifiedMatchUpFormatTiming
+getMutationFootprint
 getMutationLocks
 getNoticeBuffer
+getNoticeState
 getNotices
 getOfficialAssignments
 getOfficialCertifications
@@ -1622,6 +1700,7 @@ getProfileRounds
 getProvider
 getPublishState
 getQualityWinPoints
+getQueryFootprint
 getQuickStats
 getRandomQualifierList
 getRegistrationProfile
@@ -1656,6 +1735,7 @@ getSeedingThresholds
 getSeedsCount
 getSetComplement
 getSetScoreString
+getStampScope
 getStatusHistory
 getStructureCompleteness
 getStructureData
@@ -1747,6 +1827,7 @@ intervalsOverlap
 isAdHoc
 isAdHocType
 isAggregateFormat
+isAwardInWindow
 isChallengeInRange
 isComplete
 isCompletedStructure
@@ -1773,6 +1854,7 @@ issueChallenge
 iterateDayTicks
 keyValueConstants
 keyValueScore
+ladderConstants
 ladderGovernor
 lightingEvaluator
 linkTournaments
@@ -1796,11 +1878,13 @@ matchUpScheduleSort
 matchUpSort
 matchUpStatusConstants
 matchUpTypes
+matchUps
 matchWindowEvaluator
 mcpValidator
 meetCondition
 mergeAdjacentSegments
 mergeFacilitySchedule
+mergeIndividualParticipants
 mergeOverlappingAvailability
 mergeParticipants
 migrateTournamentRecord
@@ -1840,11 +1924,14 @@ nextPowerOf2
 noNulls
 noNumeric
 nonDirectingMatchUpStatuses
+normalizeTeamPalette
+normalizeTeamPresentation
 noticeModifies
 now
 nowIso
 numericSort
 occurrences
+officiating
 officiatingConstants
 officiatingEngine
 officiatingGovernor
@@ -1880,6 +1967,7 @@ policyGovernor
 policyRegistry
 positionActionConstants
 positionActions
+positionTargets
 practiceGovernor
 predictDrawCompetitiveBands
 predictMatchUpCompetitiveBands
@@ -1902,6 +1990,7 @@ publishEventSeeding
 publishOrderOfPlay
 publishParticipants
 publishTournamentInfo
+publishing
 publishingGovernor
 qualifierDrawPositionAssignment
 qualifierProgression
@@ -1916,14 +2005,17 @@ randomSource
 rangesOverlap
 rankingConstants
 rankingGovernor
+rankings
 ratingConstants
 readModel
 readMutationStatus
 rebaseScheduleScenario
 recoveryTimeRequiredMatchUpStatuses
+reduceRecordToFootprint
 refreshEventDrawOrder
 refreshLadderRatings
 regenerateParticipantNames
+registerPreviewMethod
 registerSuggestions
 rejectApplication
 remapDrawDefinitionMatchUpIds
@@ -1951,6 +2043,7 @@ removeMatchUpScorekeeper
 removeMatchUpSideParticipant
 removeMatchUpTimekeeper
 removeMutationLock
+removeNonTeamTieFormats
 removeNotes
 removeOfficialAssignment
 removeOnlineResource
@@ -2002,6 +2095,7 @@ resolveDraftPositions
 resolveEntryFee
 resolveHomeParticipantId
 resolveMatchUpPublishState
+resolveMergedParticipantId
 resolvePersonLink
 resolvePointValue
 resolveScaleValueNumber
@@ -2015,10 +2109,12 @@ retainScoreForFormat
 reverseScore
 reviewAmendment
 reviewApplication
+rollingPeriodDaysFrom
 roundRobinGroups
 rubberTieValue
 runValidationPipeline
 sampleCapacityCurve
+sanctioning
 sanctioningConstants
 sanctioningEngine
 sanctioningGovernor
@@ -2033,8 +2129,10 @@ scheduleProfileRounds
 schedulingProfileRows
 scoreGovernor
 scoreWarningConstants
+scoring
 seasonConstants
 seasonGovernor
+seasons
 seedRow
 seedWithdrawalCascade
 seedingBasisConstants
@@ -2054,6 +2152,7 @@ setDrawParticipantRepresentativeIds
 setDrawPositionPreferences
 setEntryPosition
 setEntryPositions
+setEntryQualifyingPath
 setEventDates
 setEventDisplay
 setEventEndDate
@@ -2074,6 +2173,7 @@ setMethods
 setNoticeBuffer
 setOrderOfFinish
 setOutcomePipeline
+setParticipantCheckInState
 setParticipantScaleItem
 setParticipantScaleItems
 setPositionAssignments
@@ -2085,6 +2185,7 @@ setSanctionConstraints
 setSaveDrawDeletions
 setSchedulingProfile
 setSchemaWriteMode
+setStampScope
 setStateMethods
 setStateProvider
 setStructureOrder

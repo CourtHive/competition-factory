@@ -16,6 +16,7 @@ import { findExtension } from '@Helpers/extensions/findExtension';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
+import type { PublishEventArgs } from '@Mutate/publishing/publishEvent';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { getDrawStructures } from '@Acquire/findStructure';
@@ -52,10 +53,11 @@ type DrawDeletionDispatch = {
 type DeleteDrawDefinitionArgs = {
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
-  eventDataParams?: any;
+  /** passed to publishEvent when a published draw is deleted and `autoPublish` is true */
+  eventDataParams?: Partial<PublishEventArgs>;
   autoPublish?: boolean;
   drawIds?: string[];
-  auditData?: any;
+  auditData?: object;
   eventId?: string;
   force?: boolean;
   event?: Event;

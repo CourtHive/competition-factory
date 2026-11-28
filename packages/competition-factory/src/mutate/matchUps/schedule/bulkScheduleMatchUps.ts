@@ -9,6 +9,7 @@ import { ARRAY, INVALID, OF_TYPE, ONE_OF, TOURNAMENT_RECORDS } from '@Constants/
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { PARTIAL_COMMIT, SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import type { MatchUpContextIds, MatchUpScheduleDetail, MatchUpScheduleRequest } from '@Types/factoryTypes';
 
 type BulkScheduleMatchUpsArgs = {
   tournamentRecords: { [key: string]: Tournament };
@@ -19,10 +20,10 @@ type BulkScheduleMatchUpsArgs = {
   errorOnAnachronism?: boolean;
   removePriorValues?: boolean;
   checkChronology?: boolean;
-  matchUpContextIds?: any;
+  matchUpContextIds?: MatchUpContextIds[];
   matchUpIds?: string[];
-  matchUpDetails: any;
-  schedule?: any;
+  matchUpDetails?: MatchUpScheduleDetail[];
+  schedule?: MatchUpScheduleRequest;
   /** false: only a played matchUp orders, as before plans ordered too (default true: plans order too) */
   plannedOrder?: boolean;
 };

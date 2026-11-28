@@ -20,8 +20,8 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // types
-import type { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
-import type { DrawDefinition, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import type { PolicyDefinitions, ResultType, MatchUpScheduleRequest } from '@Types/factoryTypes';
+import type { DrawDefinition, MatchUpStatusUnion, Score, Tournament } from '@Types/tournamentTypes';
 
 // The per-call options of setMatchUpStatus that a bulk entry carries, each settable on the call (every outcome) or
 // on one outcome (that outcome only). Forwarding none of them made a result entered in bulk propagate differently
@@ -45,11 +45,11 @@ type BulkOutcome = ForwardedOptions & {
   eventId: string;
   drawId: string;
   notes?: string;
-  schedule?: object;
+  schedule?: MatchUpScheduleRequest;
   // the outcome itself, as `setMatchUpStatus` takes it
   matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
-  score?: unknown;
+  score?: Score;
 };
 type BulkParams = ForwardedOptions & {
   tournamentRecords?: { [key: string]: Tournament };

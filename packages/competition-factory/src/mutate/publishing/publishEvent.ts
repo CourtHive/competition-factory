@@ -5,6 +5,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice, getTopics } from '@Global/state/globalState';
 import { getEventData } from '@Query/event/getEventData';
+import type { GetEventDataArgs } from '@Query/event/getEventData';
 
 // constants and types
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_EMBARGO, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -17,13 +18,14 @@ import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isValidEmbargoDate } from '@Tools/dateTime';
 
-type PublishEventType = {
+export type PublishEventArgs = {
   includePositionAssignments?: boolean; // include positionAssignments in eventData
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
   removePriorValues?: boolean;
   returnEventData?: boolean;
-  eventDataParams?: any;
+  /** passed to getEventData when `returnEventData` is true */
+  eventDataParams?: Partial<GetEventDataArgs>;
   drawIds?: string[];
   status?: string;
   event?: Event;
@@ -34,7 +36,7 @@ type PublishEventType = {
   drawIdsToAdd?: string[];
 };
 
-export function publishEvent(params: PublishEventType): ResultType & { eventData?: any } {
+export function publishEvent(params: PublishEventArgs): ResultType & { eventData?: any } {
   const paramsCheck = checkRequiredParameters(params, [
     { [TOURNAMENT_RECORD]: true, [EVENT]: true },
     { eventDataParams: false, [OF_TYPE]: OBJECT },

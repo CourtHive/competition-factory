@@ -8,7 +8,7 @@ import { expect, describe, test } from 'vitest';
 // constants and types
 import { COMPLETED, RETIRED, IN_PROGRESS, SUSPENDED } from '@Constants/matchUpStatusConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import type { ResultType } from '@Types/factoryTypes';
+import type { MatchUpOutcome, ResultType } from '@Types/factoryTypes';
 import type { Score } from '@Types/tournamentTypes';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ describe('setMatchUpStatus preserves point scores', () => {
 
     tournamentEngine.setState(tournamentRecord);
 
-    const outcome = {
+    const outcome: MatchUpOutcome = {
       winningSide: 1,
       score: {
         sets: [
@@ -176,7 +176,7 @@ describe('setMatchUpStatus preserves point scores', () => {
       setState: true,
     });
 
-    const outcome = {
+    const outcome: MatchUpOutcome = {
       winningSide: 1,
       score: {
         sets: [
@@ -234,7 +234,7 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
     });
 
     // Partial score: 2-1 with point scores 15-30, match still in progress
-    const outcome = {
+    const outcome: MatchUpOutcome = {
       score: {
         sets: [
           {
@@ -288,7 +288,7 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       setState: true,
     });
 
-    const outcome = {
+    const outcome: MatchUpOutcome = {
       score: {
         sets: [
           {
@@ -330,7 +330,7 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       setState: true,
     });
 
-    const outcome = {
+    const outcome: MatchUpOutcome = {
       score: {
         sets: [{ setNumber: 1, side1Score: 3, side2Score: 2 }],
       },
@@ -385,7 +385,7 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       setState: true,
     });
 
-    const outcome = {
+    const outcome: MatchUpOutcome = {
       score: {
         sets: [
           {
