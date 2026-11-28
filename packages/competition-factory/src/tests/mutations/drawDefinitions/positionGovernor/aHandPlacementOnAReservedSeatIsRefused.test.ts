@@ -112,6 +112,33 @@ describe.each(MODES)('a hand placement on a reserved seat is refused (%s)', (mod
     expect(inconsistencies()).toEqual([]);
   });
 
+  it('an alternate placed by hand where one owed loser still has a seat is accepted, and removed as before', () => {
+    setSubscriptions({ subscriptions: {} });
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId, drawType: FIRST_ROUND_LOSER_CONSOLATION, drawSize: 8, alternatesCount: 1 }],
+      setState: true,
+    });
+    setOutcomePipeline(mode);
+    const { participantId } = tournamentEngine
+      .getEvent({ drawId })
+      .event.entries.find((entry: any) => entry.entryStatus === 'ALTERNATE');
+    const place = () =>
+      tournamentEngine.alternateDrawPositionAssignment({ ...seat(1), alternateParticipantId: participantId });
+    const placed = () => structureOf('Consolation').positionAssignments.find((a: any) => a.drawPosition === 1);
+    // the placement disables the seat's own links: its loser is not sent there, the other owed loser takes seat 2
+    expect(place().success).toEqual(true);
+    expect(placed().participantId).toEqual(participantId);
+    // no result has sent anyone to the consolation: the alternate did not arrive from one, and is removed
+    expect(tournamentEngine.removeDrawPositionAssignment(seat(1)).success).toEqual(true);
+    expect(placed().participantId).toBeUndefined();
+
+    // a result elsewhere in the round sent its loser on; the alternate still did not arrive from it
+    expect(set(find('Main', 1, 3).matchUpId, played(1)).success).toEqual(true);
+    expect(place().success).toEqual(true);
+    expect(tournamentEngine.removeDrawPositionAssignment(seat(1)).success).toEqual(true);
+    expect(placed().participantId).toBeUndefined();
+  });
+
   it('a seat no matchUp still owes takes a hand-placed BYE as before', () => {
     generate(FIRST_ROUND_LOSER_CONSOLATION, 8);
     setOutcomePipeline(mode);

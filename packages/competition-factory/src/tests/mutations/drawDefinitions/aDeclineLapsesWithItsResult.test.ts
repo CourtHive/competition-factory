@@ -4,7 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, describe, expect, it } from 'vitest';
 
 // constants
-import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { COMPASS, FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -206,5 +206,53 @@ describe.each(MODES)('a decline lapses with its result (%s)', (mode) => {
     expect(seatOf(drawPosition).bye).toBeUndefined();
     expect(set(1, played(1)).success).toEqual(true);
     expect(seatOf(drawPosition).participantId).toEqual(loser);
+  });
+  it('resetting the structure whose result was declined lapses the decline; resetting another keeps it', () => {
+    setSubscriptions({ subscriptions: {} });
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawId, drawType: COMPASS, drawSize: 16 }],
+      setState: true,
+    });
+    setOutcomePipeline(mode);
+    const structures = () => tournamentEngine.getEvent({ drawId }).drawDefinition.structures;
+    const named = (name: string) => structures().find((s: any) => s.structureName === name);
+    const first = (name: string, roundPosition: number) =>
+      tournamentEngine
+        .allDrawMatchUps({ drawId, inContext: true })
+        .matchUps.find(
+          (m: any) => m.structureName === name && m.roundNumber === 1 && m.roundPosition === roundPosition,
+        );
+    for (const roundPosition of [1, 2]) {
+      const { matchUpId } = first('East', roundPosition);
+      expect(tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome: played(1) }).success).toEqual(true);
+    }
+    const { matchUpId } = first('West', 1);
+    expect(tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome: played(1) }).success).toEqual(true);
+    // the West loser arrived in South: the director declines the seat for them
+    const south = named('South');
+    const { drawPosition, participantId } = south.positionAssignments.find((a: any) => a.participantId);
+    const removed = tournamentEngine.removeDrawPositionAssignment({
+      structureId: south.structureId,
+      replaceWithBye: true,
+      drawPosition,
+      drawId,
+    });
+    expect(removed.success).toEqual(true);
+    const southSeat = () => named('South').positionAssignments.find((a: any) => a.drawPosition === drawPosition);
+    expect(southSeat()).toMatchObject({
+      bye: true,
+      declinedParticipantId: participantId,
+      declinedMatchUpId: matchUpId,
+    });
+
+    // North holds no result the decline came from: its reset keeps the decline
+    expect(tournamentEngine.resetStructure({ drawId, structureId: named('North').structureId }).success).toEqual(true);
+    expect(southSeat()).toMatchObject({ bye: true, declinedParticipantId: participantId });
+
+    // West holds the result: its reset lapses the decline and reopens the seat
+    expect(tournamentEngine.resetStructure({ drawId, structureId: named('West').structureId }).success).toEqual(true);
+    expect(southSeat().bye).toBeUndefined();
+    expect(southSeat().declinedParticipantId).toBeUndefined();
+    expect(southSeat().disableLinks).toBeUndefined();
   });
 });
