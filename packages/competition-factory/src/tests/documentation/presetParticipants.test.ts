@@ -1,4 +1,5 @@
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, test } from 'vitest';
 
@@ -128,8 +129,17 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
     expect(gen.success).toEqual(true);
 
     const drawId = gen.drawIds[0];
-    const tr0 = tournamentEngine.getState().tournamentRecords[gen.tournamentRecord.tournamentId];
-    const structureId = tr0.events[0].drawDefinitions[0].structures[0].structureId;
+    const mainStructure = () => {
+      const record = defined(
+        tournamentEngine.getState().tournamentRecords[gen.tournamentRecord.tournamentId],
+        'record',
+      );
+      return defined(
+        defined(defined(record.events, 'events')[0].drawDefinitions, 'draws')[0].structures,
+        'structures',
+      )[0];
+    };
+    const structureId = mainStructure().structureId;
 
     for (let dp = 1; dp <= 4; dp += 1) {
       const r = tournamentEngine.assignDrawPosition({
@@ -141,9 +151,10 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
       expect(r.success).toEqual(true);
     }
 
-    const tr1 = tournamentEngine.getState().tournamentRecords[gen.tournamentRecord.tournamentId];
-    const matchUps = tr1.events[0].drawDefinitions[0].structures[0].matchUps;
-    const r1 = matchUps.filter((m) => m.roundNumber === 1).sort((a, b) => a.roundPosition - b.roundPosition);
+    const matchUps = defined(mainStructure().matchUps, 'matchUps');
+    const r1 = matchUps
+      .filter((m) => m.roundNumber === 1)
+      .sort((a, b) => defined(a.roundPosition) - defined(b.roundPosition));
     for (const mu of r1) {
       const r: ResultType = tournamentEngine.setMatchUpStatus({
         outcome: mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 6-2', winningSide: 1 }).outcome,
@@ -153,8 +164,7 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
       expect(r.success).toEqual(true);
     }
     // Winners of R1 land at correct positions in R2
-    const tr2 = tournamentEngine.getState().tournamentRecords[gen.tournamentRecord.tournamentId];
-    const r2 = tr2.events[0].drawDefinitions[0].structures[0].matchUps.filter((m) => m.roundNumber === 2);
+    const r2 = defined(mainStructure().matchUps, 'matchUps').filter((m) => m.roundNumber === 2);
     expect(r2.length).toEqual(1);
     expect(r2[0].drawPositions).toEqual([1, 3]);
   });

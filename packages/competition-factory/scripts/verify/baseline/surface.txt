@@ -287,6 +287,7 @@ EngineEventType
 EngineInspection
 EngineInspectionCounts
 EngineMethod
+EngineSetup
 EngineWarning
 EntriesNotPlacedWarning
 EntriesOpts
@@ -1006,6 +1007,7 @@ SwissParticipantRecord
 SwissPolicy
 SwissStanding
 SwissState
+SyncEngineSetup
 TEAM_NOT_FOUND
 TERMINAL_STATUSES
 TOURNAMENT_CATEGORY_IN_USE
