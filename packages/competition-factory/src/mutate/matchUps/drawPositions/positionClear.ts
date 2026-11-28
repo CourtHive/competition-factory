@@ -60,6 +60,31 @@ import {
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
+/**
+ * THE EXITS A REMOVAL RE-DERIVED, for the caller to settle once the removal is complete.
+ *
+ * A double exit that loses one side's position is re-derived to the exit that remains (below, in
+ * `updateMatchUpStatusAfterRemoval`), and the withdrawn side's reason must go with it. Not here: a removal can be one
+ * step of a route that brings the exit straight back (a BYE placed in the emptied seat, the unwind of a double exit
+ * re-propagating its correction), and the convergence that restores it writes the matchUp from the reasons it holds.
+ * Dropped at this write, the restored double exit lost a reason that described it (9 seeds in 8,000 of the
+ * reason-bearing sweep). So the reductions are collected, and `removeDrawPositionAssignment`, whose removal they are,
+ * settles them after its BYE placement and carries (`dropWithdrawnExitReasons`). Outside a collection nothing is kept.
+ */
+let reducedExits: MatchUp[] | undefined;
+
+/** Run a removal, collecting the exits it re-derives. */
+export function collectReducedExits<T>(removal: () => T): { result: T; reduced: MatchUp[] } {
+  const outer = reducedExits;
+  const reduced: MatchUp[] = [];
+  reducedExits = reduced;
+  try {
+    return { result: removal(), reduced };
+  } finally {
+    reducedExits = outer;
+  }
+}
+
 type ClearDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
   tournamentRecord?: Tournament;
@@ -969,6 +994,8 @@ function updateMatchUpStatusAfterRemoval({
       drawDefinition,
       event,
     });
+    // the removed side's exit takes its reason with it, once the removal is complete (`collectReducedExits`)
+    if (rederived) reducedExits?.push(targetMatchUp);
   }
 
   return matchUpContainsBye;

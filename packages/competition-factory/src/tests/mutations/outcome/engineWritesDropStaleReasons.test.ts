@@ -21,6 +21,7 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
   MODIFIED_FEED_IN_CHAMPIONSHIP,
+  OLYMPIC,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
 import {
@@ -45,8 +46,9 @@ import {
  * reasons of the result it undid on a matchUp that no longer holds it (a `TO_BE_PLAYED` or a `BYE` carrying a
  * walkover's `W1`). The check is independent of the engine: after every step, every matchUp's reasons are described
  * by its status and winner, a side reason naming a side that exited and a match reason on a status that belongs to
- * the match. A BYE standing over an exit its provenance still records may keep that exit's reason. v1 and v2 leave the
- * same record and raise the same notices, and `differential` finds nothing to raise.
+ * the match. A BYE standing over an exit its provenance still records may keep that exit's reason, and so may a single
+ * exit still pending its opponent. v1 and v2 leave the same record and raise the same notices, and `differential` finds
+ * nothing to raise.
  */
 
 afterEach(() => {
@@ -59,6 +61,7 @@ type Outcome = Record<string, unknown>;
 type Step =
   | { at: string; outcome: Outcome }
   | { removeWithBye: [string, number] }
+  | { remove: [string, number] }
   | { swap: [string, number, number] }
   | { reset: true };
 type Row = {
@@ -242,8 +245,12 @@ function drawMatchUps() {
 function undescribed({ matchUpStatus, winningSide, sideStatusCodes, matchUpStatusCode, sideExitProvenance }: any) {
   const stale: string[] = [];
   const held = Object.keys(sideStatusCodes ?? {}).map(Number);
+  // a BYE, or a single exit still pending its opponent, stands over the exits its provenance holds, and may keep theirs
+  const pending = [DEFAULTED, RETIRED, WALKOVER].includes(matchUpStatus) && !winningSide;
   const sides =
-    matchUpStatus === BYE ? held.filter((side) => !EXITS.includes(sideExitProvenance?.[side]?.matchUpStatus)) : held;
+    matchUpStatus === BYE || pending
+      ? held.filter((side) => !EXITS.includes(sideExitProvenance?.[side]?.matchUpStatus))
+      : held;
   if (!REASON_STATUSES.includes(matchUpStatus)) {
     if (matchUpStatusCode) stale.push(`matchUpStatusCode on ${matchUpStatus}`);
     if (sides.length) stale.push(`sideStatusCodes on ${matchUpStatus}`);
@@ -310,6 +317,11 @@ function play(mode: OutcomePipelineMode, row: Row) {
           drawPosition,
           structureId,
         });
+      } else if ('remove' in step) {
+        const [structureName, drawPosition] = step.remove;
+        const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
+        const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
+        result = tournamentEngine.removeDrawPositionAssignment({ drawId: 'd', drawPosition, structureId });
       } else if ('swap' in step) {
         const [structureName, ...drawPositions] = step.swap;
         const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
@@ -481,6 +493,162 @@ describe('a re-sort under the winner keeps the reason on the side that exited', 
     // ...and nothing else in the record depends on it
     expect(bare.then?.sideStatusCodes).toBeUndefined();
     expect(recordWithoutReasons(v1.record, v1.thenMatchUpId)).toEqual(bare.record);
+
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.undescribedAfter).toEqual(v1.undescribedAfter);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+    expect(differential.divergence).toBeUndefined();
+    expect(differential.record).toEqual(v1.record);
+  });
+});
+
+/**
+ * AN EXIT REDUCED OR RELABELLED KEEPS ONLY THE REASONS OF THE EXITS THAT STAND.
+ *
+ * A double exit loses one side's exit when that side's position is removed or its source is cleared, and a produced
+ * exit is relabelled when the exit opposite it is withdrawn. The matchUp is still an exit, so the stamp keeps its
+ * reasons for the write that settles it, and these are the writes that settle it. The withdrawn side's reason goes: a
+ * `DOUBLE_WALKOVER` reduced to a `WALKOVER` keeps only the reason of the side that still exited. A produced exit left
+ * pending, with no winner until its opponent arrives, keeps the reason of the exit its provenance still holds and no
+ * other. Each row was found by the reason-bearing random sweep and shrunk to the steps that still left the reason; the
+ * two pending rows that keep one were shrunk to the steps that reach the reduction.
+ */
+const walkover = (winningSide: 1 | 2) => ({
+  matchUpStatus: WALKOVER,
+  winningSide,
+  sideStatusCodes: { [3 - winningSide]: 'W1' },
+});
+const defaulted = (winningSide: 1 | 2) => ({
+  matchUpStatus: DEFAULTED,
+  winningSide,
+  sideStatusCodes: { [3 - winningSide]: 'DM' },
+});
+const doubleDefault = { matchUpStatus: DOUBLE_DEFAULT, sideStatusCodes: { 1: 'DM', 2: 'DM' } };
+const REDUCTION_ROWS: [string, Row][] = [
+  [
+    "a double walkover reduced to a walkover when one exit's position is removed",
+    {
+      drawType: FEED_IN_CHAMPIONSHIP,
+      drawSize: 8,
+      participantsCount: 4,
+      nonRandom: 7372,
+      propagateExitStatus: true,
+      steps: [
+        { at: 'Main|2|1', outcome: walkover(1) },
+        { at: 'Main|2|2', outcome: walkover(1) },
+        { remove: ['Main', 4] },
+      ],
+      then: ['Consolation|3|1', WALKOVER],
+      kept: { 2: 'W1' },
+    },
+  ],
+  [
+    "a double exit reduced to a default when the walkover's position is removed",
+    {
+      drawType: DOUBLE_ELIMINATION,
+      drawSize: 8,
+      participantsCount: 6,
+      nonRandom: 7315,
+      propagateExitStatus: true,
+      steps: [
+        { at: 'Main|1|2', outcome: defaulted(1) },
+        { at: 'Main|2|1', outcome: walkover(2) },
+        { at: 'Main|1|3', outcome: doubleDefault },
+        { remove: ['Main', 7] },
+      ],
+      then: ['Backdraw|3|1', DEFAULTED],
+      kept: { 2: 'DM' },
+    },
+  ],
+  [
+    "a double walkover reduced to a pending walkover when one exit's position is removed",
+    {
+      drawType: FEED_IN_CHAMPIONSHIP_TO_SF,
+      drawSize: 8,
+      participantsCount: 5,
+      nonRandom: 7078,
+      propagateExitStatus: true,
+      steps: [
+        { at: 'Main|1|2', outcome: walkover(1) },
+        { at: 'Main|2|1', outcome: walkover(1) },
+        { at: 'Main|2|2', outcome: defaulted(1) },
+        { remove: ['Consolation', 2] },
+      ],
+      then: ['Consolation|3|1', WALKOVER],
+    },
+  ],
+  [
+    "a double walkover reduced to a pending walkover when one exit's source is cleared keeps the standing exit's reason",
+    {
+      drawType: MODIFIED_FEED_IN_CHAMPIONSHIP,
+      drawSize: 16,
+      participantsCount: 15,
+      nonRandom: 497,
+      propagateExitStatus: true,
+      steps: [
+        { at: 'Main|1|7', outcome: doubleDefault },
+        { at: 'Main|1|2', outcome: defaulted(1) },
+        { at: 'Main|1|8', outcome: walkover(2) },
+        { at: 'Main|2|1', outcome: walkover(1) },
+        { at: 'Main|1|7', outcome: defaulted(2) },
+        { at: 'Main|2|1', outcome: { matchUpStatus: TO_BE_PLAYED, score: blank } },
+      ],
+      then: ['Consolation|2|4', WALKOVER],
+      kept: { 2: 'W1' },
+    },
+  ],
+  [
+    "a double exit reduced to a pending walkover by the explicit clear keeps the standing exit's reason",
+    {
+      drawType: OLYMPIC,
+      drawSize: 8,
+      participantsCount: 8,
+      nonRandom: 5050,
+      propagateExitStatus: true,
+      steps: [
+        { at: 'East|1|1', outcome: doubleDefault },
+        { at: 'East|1|4', outcome: doubleDefault },
+        { at: 'East|1|3', outcome: defaulted(1) },
+        { at: 'East|1|2', outcome: defaulted(2) },
+        { at: 'East|1|4', outcome: walkover(2) },
+        { at: 'East|1|1', outcome: { matchUpStatus: TO_BE_PLAYED, score: blank, clearStatusCodes: true } },
+      ],
+      then: ['West|2|1', WALKOVER],
+      kept: { 2: 'DM' },
+    },
+  ],
+  [
+    'a produced walkover relabelled to the other side, left pending',
+    {
+      drawType: FIRST_ROUND_LOSER_CONSOLATION,
+      drawSize: 16,
+      participantsCount: 13,
+      nonRandom: 3273,
+      propagateExitStatus: true,
+      steps: [
+        { at: 'Main|1|2', outcome: walkover(2) },
+        { swap: ['Consolation', 2, 5] },
+        { at: 'Main|1|4', outcome: walkover(2) },
+        { at: 'Main|1|3', outcome: walkover(1) },
+      ],
+      then: ['Consolation|2|1', WALKOVER],
+    },
+  ],
+];
+
+describe('an exit reduced or relabelled keeps only the reasons that describe it', () => {
+  it.each(REDUCTION_ROWS)('%s', (_label, row) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, row);
+    const v2 = play(OUTCOME_PIPELINE_V2, row);
+    const differential = play(OUTCOME_PIPELINE_DIFFERENTIAL, row);
+
+    expect(v1.results.map((result: any) => result.success)).toEqual(row.steps.map(() => true));
+    expect(v1.then?.matchUpStatus).toEqual(row.then[1]);
+
+    expect(v1.then?.sideStatusCodes).toEqual(row.kept);
+    expect(v1.then?.matchUpStatusCode).toBeUndefined();
+    expect(v1.undescribedAfter).toEqual(row.steps.map(() => []));
 
     expect(v2.results).toEqual(v1.results);
     expect(v2.undescribedAfter).toEqual(v1.undescribedAfter);

@@ -318,8 +318,11 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    that submits reasons is v1's (`status-codes`). Every write that touches a matchUp also removes, at its `updatedAt`
    stamp, the reasons it holds on a status that takes none (`dropStaleStatusReasons`; v2 at the reducer's stamp fold),
    so a result undone by the engine (a produced exit withdrawn, a collapse to BYE, a removal, a reset) leaves no
-   reason behind. A BYE keeps the reason of an exit its provenance still holds on that side. An award re-derived to
-   the other side when an exit is withdrawn (`withdrawFromMatchUp`) removes a side reason that now names the winner. A
+   reason behind. A BYE keeps the reason of an exit its provenance still holds on that side. An exit re-derived from
+   what its provenance retains, when an exit opposite it is withdrawn (`withdrawFromMatchUp`) or a double exit loses
+   one side's position (`updateMatchUpStatusAfterRemoval`), keeps only the reasons that describe it: the withdrawn
+   side's reason goes, and a pending exit keeps only the reason of the exit its provenance still holds
+   (`dropWithdrawnExitReasons`; a removal settles them once it is complete). A
    re-sort under a winner (`followWinnerAcrossResort`) moves the reason with the side that exited, as it moves the
    winner, the score and the provenance (`swapSideFacts`).
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
