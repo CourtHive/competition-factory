@@ -7,7 +7,7 @@ import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DraftState, DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { DRAFT_STATE } from '@Constants/extensionConstants';
 import { RANKING, RATING } from '@Constants/scaleConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
@@ -21,7 +21,7 @@ import {
   NO_VALID_ATTRIBUTES,
 } from '@Constants/errorConditionConstants';
 
-export type TierMethod = 'ENTRY_ORDER' | 'RANKING' | 'RATING';
+export type TierMethod = DraftState['tierMethod'];
 
 type InitializeDraftArgs = {
   tournamentRecord?: Tournament;

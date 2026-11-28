@@ -46,7 +46,7 @@ import {
 
 // constants and types
 import { AddScheduleAttributeArgs, PolicyDefinitions, ResultType, TournamentRecords } from '@Types/factoryTypes';
-import { DrawDefinition, Event, MatchUp, MatchUpSchedule, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, MatchUpScheduleItems, Tournament } from '@Types/tournamentTypes';
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import type { EventDateWarning } from '@Query/events/eventDateWarning';
@@ -95,7 +95,7 @@ import {
  * array through unchanged, so `allocatedCourts: []` behaves exactly as
  * `courtIds: []` does rather than acquiring new semantics here.
  */
-function allocatedCourtIds(value: MatchUpSchedule['allocatedCourts']): string[] | undefined {
+function allocatedCourtIds(value: MatchUpScheduleItems['allocatedCourts']): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   return value.map((entry) => (typeof entry === 'string' ? entry : entry?.courtId)).filter(Boolean);
 }
@@ -495,7 +495,7 @@ const DERIVED_SCHEDULE_ATTRIBUTES = new Set([
  * about hygiene would be the wrong trade; `errorOnUnknownAttributes` escalates
  * per call, mirroring how `errorOnAnachronism` escalates ANACHRONISM.
  */
-function unwritableScheduleAttributes(schedule: MatchUpSchedule): string[] {
+function unwritableScheduleAttributes(schedule: MatchUpScheduleItems): string[] {
   return Object.keys(schedule ?? {}).filter(
     (key) =>
       schedule[key] !== undefined && !WRITABLE_SCHEDULE_ATTRIBUTES.has(key) && !DERIVED_SCHEDULE_ATTRIBUTES.has(key),
@@ -503,7 +503,7 @@ function unwritableScheduleAttributes(schedule: MatchUpSchedule): string[] {
 }
 
 /** The unwritable attributes, plus the error to return if this caller asked to be stopped by them. */
-function checkUnwritableAttributes(schedule: MatchUpSchedule, errorOnUnknownAttributes: boolean, stack: string) {
+function checkUnwritableAttributes(schedule: MatchUpScheduleItems, errorOnUnknownAttributes: boolean, stack: string) {
   const unwritable = unwritableScheduleAttributes(schedule);
   if (!unwritable.length || !errorOnUnknownAttributes) return { unwritable };
   return {
@@ -526,7 +526,7 @@ function scheduleDateWarning({
 }: {
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
-  schedule: MatchUpSchedule;
+  schedule: MatchUpScheduleItems;
   matchUpId: string;
   event?: Event;
 }): EventDateWarning | undefined {
@@ -568,7 +568,7 @@ type AddMatchUpScheduleItemsArgs = {
   tournamentRecords?: TournamentRecords;
   tournamentRecord: Tournament;
   matchUpId: string;
-  schedule: MatchUpSchedule;
+  schedule: MatchUpScheduleItems;
   event?: Event;
 };
 
@@ -887,7 +887,7 @@ function installTimeItems(stored: MatchUp, timeItems: NonNullable<MatchUp['timeI
  * `clearGridPositionOnDateChange`). The lock check sees those clears as the writes they are, so a lock that pins only
  * the court refuses a date change that would remove it.
  */
-function withGridPositionCleared({ matchUp, schedule }: { matchUp?: MatchUp; schedule?: MatchUpSchedule }) {
+function withGridPositionCleared({ matchUp, schedule }: { matchUp?: MatchUp; schedule?: MatchUpScheduleItems }) {
   const { scheduledDate, courtOrder, courtId, venueId } = schedule ?? {};
   const priorScheduledDate = matchUp && scheduledMatchUpDate({ matchUp })?.scheduledDate;
   const dateChange =
@@ -907,7 +907,7 @@ function recordedTimesRefusal({
   schedule,
 }: {
   drawDefinition: DrawDefinition;
-  schedule: MatchUpSchedule;
+  schedule: MatchUpScheduleItems;
   matchUpId: string;
 }): ResultType | undefined {
   const stated = (value: unknown) => (isString(value) && value ? convertTime(value, true, true) : undefined);
@@ -994,7 +994,7 @@ export function checkScheduleValues({
   schedule,
 }: {
   tournamentRecord?: Tournament;
-  schedule: MatchUpSchedule;
+  schedule: MatchUpScheduleItems;
 }): { error?: ErrorType; info?: string } | undefined {
   const { calledAt, courtOrder, endTime, resumeTime, scheduledDate, scheduledTime, startTime, stopTime } = schedule;
 

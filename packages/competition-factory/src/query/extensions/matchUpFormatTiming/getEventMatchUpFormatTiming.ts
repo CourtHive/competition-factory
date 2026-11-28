@@ -12,7 +12,7 @@ import { POLICY_TYPE_SCHEDULING, POLICY_TYPE_SCORING } from '@Constants/policyCo
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { ErrorType, MISSING_EVENT } from '@Constants/errorConditionConstants';
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
-import { Event, Tournament } from '@Types/tournamentTypes';
+import { Event, Tournament, TournamentScheduleTiming } from '@Types/tournamentTypes';
 
 type GetEventMatchUpFormatTimingArgs = {
   tournamentRecord: Tournament;
@@ -60,7 +60,7 @@ export function getEventMatchUpFormatTiming({
     if (policy?.matchUpFormats) {
       matchUpFormatDefinitions = policy?.matchUpFormats;
     } else {
-      const { extension } = findExtension({
+      const { extension } = findExtension<TournamentScheduleTiming>({
         name: SCHEDULE_TIMING,
         element: event,
       });

@@ -18,6 +18,7 @@ import {
 
 // types
 import type { Tournament } from '@Types/tournamentTypes';
+import type { TournamentPublishState } from '@Types/viewTypes';
 
 /**
  * Publish a tournament's INFORMATION — the tournament itself, before anything inside it is public.
@@ -92,7 +93,7 @@ export function setTournamentInfoPublishState({
 
   const itemType = `${PUBLISH}.${STATUS}`;
   const { timeItem } = getTimeItem({ element: tournamentRecord, itemType });
-  const itemValue = timeItem?.itemValue || { [status]: {} };
+  const itemValue = (timeItem?.itemValue as Record<string, TournamentPublishState>) || { [status]: {} };
   itemValue[status] ??= {};
 
   const info: any = { published: true };

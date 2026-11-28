@@ -25,7 +25,7 @@ export function modifyEventPublishStatus({
   const publishStatus = getEventPublishStatus({ event, status });
   const itemType = `${PUBLISH}.${STATUS}`;
   // the time item holds every status; modifying one must carry the others forward
-  const otherStatuses = event && getEventTimeItem({ event, itemType })?.timeItem?.itemValue;
+  const otherStatuses = event && (getEventTimeItem({ event, itemType })?.timeItem?.itemValue as object | undefined);
   const updatedTimeItem = {
     itemValue: { ...otherStatuses, [status]: { ...publishStatus, ...statusObject } },
     itemType,

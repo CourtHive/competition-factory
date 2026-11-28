@@ -68,7 +68,7 @@ export const TOURNAMENT_FLAT_PROMOTIONS: ExtensionPromotion[] = [
     name: LINKED_TOURNAMENTS,
     attribute: 'linkedTournamentIds',
     // historical shape `{tournamentIds: string[]}` flattens to a plain `string[]`
-    translate: (legacy) => legacy?.tournamentIds ?? legacy,
+    translate: (legacy) => (legacy as { tournamentIds?: string[] } | undefined)?.tournamentIds ?? legacy,
   },
 ];
 

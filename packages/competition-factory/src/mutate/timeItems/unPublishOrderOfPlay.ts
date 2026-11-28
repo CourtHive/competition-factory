@@ -9,6 +9,7 @@ import { MISSING_TOURNAMENT_RECORD, MISSING_TOURNAMENT_RECORDS } from '@Constant
 import { PUBLIC, PUBLISH, STATUS } from '@Constants/timeItemConstants';
 import { UNPUBLISH_ORDER_OF_PLAY } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { TournamentPublishState } from '@Types/viewTypes';
 
 export function unPublishOrderOfPlay(params) {
   const tournamentRecords = resolveTournamentRecords(params);
@@ -28,7 +29,7 @@ function unPublishOOP({ removePriorValues = true, tournamentRecord, status = PUB
 
   const itemType = `${PUBLISH}.${STATUS}`;
   const { timeItem } = getTimeItem({ element: tournamentRecord, itemType });
-  const itemValue = timeItem?.itemValue || { [status]: {} };
+  const itemValue = (timeItem?.itemValue as Record<string, TournamentPublishState>) || { [status]: {} };
   if (itemValue[status]) delete itemValue[status].orderOfPlay;
   const updatedTimeItem = { itemValue, itemType };
 

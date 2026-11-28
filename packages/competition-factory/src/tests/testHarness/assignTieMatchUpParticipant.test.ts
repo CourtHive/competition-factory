@@ -1,4 +1,6 @@
 import { findExtension } from '@Helpers/extensions/findExtension';
+import { defined } from '@Tests/helpers/defined';
+import type { LineUp } from '@Types/factoryTypes';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
@@ -101,7 +103,9 @@ it('can add a participant to a partial pair with a Substitute', () => {
   const drawId = '21d8e860-41d8-4b2d-8f79-94c5758e2ad2';
 
   const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
-  const lineUps = findExtension({ element: drawDefinition, name: LINEUPS })?.extension?.value;
+  const lineUps = defined(
+    findExtension<Record<string, LineUp>>({ element: drawDefinition, name: LINEUPS })?.extension?.value,
+  );
   const placedParticipantIds = Object.values(lineUps).flat().map(xa('participantId'));
   expect(placedParticipantIds.includes(participantId)).toEqual(false);
 

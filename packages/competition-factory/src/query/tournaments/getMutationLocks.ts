@@ -36,7 +36,7 @@ export function getMutationLocks(params: GetMutationLocksArgs): {
     element: { extensions?: Extension[] },
     context?: { drawId?: string; eventId?: string; venueId?: string },
   ) => {
-    const { extension } = findExtension({ element, name: MUTATION_LOCKS });
+    const { extension } = findExtension<MutationLocksValue>({ element, name: MUTATION_LOCKS });
     const locksValue: MutationLocksValue = extension?.value ?? { locks: [] };
 
     for (const lock of locksValue.locks) {

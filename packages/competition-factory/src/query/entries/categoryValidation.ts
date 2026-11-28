@@ -294,7 +294,7 @@ export function validateParticipantRating(
   if (typeof scaleItem.scaleValue === 'object') {
     const extractedValue = getAccessorValue({
       element: scaleItem.scaleValue,
-      accessor: scaleItem.scaleValue?.accessor,
+      accessor: (scaleItem.scaleValue as { accessor?: string } | null)?.accessor,
     });
     if (extractedValue === undefined) {
       return {
@@ -310,7 +310,7 @@ export function validateParticipantRating(
     }
     ratingValue = extractedValue;
   } else {
-    ratingValue = scaleItem.scaleValue;
+    ratingValue = scaleItem.scaleValue as number;
   }
 
   // Check rating range

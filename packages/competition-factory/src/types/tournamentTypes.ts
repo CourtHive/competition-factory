@@ -3,12 +3,15 @@ import type { RotatingPartnerRoundRecord } from './rotatingPartnerRound';
 import type { CompetitionProfile } from './competitionProfile';
 import type { competitionFormat } from './competitionFormat';
 import type { PresenceAttestation } from './presenceTypes';
+import type { CompetitionState } from './competitionPolicyTypes';
 import type {
   SchedulingFormatRecoveryTimes,
   SchedulingFormatAverageTimes,
   SchedulingCategoryTimes,
   PolicyDefinitions,
+  ScaleAttributes,
   FlightProfile,
+  LineUp,
 } from './factoryTypes';
 
 export interface Tournament {
@@ -26,7 +29,6 @@ export interface Tournament {
     timeStamp?: number;
     /** the engine defaults the record relies on for the policy types it does not pin (`defaultsHash`) */
     defaultsHash?: string;
-    [key: string]: any;
   };
   formalName?: string;
   hostCountryCode?: CountryCodeUnion;
@@ -343,7 +345,7 @@ export interface Extension {
   createdAt?: Date | string;
   description?: string;
   name: string;
-  value: any;
+  value: unknown;
 }
 
 export interface TimeItem {
@@ -351,7 +353,7 @@ export interface TimeItem {
   itemDate?: Date | string;
   itemSubTypes?: string[];
   itemType?: string;
-  itemValue?: any;
+  itemValue?: unknown;
 }
 
 // OPEN, sport-agnostic vocabulary (see planning/DISCIPLINE_EXTENSIBILITY.md). The `disciplines`
@@ -386,6 +388,41 @@ export enum CategoryEnum {
 }
 export type CategoryUnion = `${CategoryEnum}`;
 
+/** `DraftState.status`: tiers made, preferences being collected, every tier resolved */
+export type DraftStatusUnion = 'SEEDS_PLACED' | 'COLLECTING_PREFERENCES' | 'COMPLETED';
+
+/** One tier of a draft: its participants, in priority order with the other tiers, and how each was placed */
+export interface DraftTier {
+  participantIds: string[];
+  resolved: boolean;
+  /** written when the tier is applied: each participant's draw position and which preference it matched */
+  resolutions?: { [participantId: string]: { assignedPosition: number; preferenceMatch: number | null } };
+}
+
+/** `drawDefinition.draftState`: a draft draw's tiers, the preferences submitted and, once complete, the report */
+export interface DraftState {
+  status: DraftStatusUnion;
+  structureId: string;
+  /** the most preferences a participant may submit */
+  preferencesCount: number;
+  tierMethod: 'ENTRY_ORDER' | 'RANKING' | 'RATING';
+  scaleAttributes?: ScaleAttributes;
+  ascending: boolean;
+  tiers: DraftTier[];
+  /** each participant's preferred draw positions, in order */
+  preferences: { [participantId: string]: number[] };
+  unassignedDrawPositions: number[];
+  /** ISO timestamp, written when the last tier is resolved */
+  resolvedAt?: string;
+  /** written when the last tier is resolved; `preferenceMatch` is 1 for a first preference, null for none */
+  transparencyReport?: {
+    participantId: string;
+    preferences: number[];
+    assignedPosition: number;
+    preferenceMatch: number | null;
+  }[];
+}
+
 export interface DrawDefinition {
   /** the policies this element attaches (CODES first-class; the `appliedPolicies` extension on older records) */
   appliedPolicies?: PolicyDefinitions;
@@ -413,9 +450,9 @@ export interface DrawDefinition {
   // the factory version and engine clock of the last write to this draw; written only under `stampScope('modified')`
   factory?: { version?: string; timeStamp?: number };
   // CODES first-class: previously stored as `competitionState` extension
-  competitionState?: any;
+  competitionState?: CompetitionState;
   // CODES first-class: previously stored as `draftState` extension
-  draftState?: any;
+  draftState?: DraftState;
   // Per-flight ordering number, sourced from the parent event's flightProfile
   // (`flightProfile.flights[].flightNumber`) when a draw was generated as part
   // of a multi-flight event. Optional because legacy + single-flight draws
@@ -423,8 +460,8 @@ export interface DrawDefinition {
   // ordering.
   flightNumber?: number;
   isMock?: boolean;
-  // CODES first-class: previously stored as `lineUps` extension
-  lineUps?: any;
+  // CODES first-class: previously stored as `lineUps` extension; each TEAM participant's lineUp, by its participantId
+  lineUps?: { [teamParticipantId: string]: LineUp };
   links?: DrawLink[];
   matchUpFormat?: string;
   matchUps?: MatchUp[];
@@ -669,10 +706,11 @@ export interface ScheduleLock {
  * ordered history. Derived fields like `startTime`, `endTime`,
  * `milliseconds`, `time`, `venueName`, `courtName`, `isoDateString`, and
  * the recovery-time calculations remain hydration-time outputs and are
- * NOT first-class writable.
+ * NOT first-class writable: they are declared on {@link HydratedMatchUpSchedule}.
  */
 export interface MatchUpSchedule {
-  allocatedCourts?: any[];
+  // a TEAM matchUp's courts (`allocateTeamMatchUpCourts`)
+  allocatedCourts?: AllocatedCourt[];
   // CODES 5.0.0 first-class: ISO timestamp captured when the matchUp is
   // deliberately placed on the TMX active strip ("calling the match to court").
   // Distinct from scheduledTime (plan) and START_TIME timeItem (actual start).
@@ -685,13 +723,14 @@ export interface MatchUpSchedule {
   // CODES 5.0.0 first-class: pins this placement against bulk clears and
   // automated scheduling. See {@link ScheduleLock}. No legacy timeItem mirror.
   lock?: ScheduleLock;
-  official?: any;
+  // participantId of the assigned official
+  official?: string;
   // participantId of a nominated scorekeeper for this matchUp (crowd-scoring Phase D).
   // SCHEDULE.ASSIGNMENT.SCOREKEEPER first-class value; not cleared by rescheduling.
-  scorekeeper?: any;
+  scorekeeper?: string;
   // participantId of an assigned timekeeper (timed matchUpFormats).
   // SCHEDULE.ASSIGNMENT.TIMEKEEPER first-class value; not cleared by rescheduling.
-  timekeeper?: any;
+  timekeeper?: string;
   scheduledDate?: string;
   // sparse: the calendar day (scheduledDate + 1) on which a matchUp's END_TIME
   // falls when the match crossed midnight. Absent ⇒ the end is on scheduledDate.
@@ -706,8 +745,60 @@ export interface MatchUpSchedule {
   scoredTime?: string;
   timeModifiers?: string[];
   venueId?: string;
-  // derived/hydrated read-only fields (populated by getMatchUpScheduleDetails)
-  [key: string]: any;
+}
+
+/** One of a TEAM matchUp's allocated courts. */
+export interface AllocatedCourt {
+  courtId: string;
+  venueId?: string;
+}
+
+/**
+ * The `schedule` of a matchUp as the queries return it with `inContext: true`: the stored {@link MatchUpSchedule}
+ * with its timeItem fallbacks read in, plus what hydration derives (`getMatchUpScheduleDetails`). The derived
+ * fields are read-only: they are never written into a record.
+ */
+export interface HydratedMatchUpSchedule extends MatchUpSchedule {
+  /** the allocated courts, each with its venue's and its own name */
+  allocatedCourts?: (AllocatedCourt & { venueName?: string; courtName?: string })[];
+  venueName?: string;
+  venueAbbreviation?: string;
+  courtName?: string;
+  /** the scheduled date and time as an ISO date-time string */
+  isoDateString?: string;
+  /** the START_TIME timeItem */
+  startTime?: string;
+  /** the END_TIME timeItem */
+  endTime?: string;
+  /** the time played, from the START / STOP / RESUME / END timeItems (`matchUpDuration`) */
+  milliseconds?: number;
+  /** the time played, as `HH:MM:SS` */
+  time?: string;
+  // with `afterRecoveryTimes`: the format's average and recovery minutes and when recovery ends
+  averageMinutes?: number;
+  recoveryMinutes?: number;
+  timeAfterRecovery?: string;
+  dateAfterRecovery?: string;
+  typeChangeRecoveryMinutes?: number;
+  typeChangeTimeAfterRecovery?: string;
+  typeChangeDateAfterRecovery?: string;
+  /** with `nextMatchUps`: the matchUpId of a matchUp whose recovery runs past this one's scheduled time */
+  scheduleConflict?: string;
+}
+
+/**
+ * A schedule as the scheduling mutations take it (`addMatchUpScheduleItems`, `bulkScheduleMatchUps`). A schedule
+ * read from a hydrated matchUp can be written back as it is: its derived fields are ignored.
+ */
+export interface MatchUpScheduleItems extends Omit<HydratedMatchUpSchedule, 'allocatedCourts'> {
+  /** court ids, or courts as read back from a matchUp; `courtIds` wins when both are given */
+  allocatedCourts?: (string | AllocatedCourt)[];
+  /** the courts to allocate to a TEAM matchUp */
+  courtIds?: string[];
+  /** written as a STOP_TIME timeItem */
+  stopTime?: string;
+  /** written as a RESUME_TIME timeItem */
+  resumeTime?: string;
 }
 
 /**
@@ -720,7 +811,7 @@ export interface MatchUpSchedule {
 export interface ScenarioPlacement {
   tournamentId: string;
   matchUpId: string;
-  schedule: MatchUpSchedule;
+  schedule: MatchUpScheduleItems;
 }
 
 /**
@@ -844,6 +935,21 @@ export type SideExitProvenanceEntry = {
 /** Keyed by sideNumber (1 | 2). Serialises as `{ "1": {...}, "2": {...} }`. */
 export type SideExitProvenance = Record<number, SideExitProvenanceEntry>;
 
+/**
+ * `matchUp.delegatedOutcome`: an unofficial outcome from another application, for display before the official
+ * result is entered. `setDelegatedOutcome` stores the outcome it is given as it is (deriving the score strings when
+ * only `sets` are given), so keys of the caller's own, such as `source`, are kept; read them as `unknown`.
+ */
+export interface DelegatedOutcome {
+  score: Score;
+  winningSide?: number;
+  matchUpStatus?: MatchUpStatusUnion;
+  matchUpFormat?: string;
+  /** where the outcome came from */
+  source?: string;
+  [key: string]: unknown;
+}
+
 export interface MatchUp {
   /**
    * CODES first-class: who has presented themselves at the desk for THIS matchUp, previously stored as
@@ -859,7 +965,7 @@ export interface MatchUp {
   collectionPosition?: number;
   createdAt?: Date | string;
   // CODES first-class: previously stored as `delegatedOutcome` extension
-  delegatedOutcome?: any;
+  delegatedOutcome?: DelegatedOutcome;
   // CODES first-class: previously stored as `disableAutoCalc` extension (tie matchUp)
   disableAutoCalc?: boolean;
   drawPositions?: number[];
@@ -1377,7 +1483,8 @@ export interface TallyResult {
   GEMscore?: number;
   allDefaults?: number;
   defaults?: number;
-  defeats?: any[];
+  /** the participantIds this participant lost to, once per matchUp */
+  defeats?: string[];
   gamesLost?: number;
   gamesPct?: number;
   gamesWon?: number;
@@ -1407,9 +1514,21 @@ export interface TallyResult {
   tieSinglesLost?: number;
   tieSinglesWon?: number;
   ties?: number;
-  victories?: any[];
+  /** the participantIds this participant beat, once per matchUp */
+  victories?: string[];
   walkovers?: number;
-  [key: string]: any;
+  /** the participantIds this participant drew with, once per matchUp */
+  drawnWith?: string[];
+  /** a cross-group ordering's values, when the tally policy compares groups */
+  crossGroupValues?: number[];
+  gamesDiff?: number;
+  pointsDiff?: number;
+  setsDiff?: number;
+  tieMatchUpsPct?: number;
+  /** each matchUp's rating variation, for the pressure order */
+  ratingVariation?: number[];
+  /** matchUps won and lost, as `won/lost` */
+  result?: string;
 }
 
 export interface PositionAssignment {
