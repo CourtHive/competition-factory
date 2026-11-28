@@ -2917,6 +2917,9 @@
       "ret:index": 7,
       "ret:keys": 1
     },
+    "removeNonTeamTieFormats": {
+      "ret:index": 1
+    },
     "repairDrawLinks": {
       "param:index": 1
     },
