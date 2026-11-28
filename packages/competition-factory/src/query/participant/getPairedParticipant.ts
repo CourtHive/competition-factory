@@ -16,7 +16,7 @@ import {
 } from '@Constants/errorConditionConstants';
 
 type GetPairedParticipantArgs = {
-  tournamentParticipants?: any[];
+  tournamentParticipants?: Participant[];
   tournamentRecord?: Tournament;
   participantIds: string[];
 };
@@ -66,7 +66,7 @@ export function findPairedParticipant({
         (participant) =>
           participant.participantType === PAIR &&
           intersection(participantIds, participant.individualParticipantIds).length === participantIds.length &&
-          participant.individualParticipantIds.length === participantIds.length,
+          participant.individualParticipantIds!.length === participantIds.length,
       );
   const existingPairedParticipant = existingPairedParticipants[0];
   if (!existingPairedParticipant) {

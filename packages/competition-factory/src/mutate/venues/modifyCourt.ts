@@ -20,7 +20,7 @@ type ModifyCourtArgs = {
   venueMatchUps?: HydratedMatchUp[];
   tournamentRecord?: Tournament;
   disableNotice?: boolean;
-  modifications: any;
+  modifications: Partial<Court>;
   courtId: string;
   force?: boolean;
 };

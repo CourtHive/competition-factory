@@ -1,12 +1,13 @@
 import { getTargetElement } from './getTargetElement';
 import { isConvertableInteger } from '@Tools/math';
+import type { FlightConfig } from '@Types/rankingTypes';
 
 type GetAwardPointsArgs = {
   participantWon?: boolean;
   flightNumber?: number;
   drawSize: number;
   valueObj: any;
-  flights?: any;
+  flights?: FlightConfig;
   level?: number;
 };
 export function getAwardPoints({

@@ -9,18 +9,18 @@ import { AWAITING_RESULT, CHALLENGED, COMPLETED, TO_BE_PLAYED } from '@Constants
 import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Constants/ladderConstants';
 import type { LapseConsequence, LapseKind } from '@Constants/ladderConstants';
 import type { LadderPolicy, LapsePolicy } from '@Types/ladderTypes';
-import type { MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 
 type LapsesArgs = {
   /** The instant to judge against — expiry and play-by are derived, never stored. */
   asOf: string;
   participantId: string;
-  tournamentRecord?: any;
-  drawDefinition?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
   /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
-  structure?: any;
+  structure?: Structure;
   structureId?: string;
-  event?: any;
+  event?: Event;
 };
 
 export type Lapse = { kind: LapseKind; matchUpId: string; at: string };

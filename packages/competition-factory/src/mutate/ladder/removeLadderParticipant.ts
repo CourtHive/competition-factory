@@ -8,7 +8,7 @@ import { isLadder } from '@Query/drawDefinition/isLadder';
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { LADDER_PARTICIPANT_REMOVED, RANK } from '@Constants/ladderConstants';
-import type { Structure } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
@@ -17,10 +17,10 @@ type RemoveArgs = {
   reason?: string;
   removedAt: string;
   participantId: string;
-  tournamentRecord?: any;
-  drawDefinition: any;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
   structureId?: string;
-  event?: any;
+  event?: Event;
 };
 
 /**

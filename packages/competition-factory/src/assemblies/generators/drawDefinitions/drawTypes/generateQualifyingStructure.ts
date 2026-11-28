@@ -18,7 +18,7 @@ import { FEED_IN, POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/d
 import POLICY_ROUND_NAMING_DEFAULT from '@Fixtures/policies/POLICY_ROUND_NAMING_DEFAULT';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
-import { PolicyDefinitions } from '@Types/factoryTypes';
+import { GenerateDrawDefinitionArgs, PolicyDefinitions } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ErrorType,
@@ -38,7 +38,7 @@ type GenerateQualifyingStructureArgs = {
   targetStructureId: string;
   qualifyingOnly?: boolean;
   drawType?: DrawTypeUnion;
-  structureOptions?: any;
+  structureOptions?: GenerateDrawDefinitionArgs['structureOptions'];
   matchUpFormat?: string;
   structureName?: string;
   tieFormat?: TieFormat;

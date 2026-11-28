@@ -18,14 +18,15 @@ import {
   STRUCTURE_NOT_FOUND,
   EXISTING_MATCHUP_ID,
 } from '@Constants/errorConditionConstants';
+import type { Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 
 type AddAdHocMatchUpsParams = {
   suppressNotifications?: boolean; // internal - avoid duplicate notifications from mocksEngine
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   structureId?: string;
   drawDefinition: any;
-  matchUps: any[];
-  event: any;
+  matchUps: MatchUp[];
+  event: Event;
 };
 
 export function addAdHocMatchUps(params: AddAdHocMatchUpsParams): ResultType {
@@ -80,7 +81,7 @@ export function addAdHocMatchUps(params: AddAdHocMatchUpsParams): ResultType {
   if (!suppressNotifications) {
     addMatchUpsNotice({
       tournamentId: tournamentRecord?.tournamentId,
-      matchUps: [...tieMatchUps, ...matchUps],
+      matchUps: [...tieMatchUps, ...matchUps] as MatchUp[],
       eventId: event?.eventId,
       drawDefinition,
     });

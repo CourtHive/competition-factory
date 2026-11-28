@@ -24,7 +24,7 @@ type GetSeedsCountArgs = {
   drawDefinition?: DrawDefinition;
   participantsCount?: number;
   participantCount?: number;
-  drawSize?: any;
+  drawSize?: number | string;
   event?: Event;
 };
 
@@ -89,7 +89,7 @@ export function getSeedsCount(
   }
 
   const consideredParticipantCount = (requireParticipantCount && participantsCount) || drawSize;
-  if (consideredParticipantCount && consideredParticipantCount > drawSize)
+  if (consideredParticipantCount && consideredParticipantCount > drawSize!)
     return { error: PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE };
 
   const policy = policyDefinitions?.[POLICY_TYPE_SEEDING];
@@ -100,7 +100,7 @@ export function getSeedsCount(
   if (policy.drawSizeProgression !== undefined) drawSizeProgression = policy.drawSizeProgression;
 
   const relevantThresholds = seedsCountThresholds.filter((threshold) => {
-    return drawSizeProgression ? threshold.drawSize <= drawSize : drawSize === threshold.drawSize;
+    return drawSizeProgression ? threshold.drawSize <= (drawSize as number) : drawSize === threshold.drawSize;
   });
 
   const seedsCount = relevantThresholds.reduce((seedsCount, threshold) => {

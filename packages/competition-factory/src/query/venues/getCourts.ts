@@ -2,13 +2,19 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
+type GetCourtsArgs = {
+  tournamentRecord?: Tournament;
+  venueId?: string;
+  venueIds?: string[];
+};
 /**
  *
  * @param {string} venueId - optional -
  * @param {string[]} venueIds - optional -
  */
-export function getCourts({ tournamentRecord, venueId, venueIds }) {
+export function getCourts({ tournamentRecord, venueId, venueIds }: GetCourtsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   const courts = (tournamentRecord.venues ?? [])

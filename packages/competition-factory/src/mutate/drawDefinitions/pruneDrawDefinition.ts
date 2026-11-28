@@ -8,14 +8,20 @@ import { getDrawStructures } from '@Acquire/findStructure';
 import { MISSING_DRAW_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { MatchUp } from '@Types/tournamentTypes';
+import { MatchUp, DrawDefinition, Tournament } from '@Types/tournamentTypes';
 
+type PruneDrawDefinitionArgs = {
+  matchPlayDrawPositions?: boolean;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  drawId?: string;
+};
 export function pruneDrawDefinition({
   matchPlayDrawPositions = true, // when simply extracting matchUps for aggregation, drawPositions are unnecessary
   tournamentRecord,
   drawDefinition,
   drawId,
-}) {
+}: PruneDrawDefinitionArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
@@ -24,7 +30,7 @@ export function pruneDrawDefinition({
   const { drawsAnalysis } = analyzeDraws({ tournamentRecord });
   if (drawsAnalysis.canBePruned.includes(drawId)) {
     const isMatchPlay = drawsAnalysis.matchPlay.includes(drawId);
-    const drawAnalysis = drawsAnalysis.drawAnalysis[drawId];
+    const drawAnalysis = drawsAnalysis.drawAnalysis[drawId!];
     const {
       structures: [mainStructure],
     } = getDrawStructures({

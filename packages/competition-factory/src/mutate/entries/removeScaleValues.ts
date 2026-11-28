@@ -6,7 +6,18 @@ import { mustBeAnArray } from '@Tools/mustBeAnArray';
 
 // constants
 import { INVALID_VALUES, MISSING_EVENT } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, EntryStatusUnion, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
+import type { ScaleAttributes } from '@Types/factoryTypes';
 
+type RemoveScaleValuesArgs = {
+  tournamentRecord: Tournament;
+  scaleAttributes: ScaleAttributes;
+  drawDefinition?: DrawDefinition;
+  entryStatuses?: EntryStatusUnion[];
+  drawId?: string;
+  event: Event;
+  stage?: StageTypeUnion;
+};
 export function removeScaleValues({
   tournamentRecord,
   scaleAttributes,
@@ -15,7 +26,7 @@ export function removeScaleValues({
   drawId,
   event,
   stage,
-}) {
+}: RemoveScaleValuesArgs) {
   if (!event) return { error: MISSING_EVENT };
   if (entryStatuses && !Array.isArray(entryStatuses))
     return decorateResult({
@@ -39,7 +50,7 @@ export function removeScaleValues({
   const stageEntries = (entries ?? []).filter(
     (entry) =>
       (!stage || !entry.entryStage || entry.entryStage === stage) &&
-      (!entryStatuses || entryStatuses.includes(entry.entryStatus)),
+      (!entryStatuses || (entryStatuses as (string | undefined)[]).includes(entry.entryStatus)),
   );
 
   const participantIds = stageEntries.map(getParticipantId);

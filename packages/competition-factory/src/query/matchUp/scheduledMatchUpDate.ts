@@ -13,7 +13,7 @@ import { ScheduledMatchUpArgs } from '@Types/factoryTypes';
 export function scheduledMatchUpDate({ timeStamp, schedule, matchUp }: ScheduledMatchUpArgs) {
   const firstClassDate = matchUp?.schedule?.scheduledDate;
 
-  const { itemValue: legacyDate, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue({
+  const { itemValue: legacyDate, timeStamp: itemTimeStamp } = latestVisibleTimeItemValue<string>({
     timeItems: matchUp?.timeItems ?? [],
     itemType: SCHEDULED_DATE,
   });

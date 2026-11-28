@@ -16,7 +16,7 @@ import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
-import { PolicyDefinitions, MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { GenerateDrawDefinitionArgs, PolicyDefinitions, MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -48,11 +48,11 @@ type GenerateDrawTypeAndModify = {
   qualifiersCount?: number;
   stageSequence?: number;
   matchUpFormat?: string;
-  structureOptions?: any;
+  structureOptions?: GenerateDrawDefinitionArgs['structureOptions'];
   tieFormat?: TieFormat;
   drawType?: string;
   drawSize?: number;
-  feedPolicy?: any;
+  feedPolicy?: PolicyDefinitions['feedIn'];
   isMock?: boolean;
   event?: Event;
 };

@@ -8,7 +8,7 @@ import { UUID } from '@Tools/UUID';
 // constants and types
 import { CHALLENGED } from '@Constants/matchUpStatusConstants';
 import { CHALLENGE_ISSUED } from '@Constants/ladderConstants';
-import type { Structure } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -24,10 +24,10 @@ type IssueChallengeArgs = {
   challengerParticipantId: string;
   /** The instant the challenge was issued. Supplied, never read from an ambient clock. */
   issuedAt: string;
-  tournamentRecord?: any;
-  drawDefinition: any;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
   structureId?: string;
-  event?: any;
+  event?: Event;
 };
 
 /**

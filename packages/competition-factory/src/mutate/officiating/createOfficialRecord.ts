@@ -7,12 +7,13 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord } from '@Types/officiatingTypes';
+import type { Extension } from '@Types/tournamentTypes';
 
 type CreateOfficialRecordArgs = {
   officialRecordId?: string;
   personId: string;
   organisationId?: string;
-  extensions?: any[];
+  extensions?: Extension[];
 };
 
 export function createOfficialRecord({

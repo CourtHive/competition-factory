@@ -12,6 +12,7 @@ import {
   PARTICIPANT_NOT_FOUND,
   EXISTING_PERSON_OTHER_ID,
 } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
 /**
  * Upsert a `UnifiedPersonID` entry into the participant's
@@ -43,7 +44,7 @@ export function addPersonOtherId({
   occurredAt,
   replaceExisting,
 }: {
-  tournamentRecord: any;
+  tournamentRecord: Tournament;
   participantId: string;
   organisationId: string;
   personId: string;

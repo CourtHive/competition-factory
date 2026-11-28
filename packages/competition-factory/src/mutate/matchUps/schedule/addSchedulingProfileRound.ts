@@ -12,12 +12,19 @@ import { EVENT_DATE_INACTIVE, EXISTING_ROUND, INVALID_DATE } from '@Constants/er
 import type { ProfileRound, ProfileVenue } from '@Query/matchUps/scheduling/schedulingUtils';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import type { ResultType, ResultWarning } from '@Types/factoryTypes';
+import type { ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
+import type { ScheduleProfileRound } from '@Types/tournamentTypes';
 
 // Every rule is decided before the profile is written: the date and its range, the round at another venue, the round
 // already at this venue, and the validity of the whole proposed profile (its draw, structure and round references).
 // A refusal leaves the stored profile as it was; an accepted round is appended where the planner found its place.
-export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, venueId, round }): ResultType {
+type RoundArgs = {
+  tournamentRecords: TournamentRecords;
+  scheduleDate: string;
+  venueId: string;
+  round: ScheduleProfileRound;
+};
+export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, venueId, round }: RoundArgs): ResultType {
   if (!isValidDateString(scheduleDate)) {
     return { error: INVALID_DATE };
   }

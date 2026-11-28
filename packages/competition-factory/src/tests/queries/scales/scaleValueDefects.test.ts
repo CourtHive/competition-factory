@@ -34,6 +34,7 @@ function participantWithRating(participantId: string, utrRating: string | number
 
 describe('getMatchUpRatingDelta — string ratings are not "missing data"', () => {
   const matchUpFor = (a: string | number, b: string | number) => ({
+    matchUpId: 'm1',
     matchUpType: SINGLES,
     winningSide: 1,
     sides: [

@@ -24,6 +24,7 @@ import {
   PARTICIPANT_NOT_FOUND,
   TEAM_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
+import type { ScaleAttributes } from '@Types/factoryTypes';
 
 /*
 scaledParticipants are equivalent to scaledEntries
@@ -44,9 +45,10 @@ type ScaledTeamAssignmentArgs = {
   reverseAssignmentOrder?: boolean;
   teamParticipantIds?: string[];
   tournamentRecord: Tournament;
-  scaledParticipants?: any[];
+  scaledParticipants?: { participantId: string; scaleValue?: number }[];
   initialTeamIndex?: number;
-  scaleAttributes?: any;
+  /** `sortOrder` set: highest scale value first */
+  scaleAttributes?: ScaleAttributes & { sortOrder?: string };
   teamNameBase?: string;
   teamsCount?: number;
   eventId?: string;

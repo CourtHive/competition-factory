@@ -16,7 +16,7 @@ import {
   UNRECOGNIZED_DRAW_TYPE,
 } from '@Constants/errorConditionConstants';
 import type { ResultType } from '@Types/factoryTypes';
-import type { Structure } from '@Types/tournamentTypes';
+import type { DrawDefinition, Structure } from '@Types/tournamentTypes';
 
 type LoserLinkDefinition = {
   sourceRoundNumber: number;
@@ -32,7 +32,7 @@ type GenerateConsolationArgs = {
 };
 
 type AddLinkedConsolationStructureArgs = GenerateConsolationArgs & {
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
   structureId?: string;
   links: LoserLinkDefinition[];
 };

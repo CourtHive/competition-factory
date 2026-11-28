@@ -42,7 +42,7 @@ type GetCompetitiveProfileArgs = {
   scaleAccessor?: string;
   participantId?: string;
   ascending?: boolean;
-  profileBands?: any;
+  profileBands?: { [band: string]: number };
   scaleName?: string;
   matchUps: HydratedMatchUp[];
 };
@@ -105,6 +105,7 @@ export function getCompetitiveProfile({
 
   const scoped = participantId ? matchUps.filter((matchUp) => includesParticipant(matchUp, participantId)) : matchUps;
 
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- falsy profileBands fall back to the policy bands too
   const bandProfiles = profileBands || resolveCompetitiveBands({ policyDefinitions });
 
   // The exposure axis engages only when a scale is identified — same rule as

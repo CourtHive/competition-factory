@@ -8,15 +8,21 @@ import { isString } from '@Tools/objects';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
-export function modifyParticipantOtherName({ tournamentRecord, participantId, participantOtherName }) {
+type OtherNameArgs = {
+  tournamentRecord?: Tournament;
+  participantId?: string;
+  participantOtherName?: unknown;
+};
+export function modifyParticipantOtherName({ tournamentRecord, participantId, participantOtherName }: OtherNameArgs) {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
   if (paramsCheck.error) return paramsCheck;
 
   const { participant } = findTournamentParticipant({
     tournamentRecord,
     participantId,
-  });
+  } as Parameters<typeof findTournamentParticipant>[0]);
   if (!participant) return { error: PARTICIPANT_NOT_FOUND };
 
   // Same contract as `modifyParticipant`: '' clears and DELETES the key, a non-string is
@@ -32,7 +38,7 @@ export function modifyParticipantOtherName({ tournamentRecord, participantId, pa
   // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
   // record depended on who was listening
   modifyParticipantsNotice({
-    tournamentId: tournamentRecord.tournamentId,
+    tournamentId: tournamentRecord!.tournamentId,
     participants: [participant],
   });
 

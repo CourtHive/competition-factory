@@ -33,7 +33,7 @@ type TimeItemArgs = {
   participantId?: string;
   itemType: string;
   event?: Event;
-  element: any;
+  element?: object;
 };
 
 export function getTimeItem(params: TimeItemArgs): TimeItemResult & ResultType {

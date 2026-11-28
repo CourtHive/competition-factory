@@ -779,6 +779,7 @@ PublicParticipant
 PublicParticipantDocument
 PublishedScheduleDetail
 QUALIFYING_CAPACITY_EXCEEDED
+QualifyingProfile
 QualityWinProfile
 QualityWinRange
 QueryFacade

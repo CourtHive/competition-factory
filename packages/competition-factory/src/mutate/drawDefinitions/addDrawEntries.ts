@@ -13,7 +13,16 @@ import { isUngrouped } from '@Query/entries/isUngrouped';
 // constants and types
 import { DIRECT_ACCEPTANCE, DIRECT_ENTRY_STATUSES, LUCKY_LOSER } from '@Constants/entryStatusConstants';
 import { MAIN, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { EntryStatusUnion, Participant, Entry } from '@Types/tournamentTypes';
+import {
+  EntryStatusUnion,
+  Participant,
+  Entry,
+  DrawDefinition,
+  Event,
+  Extension,
+  StageTypeUnion,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/eventConstants';
@@ -27,6 +36,21 @@ import {
   INVALID_ENTRIES,
 } from '@Constants/errorConditionConstants';
 
+type AddDrawEntriesArgs = {
+  suppressDuplicateEntries?: boolean;
+  tournamentRecord?: Tournament;
+  autoEntryPositions?: boolean;
+  entryStageSequence?: number;
+  ignoreStageSpace?: boolean;
+  participantIds: string[];
+  drawDefinition?: DrawDefinition;
+  entryStatus?: EntryStatusUnion;
+  roundTarget?: number;
+  entryStage?: StageTypeUnion;
+  extension?: Extension;
+  drawId: string;
+  event: Event;
+};
 export function addDrawEntries({
   suppressDuplicateEntries = true,
   tournamentRecord,
@@ -41,7 +65,7 @@ export function addDrawEntries({
   extension,
   drawId,
   event,
-}) {
+}: AddDrawEntriesArgs) {
   if (!participantIds?.length) return { error: MISSING_PARTICIPANT_IDS };
   if (!event) return { error: EVENT_NOT_FOUND };
   if (!drawId) return { error: MISSING_DRAW_ID };
@@ -93,7 +117,7 @@ export function addDrawEntries({
     const targetStage = entryStage ?? MAIN;
     const sameStageEntryIds = (drawDefinition.entries ?? [])
       .filter((entry) => (entry.entryStage ?? MAIN) === targetStage)
-      .filter((entry) => DIRECT_ENTRY_STATUSES.includes(entry.entryStatus))
+      .filter((entry) => (DIRECT_ENTRY_STATUSES as (string | undefined)[]).includes(entry.entryStatus))
       .map(getParticipantId);
 
     const conflictingPairs = getSharedIndividualConflicts({

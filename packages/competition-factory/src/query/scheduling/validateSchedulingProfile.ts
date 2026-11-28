@@ -22,7 +22,11 @@ type SchedulingIds = {
   drawIds: string[];
 };
 
-export function validateSchedulingProfile({ tournamentRecords, schedulingProfile }): {
+type ValidateProfileArgs = {
+  tournamentRecords?: TournamentRecords;
+  schedulingProfile?: unknown;
+};
+export function validateSchedulingProfile({ tournamentRecords, schedulingProfile }: ValidateProfileArgs): {
   error?: ErrorType;
   valid: boolean;
   info?: string;

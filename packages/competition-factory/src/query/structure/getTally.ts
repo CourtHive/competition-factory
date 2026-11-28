@@ -3,9 +3,10 @@ import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension
 // constants
 import { MISSING_POSITION_ASSIGNMENTS, NOT_FOUND } from '@Constants/errorConditionConstants';
 import { TALLY } from '@Constants/extensionConstants';
+import type { PositionAssignment } from '@Types/tournamentTypes';
 
 type GetTallyArgs = {
-  positionAssignment?: any;
+  positionAssignment?: PositionAssignment;
 };
 
 /**

@@ -411,7 +411,7 @@ describe('checkTieFormat branch coverage', () => {
 describe('getDrawParticipantRepresentativeIds branch coverage', () => {
   it('returns empty array when no extension found', () => {
     const result: any = getDrawParticipantRepresentativeIds({
-      drawDefinition: { extensions: [] },
+      drawDefinition: { drawId: 'd1', extensions: [] },
     });
     expect(result.representativeParticipantIds).toEqual([]);
   });
