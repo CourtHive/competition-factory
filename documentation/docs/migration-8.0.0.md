@@ -582,7 +582,7 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
 - `POLICY_PRINT_DEFAULT` and its `fixtures.policies` export.
 - `ScoringEngine.markHardBoundary`, `SetScore.hardBoundaries` and `Point.hardBoundary`.
 - The competitionFormat fixtures' `label` fields.
-- The `tods`-named availability exports, renamed with no alias (#6711): `todsAvailabilityToBlocks` is now `dateAvailabilityToBlocks`, `TodsDateAvailability` is now `VenueDateAvailability`, and `TodsVenue` is now `AvailabilityVenue`, on `availability`, `AvailabilityEngine`, `availabilityGovernor` and the package root. Import the new names; the shapes and behaviour are unchanged. The governor route, which leaves at 8.0.0, is listed under [availabilityGovernor](#availabilitygovernor) by its new name.
+- The `tods`-named availability exports, renamed with no alias (#6711): `todsAvailabilityToBlocks` is now `dateAvailabilityToBlocks`, `TodsDateAvailability` is now `VenueDateAvailability`, `TodsVenue` is now `AvailabilityVenue`, and `TodsCourt` is now `AvailabilityCourt`, on `availability`, `AvailabilityEngine`, `availabilityGovernor` and the package root. Import the new names; the shapes and behaviour are unchanged. The governor route, which leaves at 8.0.0, is listed under [availabilityGovernor](#availabilitygovernor) by its new name.
 
 ### Types and schema
 

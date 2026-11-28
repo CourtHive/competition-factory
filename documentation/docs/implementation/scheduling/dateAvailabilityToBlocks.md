@@ -10,8 +10,9 @@ This method is **scheduled for removal from production governors and engine expo
 
 :::
 
-Renamed from `todsAvailabilityToBlocks` in 8.0.0, with no alias; its parameter type `TodsVenue` is now
-`AvailabilityVenue`. The pinned implementation link below predates the rename and shows the old names.
+Renamed from `todsAvailabilityToBlocks` in 8.0.0, with no alias. Its parameter type `TodsVenue` is now
+`AvailabilityVenue`, whose courts are `AvailabilityCourt` (formerly `TodsCourt`). The pinned implementation link
+below predates the rename and shows the old names.
 
 ## Source-local contract
 

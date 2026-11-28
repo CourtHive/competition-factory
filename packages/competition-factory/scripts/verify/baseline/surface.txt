@@ -46,6 +46,7 @@ AsyncFactoryEngine
 AuthorityRoleEnum
 AuthorityRoleUnion
 Availability
+AvailabilityCourt
 AvailabilityEngine
 AvailabilityPayload
 AvailabilityTimeAway
@@ -1033,7 +1034,6 @@ TimeRange
 TimeoutRules
 TimeoutScope
 TimerProfile
-TodsCourt
 Topic
 TopicPayloadMap
 Tournament

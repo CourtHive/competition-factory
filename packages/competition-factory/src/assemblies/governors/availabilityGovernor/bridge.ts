@@ -40,14 +40,14 @@ export interface AvailabilityVenue {
   venueName?: string;
   defaultStartTime?: string;
   defaultEndTime?: string;
-  courts?: TodsCourt[];
+  courts?: AvailabilityCourt[];
   dateAvailability?: VenueDateAvailability[];
 }
 
 /**
  * TODS court structure (simplified)
  */
-export interface TodsCourt {
+export interface AvailabilityCourt {
   courtId?: string;
   courtName?: string;
   surfaceType?: string;
