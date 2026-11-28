@@ -795,7 +795,7 @@ function ownedResult({ owned, params, matchUpsMap, neverPlayedBefore, stack }: O
  * draw. Only this draw is copied first, and only for a call that lapses a decline; a refusal anywhere restores it in
  * place, so the refused call leaves the record as it was.
  */
-function lapseThenSet(params: SetMatchUpStatusArgs, seats: DeclinedSeat[]) {
+function lapseThenSet(params: SetMatchUpStatusArgs, seats: DeclinedSeat[]): ResultType {
   const { tournamentRecord, drawDefinition, event } = params;
   const draw = drawDefinition as DrawDefinition;
   // the draw, the notice buffer and the modified marks as they stand: a refusal puts all three back
