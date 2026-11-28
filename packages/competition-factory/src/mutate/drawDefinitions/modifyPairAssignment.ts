@@ -80,7 +80,7 @@ export function modifyPairAssignment(params) {
   // if no existing pair participant, add new pair participant
   let newPairParticipantId;
   if (!existingPairParticipant) {
-    const newPairParticipant = {
+    const newPairParticipant: Parameters<typeof addParticipant>[0]['participant'] = {
       participantId: uuids?.pop(),
       participantRole: COMPETITOR,
       individualParticipantIds,

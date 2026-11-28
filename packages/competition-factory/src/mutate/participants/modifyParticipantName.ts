@@ -6,8 +6,14 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
-export function modifyParticipantName({ tournamentRecord, participantName, participantId }) {
+type ModifyParticipantNameArgs = {
+  tournamentRecord?: Tournament;
+  participantName?: string;
+  participantId?: string;
+};
+export function modifyParticipantName({ tournamentRecord, participantName, participantId }: ModifyParticipantNameArgs) {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
   if (paramsCheck.error) return paramsCheck;
 
@@ -16,7 +22,7 @@ export function modifyParticipantName({ tournamentRecord, participantName, parti
   const { participant } = findTournamentParticipant({
     tournamentRecord,
     participantId,
-  });
+  } as Parameters<typeof findTournamentParticipant>[0]);
   if (!participant) return { error: PARTICIPANT_NOT_FOUND };
 
   participant.participantName = participantName;
@@ -24,7 +30,7 @@ export function modifyParticipantName({ tournamentRecord, participantName, parti
   // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
   // record depended on who was listening
   modifyParticipantsNotice({
-    tournamentId: tournamentRecord.tournamentId,
+    tournamentId: tournamentRecord!.tournamentId,
     participants: [participant],
   });
 

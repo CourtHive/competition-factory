@@ -2,7 +2,7 @@ import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import type { MatchUp } from '@Types/tournamentTypes';
 
-type CheckMatchUpIsCompleteArgs = { matchUp?: any };
+type CheckMatchUpIsCompleteArgs = { matchUp?: Partial<MatchUp> };
 
 /**
  * Whether a matchUp has a result.
@@ -30,7 +30,7 @@ type CheckMatchUpIsCompleteArgs = { matchUp?: any };
  */
 export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) {
   if (typeof matchUp !== 'object' || matchUp === null || !matchUp.matchUpId) return { error: MISSING_MATCHUP };
-  return completedMatchUpStatuses.includes(matchUp.matchUpStatus) || matchUp.winningSide;
+  return (completedMatchUpStatuses as (string | undefined)[]).includes(matchUp.matchUpStatus) || matchUp.winningSide;
 }
 
 /**
@@ -46,5 +46,5 @@ export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) 
 export function matchUpCompletion(matchUp: Partial<MatchUp> | undefined) {
   if (!matchUp) return undefined;
   const result = checkMatchUpIsComplete({ matchUp });
-  return result?.error ? undefined : result;
+  return (result as { error?: unknown })?.error ? undefined : result;
 }

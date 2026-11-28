@@ -36,7 +36,7 @@ const setup = ({ policy, seated, participants }: any) => {
     structures: [structure],
     extensions: [{ name: 'appliedPolicies', value: { [POLICY_TYPE_LADDER]: policy } }],
   };
-  return { drawDefinition, structure, tournamentRecord: { participants } };
+  return { drawDefinition, structure, tournamentRecord: { tournamentId: 't1', participants } };
 };
 
 const standing = (structure: any) =>

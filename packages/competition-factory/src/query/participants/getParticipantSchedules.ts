@@ -3,7 +3,7 @@ import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 
 // constants and types
 import { INVALID_OBJECT, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { PolicyDefinitions } from '@Types/factoryTypes';
+import { PolicyDefinitions, ParticipantFilters } from '@Types/factoryTypes';
 import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
@@ -11,7 +11,7 @@ import { Tournament } from '@Types/tournamentTypes';
 type GetParticipantSchedulesArgs = {
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord: Tournament;
-  participantFilters?: any;
+  participantFilters?: ParticipantFilters;
 };
 export function getParticipantSchedules({
   participantFilters = {},

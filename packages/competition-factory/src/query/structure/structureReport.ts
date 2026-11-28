@@ -19,7 +19,7 @@ import { SEEDING } from '@Constants/scaleConstants';
 type GetStructureReportsArgs = {
   firstStageSequenceOnly?: boolean;
   tournamentRecord: Tournament;
-  extensionProfiles?: any[];
+  extensionProfiles?: { name: string; label?: string; accessor?: string }[];
   firstFlightOnly?: boolean;
 };
 

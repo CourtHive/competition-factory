@@ -61,7 +61,7 @@ import {
 
 // constants and types
 import type { CallStatusReasons, RetainedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
-import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
+import { MatchUpsMap, PolicyDefinitions, MatchUpOutcome, MatchUpScheduleRequest } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -158,11 +158,11 @@ type SetMatchUpStateArgs = {
   removeScore?: boolean;
   winningSide?: number;
   matchUpId: string;
-  schedule?: any;
+  schedule?: MatchUpScheduleRequest;
   notes?: string;
-  outcome?: any;
+  outcome?: MatchUpOutcome;
   event?: Event;
-  score?: any;
+  score?: Score;
 };
 
 /**

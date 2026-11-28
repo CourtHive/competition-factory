@@ -9,7 +9,15 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import { EXISTING_PARTICIPANT, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import type { EventTypeUnion, Participant, PositionAssignment, Structure } from '@Types/tournamentTypes';
+import type {
+  DrawDefinition,
+  Event,
+  EventTypeUnion,
+  Participant,
+  PositionAssignment,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 import { DYNAMIC, RATING as RATING_SCALE } from '@Constants/scaleConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { BOTTOM, RANK } from '@Constants/ladderConstants';
@@ -20,10 +28,10 @@ type AddArgs = {
   /** The instant of joining — the scaleDate of any positions this shifts. */
   addedAt: string;
   participantId: string;
-  tournamentRecord?: any;
-  drawDefinition: any;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
   structureId?: string;
-  event?: any;
+  event?: Event;
 };
 
 type RatingOfArgs = {

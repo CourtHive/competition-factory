@@ -3,7 +3,7 @@ import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
 import { DRAW_DEFINITION_NOT_FOUND, MISSING_VALUE } from '@Constants/errorConditionConstants';
-import { UnifiedDrawID } from '@Types/tournamentTypes';
+import { UnifiedDrawID, DrawDefinition, Event } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
@@ -33,13 +33,13 @@ export function addDrawOtherId({
   uniqueOrganisationName?: string;
   // every id below belongs to `organisationId`, never to the carrying record
   otherTournamentId?: string;
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
   organisationId: string;
   otherEventId?: string;
   otherDrawId?: string;
   tournamentId?: string;
   isOrigin?: boolean;
-  event?: any;
+  event?: Event;
 }) {
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
   if (!organisationId) return { error: MISSING_VALUE, info: 'Missing organisationId' };
@@ -77,9 +77,9 @@ export function setDrawOtherIds({
   event,
 }: {
   drawOtherIds: UnifiedDrawID[] | null;
-  drawDefinition: any;
+  drawDefinition: DrawDefinition;
   tournamentId?: string;
-  event?: any;
+  event?: Event;
 }) {
   if (!drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
 

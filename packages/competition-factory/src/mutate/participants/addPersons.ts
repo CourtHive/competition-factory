@@ -9,7 +9,7 @@ import { UUID } from '@Tools/UUID';
 import { COMPETITOR, participantRoles } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Participant } from '@Types/tournamentTypes';
+import { Participant, ParticipantRoleUnion, Person, Tournament } from '@Types/tournamentTypes';
 import {
   INVALID_PARTICIPANT_ROLE,
   INVALID_VALUES,
@@ -18,7 +18,12 @@ import {
 
 // add persons to a tournamentRecord and create participants in the process
 // include ability to specify a doubles partner by personId
-export function addPersons({ participantRole = COMPETITOR, tournamentRecord, persons }) {
+type AddPersonsArgs = {
+  participantRole?: ParticipantRoleUnion;
+  tournamentRecord: Tournament;
+  persons: (Partial<Person> & { [attribute: string]: unknown })[];
+};
+export function addPersons({ participantRole = COMPETITOR, tournamentRecord, persons }: AddPersonsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!Array.isArray(persons)) return { error: INVALID_VALUES };
   if (!Object.keys(participantRoles).includes(participantRole)) return { error: INVALID_PARTICIPANT_ROLE };

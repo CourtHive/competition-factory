@@ -36,7 +36,7 @@ type OrderCollectionDefinitionsArgs = {
   matchUpId?: string;
   matchUp?: MatchUp;
   eventId?: string;
-  orderMap: any;
+  orderMap: { [collectionId: string]: number };
   event?: Event;
 };
 

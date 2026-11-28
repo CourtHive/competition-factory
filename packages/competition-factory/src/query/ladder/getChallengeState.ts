@@ -7,19 +7,19 @@ import { CHALLENGE_ACCEPTED, CHALLENGE_DECLINED, CHALLENGE_ISSUED } from '@Const
 import { ACCEPTED, DECLINED, EXPIRED, PENDING } from '@Constants/ladderConstants';
 import type { ChallengeState } from '@Constants/ladderConstants';
 import type { LadderPolicy } from '@Types/ladderTypes';
-import type { MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 
 type ChallengeStateArgs = {
   /** The instant to evaluate against. REQUIRED — see below. */
   asOf: string;
   /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
   policy?: LadderPolicy;
-  matchUp?: any;
+  matchUp?: MatchUp;
   matchUpId?: string;
-  tournamentRecord?: any;
-  drawDefinition?: any;
-  structure?: any;
-  event?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  structure?: Structure;
+  event?: Event;
 };
 
 const itemDateOf = (matchUp: MatchUp | undefined, itemType: string): string | undefined =>

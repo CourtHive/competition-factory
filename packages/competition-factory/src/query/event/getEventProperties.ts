@@ -4,16 +4,21 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 // constants
 import { TOURNAMENT_RECORD, EVENT } from '@Constants/attributeConstants';
 import { RANKING, RATING, SEEDING } from '@Constants/timeItemConstants';
+import type { Event, Participant, Tournament } from '@Types/tournamentTypes';
 
-export function getEventProperties({ tournamentRecord, event }) {
+type GetEventPropertiesArgs = {
+  tournamentRecord?: Tournament;
+  event?: Event;
+};
+export function getEventProperties({ tournamentRecord, event }: GetEventPropertiesArgs) {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 
-  const eventEntries = event.entries ?? [];
-  const tournamentParticipants = tournamentRecord.participants ?? [];
+  const eventEntries = event!.entries ?? [];
+  const tournamentParticipants = tournamentRecord!.participants ?? [];
 
-  const scaleName = event.category?.categoryName || event.category?.ageCategoryCode;
-  const { eventType } = event;
+  const scaleName = event!.category?.categoryName || event!.category?.ageCategoryCode;
+  const { eventType } = event!;
 
   const enteredParticipantIds = new Set(eventEntries.map((entry) => entry.participantId));
   const enteredParticipants = tournamentParticipants.filter((participant) =>
@@ -22,7 +27,7 @@ export function getEventProperties({ tournamentRecord, event }) {
 
   let hasSeededParticipants, hasRankedParticipants, hasRatedParticipants;
   const entryScaleAttributes = enteredParticipants.map((participant) => {
-    const { participantId, participantName, name } = participant;
+    const { participantId, participantName, name } = participant as Participant & { name?: string };
 
     let scaleAttributes = { scaleType: SEEDING, eventType, scaleName };
     const seed = participantScaleItem({ participant, scaleAttributes })?.scaleItem?.scaleValue;

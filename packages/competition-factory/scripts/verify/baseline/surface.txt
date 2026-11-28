@@ -326,6 +326,7 @@ EventNotFoundError
 EventPredicate
 EventProposal
 EventPublishState
+EventPublishStatus
 EventRegistration
 EventSeed
 EventTypeEnum
@@ -565,14 +566,19 @@ MappedMatchUps
 MappedParticipant
 MatchStatistics
 MatchUp
+MatchUpContextIds
+MatchUpDependencies
 MatchUpFilters
 MatchUpFinishingPositionRange
 MatchUpHistory
 MatchUpNotFoundError
+MatchUpOutcome
 MatchUpPublishState
 MatchUpRowContext
 MatchUpRowSet
 MatchUpSchedule
+MatchUpScheduleDetail
+MatchUpScheduleRequest
 MatchUpState
 MatchUpStatusCodeElement
 MatchUpStatusCodeRecord
@@ -728,7 +734,9 @@ PrizeMoneyAward
 ProposalChange
 PublicParticipant
 PublicParticipantDocument
+PublishedScheduleDetail
 QUALIFYING_CAPACITY_EXCEEDED
+QualifyingProfile
 QualityWinProfile
 QualityWinRange
 QueryFacade
@@ -873,6 +881,8 @@ SanctioningTier
 ScaleAttributes
 ScaleItem
 ScaleOption
+ScaleSortMethod
+ScaledEntry
 ScenarioPlacement
 ScheduleAnalysis
 ScheduleConflict

@@ -13,6 +13,8 @@ import {
   MISSING_EVENT,
   MISSING_VALUE,
 } from '@Constants/errorConditionConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
+import type { FlightProfile } from '@Types/factoryTypes';
 
 export function attachFlightProfile({
   deleteExisting,
@@ -22,10 +24,10 @@ export function attachFlightProfile({
   flightProfile,
 }: {
   deleteExisting?: boolean | null; // null is handled as false
-  tournamentRecord?: any;
+  tournamentRecord?: Tournament;
   disableNotice?: boolean;
-  event?: any;
-  flightProfile?: any;
+  event?: Event;
+  flightProfile?: FlightProfile;
 }) {
   const stack = 'attachFlightProfile';
   if (!flightProfile) return decorateResult({ result: { error: MISSING_VALUE }, stack });

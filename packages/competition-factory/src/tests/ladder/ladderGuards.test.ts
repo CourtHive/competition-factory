@@ -85,11 +85,23 @@ describe('every ladder mutation refuses a non-LADDER drawType', () => {
     ],
     [
       'applyLadderMovement',
-      () => applyLadderMovement({ drawDefinition: notALadder(), structure: {}, appliedAt: AT, trigger: FORFEIT }),
+      () =>
+        applyLadderMovement({
+          drawDefinition: notALadder(),
+          structure: { structureId: 's1' },
+          appliedAt: AT,
+          trigger: FORFEIT,
+        }),
     ],
     [
       'refreshLadderRatings',
-      () => refreshLadderRatings({ drawDefinition: notALadder(), tournamentRecord: {}, ratings: {}, refreshedAt: AT }),
+      () =>
+        refreshLadderRatings({
+          drawDefinition: notALadder(),
+          tournamentRecord: { tournamentId: 't1' },
+          ratings: {},
+          refreshedAt: AT,
+        }),
     ],
   ];
   test.each(cases)('%s', (_name, call) => {
@@ -276,13 +288,14 @@ describe('degenerate but legal inputs', () => {
 
   test('getChallengeState with no issue record is PENDING, not EXPIRED', () => {
     // Something that never started cannot have run out.
-    expect(getChallengeState({ matchUp: { timeItems: [] }, policy: { acceptanceDays: 5 }, asOf: AT }).state).toEqual(
-      PENDING,
-    );
+    expect(
+      getChallengeState({ matchUp: { matchUpId: 'm1', timeItems: [] }, policy: { acceptanceDays: 5 }, asOf: AT }).state,
+    ).toEqual(PENDING);
   });
 
   test('getChallengeState with no acceptanceDays never expires', () => {
     const matchUp = {
+      matchUpId: 'm1',
       timeItems: [{ itemType: 'ladder.challenge.issued', itemValue: 'x', itemDate: '2020-01-01T00:00:00.000Z' }],
     };
     expect(getChallengeState({ matchUp, policy: {}, asOf: AT }).state).toEqual(PENDING);

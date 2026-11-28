@@ -8,6 +8,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialConflictDeclaration, OfficialRecord } from '@Types/officiatingTypes';
+import type { Extension } from '@Types/tournamentTypes';
 
 type AddConflictDeclarationArgs = {
   officialRecord: OfficialRecord;
@@ -19,7 +20,7 @@ type AddConflictDeclarationArgs = {
   declaredBy?: string;
   personId?: string;
   notes?: string;
-  extensions?: any[];
+  extensions?: Extension[];
 };
 
 /**

@@ -1,7 +1,7 @@
 import { COMPLETED } from '@Constants/tournamentConstants';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
-import type { ResultType } from '@Types/factoryTypes';
+import type { MatchUpOutcome, ResultType } from '@Types/factoryTypes';
 import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
@@ -53,7 +53,7 @@ it('correctly calculates aggregate winner for SET3XA-S:T10 with uneven scores (3
   // Set 3: 0-1 (side 2 wins)
   // Aggregate: side 1 = 30, side 2 = 2
   // Expected winner: side 1 (30 > 2)
-  const outcome = {
+  const outcome: MatchUpOutcome = {
     matchUpFormat: exactly3aggregateTimedSets,
     matchUpStatus: COMPLETED,
     score: {

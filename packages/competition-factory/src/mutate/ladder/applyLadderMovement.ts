@@ -11,7 +11,14 @@ import { addTimeItem } from '@Mutate/timeItems/addTimeItem';
 
 // constants and types
 import { FORFEIT, INSERTION, MOVEMENT_APPLIED, RANK, RESULT, movementTriggers } from '@Constants/ladderConstants';
-import type { PositionAssignment, TimeItem } from '@Types/tournamentTypes';
+import type {
+  DrawDefinition,
+  Event,
+  PositionAssignment,
+  Structure,
+  TimeItem,
+  Tournament,
+} from '@Types/tournamentTypes';
 import type { MovementTrigger } from '@Constants/ladderConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -40,12 +47,12 @@ type MovementArgs = {
   /** Required for `FORFEIT`, which has no matchUp result to read participants from. */
   defenderParticipantId?: string;
   challengerParticipantId?: string;
-  tournamentRecord?: any;
-  drawDefinition: any;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
   /** Optional: resolved from `drawDefinition` when absent, so an engine caller can pass `drawId`. */
-  structure?: any;
+  structure?: Structure;
   structureId?: string;
-  event?: any;
+  event?: Event;
 };
 
 /**

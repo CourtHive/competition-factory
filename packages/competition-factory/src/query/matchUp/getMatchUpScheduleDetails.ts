@@ -14,7 +14,7 @@ import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
 import { Event, Tournament, EventTypeUnion, DrawDefinition } from '@Types/tournamentTypes';
-import { ScheduleTiming, ScheduleVisibilityFilters } from '@Types/factoryTypes';
+import { ScheduleTiming, ScheduleVisibilityFilters, EventPublishStatus } from '@Types/factoryTypes';
 import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/eventConstants';
@@ -45,7 +45,7 @@ type GetMatchUpScheduleDetailsArgs = {
   usePublishState?: boolean;
   matchUp: HydratedMatchUp;
   matchUpFormat?: string;
-  publishStatus?: any;
+  publishStatus?: EventPublishStatus;
   event?: Event;
 };
 /**

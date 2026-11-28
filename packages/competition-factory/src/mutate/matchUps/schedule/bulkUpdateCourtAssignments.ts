@@ -15,7 +15,7 @@ import {
 
 type BulkUpdateCourtAssignmentsParams = {
   tournamentRecords: TournamentRecords;
-  courtAssignments: any[];
+  courtAssignments: { tournamentId: string; drawId: string; matchUpId: string; courtId?: string }[];
   courtDayDate: string;
 };
 

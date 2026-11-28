@@ -160,7 +160,7 @@ function createReplacementPairIfNeeded({ individualParticipantIds, tournamentRec
     tournamentRecord,
   });
   if (!existingParticipant) {
-    const newPairParticipant = {
+    const newPairParticipant: Parameters<typeof addParticipant>[0]['participant'] = {
       participantRole: COMPETITOR,
       individualParticipantIds,
       participantType: PAIR,

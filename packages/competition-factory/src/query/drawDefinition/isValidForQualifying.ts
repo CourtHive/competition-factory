@@ -6,8 +6,13 @@ import { isString } from '@Tools/objects';
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { BOTTOM_UP, RANDOM, TOP_DOWN, WATERFALL } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 
-export function isValidForQualifying({ structureId, drawDefinition }) {
+type IsValidForQualifyingArgs = {
+  structureId: string;
+  drawDefinition: DrawDefinition;
+};
+export function isValidForQualifying({ structureId, drawDefinition }: IsValidForQualifyingArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!isString(structureId)) return { error: INVALID_VALUES };
 

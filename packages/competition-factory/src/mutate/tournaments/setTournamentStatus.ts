@@ -4,10 +4,16 @@ import { tournamentStatuses } from '@Constants/tournamentConstants';
 // constants
 import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
 const validStatuses = new Set<string>(tournamentStatuses);
 
-export function setTournamentStatus({ tournamentRecord, status }) {
+type SetTournamentStatusArgs = {
+  tournamentRecord: Tournament;
+  /** one of the tournament statuses; undefined clears it */
+  status?: Tournament['tournamentStatus'];
+};
+export function setTournamentStatus({ tournamentRecord, status }: SetTournamentStatusArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   if (status && !validStatuses.has(status)) return { error: INVALID_VALUES, info: 'Unknown status' };

@@ -5,6 +5,7 @@ import { ADD_PARTICIPANTS, MUTATIONS } from '@Constants/topicConstants';
 import { afterEach, expect, it } from 'vitest';
 import engine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
+import type { Participant } from '@Types/tournamentTypes';
 
 const method = 'addParticipant';
 const tournamentId = 'tournament';
@@ -109,7 +110,7 @@ it('binds the generated ID and index without editing either input during plannin
   const participants = [];
   const tournamentRecord = { tournamentId, participants };
   const participantsIndex = indexParticipants(participants)!;
-  const participant = { ...team, gender: 'F' };
+  const participant = { ...team, gender: 'F' } as unknown as Participant;
   const plan = planAddParticipant({ tournamentRecord, participant, participantsIndex, returnParticipant: true });
   expect(participant).toEqual({ ...team, gender: 'F' });
   expect(participantsIndex.ids.size).toBe(0);

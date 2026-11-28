@@ -35,7 +35,7 @@ import { SUCCESS } from '@Constants/resultConstants';
  */
 export function addVenueOtherId(params: {
   tournamentRecords?: { [key: string]: any };
-  tournamentRecord?: any;
+  tournamentRecord?: Tournament;
   uniqueOrganisationName?: string;
   organisationId: string;
   otherVenueId: string;

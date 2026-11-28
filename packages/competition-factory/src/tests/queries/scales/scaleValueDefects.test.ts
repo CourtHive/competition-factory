@@ -11,6 +11,7 @@ import { INDIVIDUAL } from '@Constants/participantConstants';
 import { RATING, SEEDING } from '@Constants/scaleConstants';
 import { UTR, WTN, PSA } from '@Constants/ratingConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 /**
  * Regression tests for a class of defect the suite had no coverage for: scale
@@ -34,6 +35,7 @@ function participantWithRating(participantId: string, utrRating: string | number
 
 describe('getMatchUpRatingDelta — string ratings are not "missing data"', () => {
   const matchUpFor = (a: string | number, b: string | number) => ({
+    matchUpId: 'm1',
     matchUpType: SINGLES,
     winningSide: 1,
     sides: [
@@ -46,7 +48,7 @@ describe('getMatchUpRatingDelta — string ratings are not "missing data"', () =
     // Before: undefined, and the caller documents undefined as "missing data,
     // not a caller mistake" — so a fully rated draw reported nothing, silently.
     const result: any = getMatchUpRatingDelta({
-      matchUp: matchUpFor('12.48', '10.05'),
+      matchUp: matchUpFor('12.48', '10.05') as unknown as MatchUp,
       scaleAccessor: 'utrRating',
       scaleName: UTR,
     });
@@ -58,12 +60,12 @@ describe('getMatchUpRatingDelta — string ratings are not "missing data"', () =
 
   it('gives string and number ratings the identical delta', () => {
     const asStrings: any = getMatchUpRatingDelta({
-      matchUp: matchUpFor('12.48', '10.05'),
+      matchUp: matchUpFor('12.48', '10.05') as unknown as MatchUp,
       scaleAccessor: 'utrRating',
       scaleName: UTR,
     });
     const asNumbers: any = getMatchUpRatingDelta({
-      matchUp: matchUpFor(12.48, 10.05),
+      matchUp: matchUpFor(12.48, 10.05) as unknown as MatchUp,
       scaleAccessor: 'utrRating',
       scaleName: UTR,
     });
@@ -72,7 +74,7 @@ describe('getMatchUpRatingDelta — string ratings are not "missing data"', () =
 
   it('still reports no delta when a side genuinely has no rating', () => {
     const result: any = getMatchUpRatingDelta({
-      matchUp: matchUpFor('12.48', ''),
+      matchUp: matchUpFor('12.48', '') as unknown as MatchUp,
       scaleAccessor: 'utrRating',
       scaleName: UTR,
     });

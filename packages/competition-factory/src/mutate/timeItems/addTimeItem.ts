@@ -39,7 +39,7 @@ type AddTimeItemArgs = {
   creationTime?: boolean;
   timeItem: TimeItem;
   event?: Event;
-  element: any;
+  element?: { timeItems?: TimeItem[] };
 };
 
 export function addTimeItem(params: AddTimeItemArgs) {

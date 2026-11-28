@@ -51,6 +51,7 @@ import {
   INVALID_PARTICIPANT_IDS,
   INVALID_PARTICIPANT_TYPE,
 } from '@Constants/errorConditionConstants';
+import { defined } from '@Tests/helpers/defined';
 
 // ----------------------------------------------------------------
 // 1. generateDoubleElimination — 2 uncovered branches
@@ -1050,7 +1051,7 @@ describe('bulkUpdatePublishedEventIds branch coverage', () => {
       ],
     });
     expect(result.publishedEventIds).toEqual([]);
-    expect(result.eventIdPublishedDrawIdsMap['e1']).toEqual(['d1', 'd2']);
+    expect(defined(result.eventIdPublishedDrawIdsMap)['e1']).toEqual(['d1', 'd2']);
   });
 });
 

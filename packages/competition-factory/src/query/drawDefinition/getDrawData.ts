@@ -1,4 +1,10 @@
-import type { ContextProfile, ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
+import type {
+  ContextProfile,
+  EventPublishStatus,
+  ParticipantsProfile,
+  PolicyDefinitions,
+  StructureSortConfig,
+} from '@Types/factoryTypes';
 import { DrawDefinition, Event, Participant, PayloadProfileEnum, Tournament } from '@Types/tournamentTypes';
 import { isTalliedStructure, refreshParticipantResults } from './refreshParticipantResults';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
@@ -81,7 +87,7 @@ export type GetDrawDataArgs = {
   participantsProfile?: ParticipantsProfile;
   allParticipantResults?: boolean;
   hydrateParticipants?: boolean;
-  publishStatus?: any;
+  publishStatus?: EventPublishStatus;
   noDeepCopy?: boolean;
   inContext?: boolean;
   /** publish-state key; `PUBLIC` unless a provider uses a private channel */

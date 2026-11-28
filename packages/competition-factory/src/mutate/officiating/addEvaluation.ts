@@ -8,6 +8,8 @@ import { SUCCESS } from '@Constants/resultConstants';
 
 // types
 import type { OfficialRecord, OfficialEvaluation, EvaluationScore } from '@Types/officiatingTypes';
+import type { DocumentReference } from '@Types/sanctioningTypes';
+import type { Extension } from '@Types/tournamentTypes';
 
 type AddEvaluationArgs = {
   officialRecord: OfficialRecord;
@@ -22,8 +24,8 @@ type AddEvaluationArgs = {
   policyName?: string;
   scores?: EvaluationScore[];
   comments?: string;
-  documentReference?: any;
-  extensions?: any[];
+  documentReference?: DocumentReference;
+  extensions?: Extension[];
 };
 
 export function addEvaluation({

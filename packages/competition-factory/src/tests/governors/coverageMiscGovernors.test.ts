@@ -28,6 +28,7 @@ import { MISSING_SANCTIONING_RECORD, DRAFT } from '@Constants/sanctioningConstan
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 import { RATING, SCALE } from '@Constants/scaleConstants';
 import { WTN } from '@Constants/ratingConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 // ----------------------------------------------------------------
 // Event Governor
@@ -135,7 +136,10 @@ describe('getMatchUpsToSchedule', () => {
     ];
     const orderedMatchUpIds = ['m1', 'm2', 'm3', 'm4', 'm5'];
 
-    const { matchUpsToSchedule } = getMatchUpsToSchedule({ matchUps, orderedMatchUpIds });
+    const { matchUpsToSchedule } = getMatchUpsToSchedule({
+      matchUps: matchUps as unknown as HydratedMatchUp[],
+      orderedMatchUpIds,
+    });
     expect(matchUpsToSchedule).toBeDefined();
     expect(matchUpsToSchedule!.length).toBe(1);
     expect(matchUpsToSchedule![0].matchUpId).toBe('m5');
@@ -145,7 +149,10 @@ describe('getMatchUpsToSchedule', () => {
     const matchUps = [{ matchUpId: 'm1', winningSide: 1 }, { matchUpId: 'm2' }];
     const orderedMatchUpIds = ['m1', 'm2'];
 
-    const { matchUpsToSchedule } = getMatchUpsToSchedule({ matchUps, orderedMatchUpIds });
+    const { matchUpsToSchedule } = getMatchUpsToSchedule({
+      matchUps: matchUps as unknown as HydratedMatchUp[],
+      orderedMatchUpIds,
+    });
     expect(matchUpsToSchedule!.length).toBe(1);
     expect(matchUpsToSchedule![0].matchUpId).toBe('m2');
   });
@@ -154,7 +161,10 @@ describe('getMatchUpsToSchedule', () => {
     const matchUps = [{ matchUpId: 'm1' }, { matchUpId: 'm2' }, { matchUpId: 'm3' }];
     const orderedMatchUpIds = ['m2'];
 
-    const { matchUpsToSchedule } = getMatchUpsToSchedule({ matchUps, orderedMatchUpIds });
+    const { matchUpsToSchedule } = getMatchUpsToSchedule({
+      matchUps: matchUps as unknown as HydratedMatchUp[],
+      orderedMatchUpIds,
+    });
     expect(matchUpsToSchedule!.length).toBe(1);
     expect(matchUpsToSchedule![0].matchUpId).toBe('m2');
   });
@@ -163,7 +173,10 @@ describe('getMatchUpsToSchedule', () => {
     const matchUps = [{ matchUpId: 'm1', matchUpStatus: COMPLETED }, { matchUpId: 'm2' }];
     const orderedMatchUpIds = ['m1', 'm2'];
 
-    const { matchUpsToSchedule } = getMatchUpsToSchedule({ orderedMatchUpIds, matchUps });
+    const { matchUpsToSchedule } = getMatchUpsToSchedule({
+      orderedMatchUpIds,
+      matchUps: matchUps as unknown as HydratedMatchUp[],
+    });
     expect(matchUpsToSchedule!.map(({ matchUpId }) => matchUpId)).toEqual(['m2']);
   });
 });

@@ -5,14 +5,14 @@ import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleI
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
 import { Entry, Event, Tournament } from '@Types/tournamentTypes';
-import { ScaleAttributes } from '@Types/factoryTypes';
+import { ScaleAttributes, ScaleSortMethod } from '@Types/factoryTypes';
 
 type GetScaledEntriesArgs = {
   scaleAttributes: ScaleAttributes;
   tournamentRecord: Tournament;
   sortDescending?: boolean;
   stageSequence?: number;
-  scaleSortMethod?: any;
+  scaleSortMethod?: ScaleSortMethod;
   entries?: Entry[];
   stage?: string;
   event?: Event;
@@ -68,6 +68,7 @@ export function getScaledEntries({
       });
     })
     .sort(
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- any falsy scaleSortMethod falls back to the default sort
       scaleSortMethod ||
         (sortDescending || processingAttributes?.ascending === false
           ? defaultScaleValueSortDescending

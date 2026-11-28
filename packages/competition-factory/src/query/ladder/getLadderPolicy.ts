@@ -6,12 +6,13 @@ import type { LadderMovement, LadderOrdering } from '@Constants/ladderConstants'
 import { POLICY_TYPE_LADDER } from '@Constants/policyConstants';
 import { RANK, SWAP } from '@Constants/ladderConstants';
 import type { LadderPolicy } from '@Types/ladderTypes';
+import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 
 type LadderPolicyArgs = {
-  tournamentRecord?: any;
-  drawDefinition?: any;
-  structure?: any;
-  event?: any;
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  structure?: Structure;
+  event?: Event;
 };
 
 const DEFAULTS = POLICY_LADDER_DEFAULT[POLICY_TYPE_LADDER] as LadderPolicy;

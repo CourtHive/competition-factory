@@ -8,6 +8,7 @@ import { SINGLES } from '@Constants/matchUpTypes';
 
 // types
 import type { HydratedParticipant, HydratedSide } from '@Types/hydrated';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 export type MatchUpRatingDelta = {
   perspectiveSideNumber?: number;
@@ -25,7 +26,7 @@ type GetMatchUpRatingDeltaArgs = {
   sideNumber?: number;
   ascending?: boolean;
   scaleName?: string;
-  matchUp: any;
+  matchUp: Partial<MatchUp>;
 };
 
 function participantIds(participant?: HydratedParticipant): string[] {

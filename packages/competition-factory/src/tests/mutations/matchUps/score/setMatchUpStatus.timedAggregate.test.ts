@@ -1,6 +1,6 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
-import type { ResultType } from '@Types/factoryTypes';
+import type { MatchUpOutcome, ResultType } from '@Types/factoryTypes';
 import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
@@ -37,7 +37,7 @@ it('can set score for timed aggregate format SET3XA-S:T10', () => {
 
   // Set score: 10-11, 11-10, 1-0
   // Aggregate: side1=22, side2=21, winner=side1
-  const outcome = {
+  const outcome: MatchUpOutcome = {
     matchUpFormat: 'SET3XA-S:T10',
     matchUpStatus: COMPLETED,
     score: {
@@ -134,7 +134,7 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
 
   // Set score: 10-11, 11-10, 1-0
   // Winner determined by sets won: side1 wins 2/3 sets
-  const outcome = {
+  const outcome: MatchUpOutcome = {
     matchUpFormat: 'SET3X-S:T10',
     matchUpStatus: COMPLETED,
     score: {

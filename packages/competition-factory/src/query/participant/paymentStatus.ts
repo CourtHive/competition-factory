@@ -6,8 +6,13 @@ import { getTimeItem } from '@Query/base/timeItems';
 import { PAYMENT_STATUS, paymentStatusValues, PaymentStatusUnion } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
-export function getParticipantPaymentStatus({ tournamentRecord, participantId }) {
+type GetParticipantPaymentStatusArgs = {
+  tournamentRecord: Tournament;
+  participantId: string;
+};
+export function getParticipantPaymentStatus({ tournamentRecord, participantId }: GetParticipantPaymentStatusArgs) {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
   if (paramsCheck.error) return paramsCheck;
 

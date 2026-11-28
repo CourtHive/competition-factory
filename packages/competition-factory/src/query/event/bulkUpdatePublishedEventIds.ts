@@ -3,13 +3,18 @@ import { getDrawPublishStatus } from './getDrawPublishStatus';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import type { Tournament } from '@Types/tournamentTypes';
 
+type BulkUpdatePublishedEventIdsArgs = {
+  tournamentRecord?: Tournament;
+  outcomes?: { drawId?: string; eventId?: string }[];
+};
 /**
  *
  * @param {object[]} outcomes - array of outcomes to be applied to matchUps, relevent attributes: { eventId: string; drawId: string; }
  *
  */
-export function bulkUpdatePublishedEventIds({ tournamentRecord, outcomes }) {
+export function bulkUpdatePublishedEventIds({ tournamentRecord, outcomes }: BulkUpdatePublishedEventIdsArgs) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!outcomes?.length) return { error: MISSING_VALUE, info: 'Missing outcomes' };
 
@@ -27,7 +32,7 @@ export function bulkUpdatePublishedEventIds({ tournamentRecord, outcomes }) {
 
   const relevantEventsIds = Object.keys(eventIdsMap);
   const relevantEvents = tournamentRecord.events?.filter((event) => relevantEventsIds.includes(event.eventId));
-  const publishedEventIds = relevantEvents
+  const publishedEventIds = relevantEvents!
     .filter((event) => {
       const pubStatus = getEventPublishStatus({ event });
       const { drawDetails, drawIds } = pubStatus ?? {};

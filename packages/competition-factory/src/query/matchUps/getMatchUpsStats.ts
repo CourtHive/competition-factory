@@ -9,8 +9,15 @@ import { DEFAULTED, WALKOVER as WALKOVER_STATUS } from '@Constants/matchUpStatus
 import { POLICY_TYPE_COMPETITIVE_BANDS } from '@Constants/policyConstants';
 import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import type { Tournament } from '@Types/tournamentTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
-export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }) {
+type GetMatchUpsStatsArgs = {
+  profileBands?: { [band: string]: number };
+  tournamentRecord?: Tournament;
+  matchUps: HydratedMatchUp[];
+};
+export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }: GetMatchUpsStatsArgs) {
   if (!validMatchUps(matchUps)) return { error: MISSING_MATCHUPS };
 
   const policy =
@@ -21,6 +28,7 @@ export function getMatchUpsStats({ profileBands, tournamentRecord, matchUps }) {
     }).policy;
 
   const bandProfiles =
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- falsy profileBands fall back to the next source too
     profileBands ||
     policy?.profileBands ||
     POLICY_COMPETITIVE_BANDS_DEFAULT[POLICY_TYPE_COMPETITIVE_BANDS].profileBands;
