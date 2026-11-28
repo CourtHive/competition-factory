@@ -61,6 +61,7 @@ export function getMatchUpCompetitiveProfile({
 
   if (!winningSide) return { error: INVALID_VALUES };
 
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- falsy profileBands fall back to the policy bands too
   const bandProfiles = profileBands || resolveCompetitiveBands({ policyDefinitions, tournamentRecord });
 
   const scoreComponents = getScoreComponents({ score });
