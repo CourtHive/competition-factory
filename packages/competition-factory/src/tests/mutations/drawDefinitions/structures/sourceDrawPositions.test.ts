@@ -133,7 +133,7 @@ test.each(scenarios)('FEED_IN_CHAMPIONSHIP to RSF has proper sourceDrawPositionR
     );
     if (rsr.length) {
       roundSourceRanges[finishingRound] = rsr;
-      const reduction = rsr.map((range) => accumulate(range.split('-').map(Number)));
+      const reduction = rsr.map((range) => accumulate(defined(range).split('-').map(Number)));
       const direction = reduction[0] < reduction[reduction.length - 1] ? 'ascending' : 'descending';
       directions.push(direction);
     }

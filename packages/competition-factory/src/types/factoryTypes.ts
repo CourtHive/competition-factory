@@ -62,7 +62,7 @@ export type TournamentRecords = {
 export type CheckInOutParticipantArgs = {
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
-  matchUp?: HydratedMatchUp;
+  matchUp?: MatchUp | HydratedMatchUp;
   /** the SUBJECT — an INDIVIDUAL participant. A PAIR or TEAM is refused (CODES 7.0.0) */
   participantId: string;
   matchUpId: string;

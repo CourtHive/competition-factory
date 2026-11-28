@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { generateTournamentRecord } from '@Assemblies/generators/mocks/generateTournamentRecord';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -125,8 +126,8 @@ it('removes potential participants when side participant is known', () => {
 
   const { roundMatchUps } = getRoundMatchUps({ matchUps });
   expect(roundMatchUps?.[2]?.[0]?.sides?.filter(({ sideNumber }) => sideNumber).length).toEqual(1);
-  expect(roundMatchUps?.[2][0].potentialParticipants.length).toEqual(1);
+  expect(defined(roundMatchUps?.[2][0].potentialParticipants).length).toEqual(1);
 
   expect(roundMatchUps?.[2]?.[1].sides?.filter(({ sideNumber }) => sideNumber).length).toEqual(0);
-  expect(roundMatchUps?.[2][1].potentialParticipants.length).toEqual(2);
+  expect(defined(roundMatchUps?.[2][1].potentialParticipants).length).toEqual(2);
 });

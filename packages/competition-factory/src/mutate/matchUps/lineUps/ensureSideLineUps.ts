@@ -93,7 +93,7 @@ export function ensuredDualSides({
     const rawSide =
       (drawPosition && rawSides.find((side) => side.drawPosition && side.drawPosition === drawPosition)) ??
       rawSides.find((side) => !side.drawPosition && side.sideNumber === sideNumber);
-    const { lineUp: noContextLineUp, ...noContextSideDetail } = rawSide ?? {};
+    const { lineUp: noContextLineUp, ...noContextSideDetail } = (rawSide as StoredDualSide | undefined) ?? {};
     const retainedLineUp = noContextLineUp?.length ? noContextLineUp : referenceLineUp;
     const lineUp = participantId ? retainedLineUp : undefined;
     return { ...noContextSideDetail, drawPosition, sideNumber, displaySideNumber, lineUp };

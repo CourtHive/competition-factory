@@ -6,6 +6,7 @@ import { validMatchUps } from '@Validators/validMatchUp';
 import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 /**
  * Retrieves the scheduled matchUps for participants.
@@ -21,7 +22,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
 
 type ParticiapntScheduledMatchUps = {
   scheduleAttributes?: string[];
-  matchUps?: HydratedMatchUp[];
+  matchUps?: (MatchUp | HydratedMatchUp)[];
 };
 
 export function participantScheduledMatchUps({

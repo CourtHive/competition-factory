@@ -84,7 +84,7 @@ it('matchUps returned with context cannot modify original', () => {
     matchUpId,
     inContext: true,
   });
-  if (contextMatchUp) contextMatchUp.newAttribute = 'newAttribute';
+  if (contextMatchUp) contextMatchUp.notes = 'newAttribute';
 
   // contextMatchUp should include drawId and structureId
   expect(contextMatchUp?.drawId).toEqual(drawId);
@@ -96,7 +96,7 @@ it('matchUps returned with context cannot modify original', () => {
     drawDefinition,
     matchUpId,
   }));
-  expect(retrievedMatchUp?.newAttribute).toEqual(undefined);
+  expect(retrievedMatchUp?.notes).toEqual(undefined);
   expect(retrievedMatchUp?.drawId).toEqual(undefined);
   expect(retrievedMatchUp?.structureId).toEqual(undefined);
 });

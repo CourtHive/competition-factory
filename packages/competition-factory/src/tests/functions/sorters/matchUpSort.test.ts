@@ -1,10 +1,10 @@
 import { QUALIFYING, MAIN, CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { matchUpSort } from '@Functions/sorters/matchUpSort';
+import { matchUpSort, MatchUpSortKeys } from '@Functions/sorters/matchUpSort';
 import { describe, expect, it } from 'vitest';
 
 describe('matchUpSort', () => {
   it('sorts by stage order', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: QUALIFYING, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: CONSOLATION, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
@@ -18,7 +18,7 @@ describe('matchUpSort', () => {
   });
 
   it('sorts by stageSequence when stage is equal', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 3, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 2, roundNumber: 1, roundPosition: 1 },
@@ -32,7 +32,7 @@ describe('matchUpSort', () => {
   });
 
   it('sorts by roundNumber when stage and stageSequence are equal', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundNumber: 3, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 2, roundPosition: 1 },
@@ -46,7 +46,7 @@ describe('matchUpSort', () => {
   });
 
   it('sorts by roundPosition when all else is equal', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 3 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 2 },
@@ -60,7 +60,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles missing stage', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
     ];
@@ -73,7 +73,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles missing stageSequence', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 2, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, roundNumber: 1, roundPosition: 1 },
     ];
@@ -86,7 +86,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles missing roundNumber', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundNumber: 2, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundPosition: 1 },
     ];
@@ -98,7 +98,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles missing roundPosition', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 2 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1 },
     ];
@@ -111,7 +111,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles null stage', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: null, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
     ];
@@ -123,7 +123,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles null stageSequence', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: null, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
     ];
@@ -135,7 +135,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles undefined roundNumber for both', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundPosition: 2 },
       { stage: MAIN, stageSequence: 1, roundPosition: 1 },
     ];
@@ -148,7 +148,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles unknown stage', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: 'UNKNOWN_STAGE' as any, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
     ];
@@ -161,7 +161,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles complex sorting scenario', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 2, roundNumber: 1, roundPosition: 1 },
       { stage: QUALIFYING, stageSequence: 1, roundNumber: 2, roundPosition: 2 },
       { stage: CONSOLATION, stageSequence: 1, roundNumber: 1, roundPosition: 3 },
@@ -179,13 +179,13 @@ describe('matchUpSort', () => {
   });
 
   it('returns 0 for identical matchUps', () => {
-    const matchUp = { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 };
+    const matchUp: MatchUpSortKeys = { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 };
 
     expect(matchUpSort(matchUp, matchUp)).toBe(0);
   });
 
   it('handles empty matchUp objects', () => {
-    const matchUps = [{}, {}];
+    const matchUps: MatchUpSortKeys[] = [{}, {}];
 
     matchUps.sort(matchUpSort);
 
@@ -193,7 +193,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles negative roundPosition', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 1 },
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: -1 },
     ];
@@ -205,7 +205,7 @@ describe('matchUpSort', () => {
   });
 
   it('handles zero values', () => {
-    const matchUps = [
+    const matchUps: MatchUpSortKeys[] = [
       { stage: MAIN, stageSequence: 1, roundNumber: 1, roundPosition: 0 },
       { stage: MAIN, stageSequence: 0, roundNumber: 0, roundPosition: 0 },
     ];

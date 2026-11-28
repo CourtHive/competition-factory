@@ -77,7 +77,7 @@ export function getValidSwapAction({
         return matchUp.sides
           ?.filter(({ sourceDrawPositionRange }) => sourceDrawPositionRange)
           .map(({ drawPosition, sourceDrawPositionRange }) => ({
-            [drawPosition]: sourceDrawPositionRange,
+            [drawPosition as number]: sourceDrawPositionRange,
           }));
       })
       .flat(),
