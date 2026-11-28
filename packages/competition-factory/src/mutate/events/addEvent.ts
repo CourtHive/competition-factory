@@ -1,6 +1,7 @@
 import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { matchUpFormatRefusal } from '@Validators/isValidMatchUpFormat';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
@@ -73,6 +74,10 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     endDate,
     ...event,
   };
+
+  // a tieFormat describes a TEAM tie: on any other event it is refused, not stored beside the event's matchUpFormat
+  const tieFormatRefusal = nonTeamTieFormatRefusal(event, eventRecord.eventType);
+  if (tieFormatRefusal) return tieFormatRefusal;
 
   // normalize accepted TODS short codes (M/F/X/A) to the canonical extended form
   // so events are stored with a canonical gender at rest

@@ -1,3 +1,4 @@
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { generateDrawMaticRound, DrawMaticRoundResult } from './generateDrawMaticRound';
 import { getAdHocRatings } from '@Query/participants/getAdHocRatings';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
@@ -15,6 +16,9 @@ import { SUCCESS } from '@Constants/resultConstants';
 export function drawMatic(
   params: DrawMaticArgs,
 ): ResultType & { matchUps?: MatchUp[]; roundResults?: DrawMaticRoundResult[] } {
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
   const paramsCheck = checkParams(params);
   if (paramsCheck?.error) return paramsCheck;
 

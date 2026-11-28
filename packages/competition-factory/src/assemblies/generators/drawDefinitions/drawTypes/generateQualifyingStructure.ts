@@ -4,6 +4,7 @@ import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
+import { nonTeamTieFormatRefusal, storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
 import { feedInQualifyingMatchUps } from '../feedInQualifying';
@@ -183,7 +184,12 @@ export function generateQualifyingStructure(params: GenerateQualifyingStructureA
   const structureProfile = getStructureProfile(drawDefinition, targetStructureId, stack);
   if ((structureProfile as any)?.error) return structureProfile as any;
 
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return decorateResult({ result: storedRefusal, stack });
   const matchUpType = drawDefinition.matchUpType;
+  const typeRefusal = nonTeamTieFormatRefusal({ tieFormat }, undefined, matchUpType);
+  if (typeRefusal) return decorateResult({ result: typeRefusal, stack });
   const stageSequence = 1;
 
   const roundTargetName = roundTarget ? `${roundTarget}-` : '';

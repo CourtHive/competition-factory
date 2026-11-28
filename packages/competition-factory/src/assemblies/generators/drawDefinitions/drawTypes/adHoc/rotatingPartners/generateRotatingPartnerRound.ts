@@ -1,3 +1,4 @@
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
@@ -38,6 +39,9 @@ export function generateRotatingPartnerRound(
 ): ResultType & { roundRecord?: RotatingPartnerRoundRecord; matchUps?: MatchUp[]; existingRound?: boolean } {
   const { tournamentRecord, drawDefinition, event, requestId, expectedPairings, expectedScoringContract, roundNumber } =
     params;
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
   if (
     typeof requestId !== 'string' ||
     !requestId.trim() ||

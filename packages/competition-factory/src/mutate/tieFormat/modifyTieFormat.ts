@@ -6,6 +6,7 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { nonTeamTieFormatTargetRefusal } from '@Validators/nonTeamTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { numericSortValue } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';
@@ -43,6 +44,10 @@ export function modifyTieFormat({
   event,
 }: ModifyTieFormatArgs) {
   const stack = 'modifyTieFormat';
+
+  // a tieFormat edit on an event or draw that is not TEAM is refused, before anything is written
+  const targetRefusal = nonTeamTieFormatTargetRefusal({ drawDefinition, event });
+  if (targetRefusal) return decorateResult({ result: targetRefusal, stack });
 
   if (
     !validateTieFormat({

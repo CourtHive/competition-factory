@@ -1,3 +1,4 @@
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
@@ -38,13 +39,22 @@ type GenerateAdHocMatchUpsArgs = {
   event: Event;
 };
 
-export function generateAdHocMatchUps(params: GenerateAdHocMatchUpsArgs): {
+type GeneratedAdHocMatchUps = {
   matchUpsCount?: number;
   roundNumber?: number;
   matchUps?: MatchUp[];
   error?: ErrorType;
   info?: any;
-} {
+};
+
+export function generateAdHocMatchUps(params: GenerateAdHocMatchUpsArgs): GeneratedAdHocMatchUps {
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
+  return generateFromParams(params);
+}
+
+function generateFromParams(params: GenerateAdHocMatchUpsArgs): GeneratedAdHocMatchUps {
   const { matchUpIds = [], drawDefinition, roundNumber, newRound, isMock, event } = params;
   if (typeof drawDefinition !== 'object') return { error: MISSING_DRAW_DEFINITION };
   let { participantIdPairings, matchUpsCount } = params;

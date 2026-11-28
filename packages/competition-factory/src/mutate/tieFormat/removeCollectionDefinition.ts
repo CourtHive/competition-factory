@@ -1,3 +1,4 @@
+import { nonTeamTieFormatTargetRefusal } from '@Validators/nonTeamTieFormat';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 // all child matchUps need to be checked for collectionAssignments which need to be removed when collectionDefinition.collectionIds are removed
 
@@ -62,6 +63,10 @@ type RemoveCollectionDefinitionArgs = {
 // A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
 // shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
 export function removeCollectionDefinition(params: RemoveCollectionDefinitionArgs) {
+  // a tieFormat edit on an event or draw that is not TEAM is refused, before anything is written
+  const targetRefusal = nonTeamTieFormatTargetRefusal(params);
+  if (targetRefusal)
+    return { ...targetRefusal, stack: ['removeCollectionDefinition'] } as ReturnType<typeof removeDefinition>;
   return withEventChangeNotice(params, () => removeDefinition(params));
 }
 

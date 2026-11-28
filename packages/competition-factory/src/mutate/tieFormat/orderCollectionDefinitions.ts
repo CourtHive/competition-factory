@@ -2,6 +2,7 @@ import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/dra
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
+import { nonTeamTieFormatTargetRefusal } from '@Validators/nonTeamTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getTieFormat } from '@Query/hierarchical/getTieFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -50,6 +51,10 @@ export function orderCollectionDefinitions({
   matchUp,
   event,
 }: OrderCollectionDefinitionsArgs) {
+  // a tieFormat edit on an event or draw that is not TEAM is refused, before anything is written
+  const targetRefusal = nonTeamTieFormatTargetRefusal({ drawDefinition, event });
+  if (targetRefusal) return decorateResult({ result: targetRefusal, stack: 'orderCollectionDefinitions' });
+
   if (typeof orderMap !== 'object' || !Object.values(orderMap).every((val) => isConvertableInteger(val)))
     return decorateResult({
       result: { error: INVALID_VALUES },

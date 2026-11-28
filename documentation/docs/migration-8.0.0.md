@@ -43,17 +43,45 @@ catalogue's `policies` together with the factory's own. Search a codebase for `f
 
 ### Pass `tieFormat` for TEAM draws only
 
-`generateDrawDefinition` reads a `tieFormatName` only for a TEAM draw of a TEAM event; on any other draw the name is
-ignored, in 7.x and in 8.0.0. A `tieFormat` object is not ignored the same way. On a draw that is not TEAM:
+A tieFormat describes the lines of a TEAM tie. In 7.x a `tieFormat`, `tieFormatName`, `tieFormatId` or `tieFormats`
+supplied for an event or draw that is not TEAM (SINGLES, DOUBLES or HYBRID) was accepted:
 
-- **Beside a `matchUpFormat`, the `tieFormat` is kept and the `matchUpFormat` is not.** The draw definition stores the
-  `tieFormat`, takes no `matchUpFormat`, and its SINGLES or DOUBLES matchUps are generated with tie matchUps.
-- **Without a `matchUpFormat`, the `tieFormat` is dropped** and the draw takes the event's `matchUpFormat`, or the
-  standard format.
+- `addEvent` and the mocks profiles stored it on the event.
+- `generateDrawDefinition` ignored a `tieFormatName`. A `tieFormat` object beside a `matchUpFormat` was kept and the
+  `matchUpFormat` was not: the draw definition stored the `tieFormat` and its SINGLES or DOUBLES matchUps were generated
+  with tie matchUps. Without a `matchUpFormat` the `tieFormat` was dropped, and the draw took the event's
+  `matchUpFormat` or the standard format.
 
-A draw form that sent a scorecard name with every event relied on the name being ignored outside TEAM events. When
-it moves from the name to the object, it sends `tieFormat` only when the event and the draw are TEAM, and
-`matchUpFormat` otherwise.
+In 8.0.0 each of these returns `INVALID_TIE_FORMAT` (`context.supplied` names the inputs) and changes nothing:
+`addEvent`, `generateDrawDefinition`, `addDrawDefinition` (a draw that carries a tieFormat or tie matchUps), the
+generators that take a `tieFormat` (`generateDrawTypeAndModifyDrawDefinition`, `generateVoluntaryConsolation`,
+`generateQualifyingStructure`, `generateDrawStructuresAndLinks`), `setMatchUpFormat`, the mocks `drawProfiles` and
+`eventProfiles`, and the sanctioning event proposals (`createSanctioningRecord`, `addEventProposal`,
+`updateEventProposal`, `activateFromSanctioning`). `modifyEvent` returns `INVALID_EVENT_TYPE` for a change away from
+TEAM while the event holds a tieFormat. The tieFormat governor's edits return `INVALID_TIE_FORMAT` for a non-TEAM event
+or draw that holds one, which only a record written by 7.x can.
+
+**A client that sends a `tieFormat` or `tieFormatName` with every event must stop sending it for events that are not
+TEAM.** 8.0.0 refuses the call: send `tieFormat` only when the event and the draw are TEAM, and `matchUpFormat`
+otherwise.
+
+**Records written by 7.x.** A record can hold a tieFormat on a non-TEAM event, draw definition or structure. It reads
+unchanged, but every draw and tie generator (`generateDrawDefinition`, AD_HOC rounds included, playoff, qualifying and
+consolation structures) refuses to generate over it with `INVALID_TIE_FORMAT`, before writing anything;
+`context.location` is `event`, `drawDefinition` or `structure`, with the `eventId`, `drawId` and `structureId` that find
+it. The tieFormat governor's edits refuse it too. Clean such a record once, before loading it or before generating on
+it:
+
+```js
+import { tools } from 'competition-factory';
+
+const { tournamentRecord: cleaned, removed } = tools.removeNonTeamTieFormats({ tournamentRecord });
+engine.setState(cleaned);
+```
+
+The helper removes `tieFormat` and `tieFormatId` from every non-TEAM event, draw definition and structure, leaves TEAM
+events and their tie formats as they are, and returns a copy: the record passed in is not changed. `removed` lists where
+each tieFormat was.
 
 ## Governor and engine route removals
 
@@ -466,6 +494,9 @@ and earlier carry no tags at all.
 ### Behaviour changes
 
 - _Proposed:_ **the default `stampScope` becomes `'modified'`.** The factory `{ version, timeStamp }` stamp goes on each drawDefinition a call modified, and on the tournament only when something outside its draws changed. A consumer that reads `tournament.factory` as "last write anywhere" must read the draw stamps. Opt in during 7.x with `engine.stampScope('modified')`. A custom state provider uses the optional `cycleModifiedTopics` hook.
+- **A tieFormat for an event that is not TEAM is refused** with `INVALID_TIE_FORMAT`, and so is generating over one a
+  7.x record stored there; `tools.removeNonTeamTieFormats` cleans such a record. See
+  [Pass `tieFormat` for TEAM draws only](#pass-tieformat-for-team-draws-only) (#6672).
 - **`addFlight` refuses a participant already in another flight** with `EXISTING_FLIGHT` (and `context.participantIds`) unless `force: true`. In 7.x it returns a `PARTICIPANT_IN_OTHER_FLIGHT` warning and still adds.
 - **`addPoint` no longer mutates the matchUp it is given.** Use its return value.
 - **Generators no longer attach.** `generateLineUps` (`attach`), `generateFlightProfile` (`attachFlightProfile`), `drawMatic` (`updateParticipantRatings`), `generateDrawTypeAndModifyDrawDefinition` (`modifyOriginal`), `generateEventsFromTieFormat` (attaching unless `addEvents: false`) and `generateTournamentRecord` through an engine return what they generate. Call the matching attach mutation to store it.
