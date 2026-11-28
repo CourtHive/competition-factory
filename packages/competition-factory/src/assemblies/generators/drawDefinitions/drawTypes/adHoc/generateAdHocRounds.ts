@@ -1,3 +1,4 @@
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { generateRoundRobinPairings, PairingRound } from './roundRobinPairing/generateRoundRobinPairings';
 import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 import { getParticipantIds } from './drawMatic/getParticipantIds';
@@ -33,6 +34,9 @@ type GenerateAdHocRoundsArgs = {
 
 export function generateAdHocRounds(params: GenerateAdHocRoundsArgs): ResultType & { matchUps?: MatchUp[] } {
   const { roundsCount = 1, drawDefinition, matchUpsCount, structureId, idPrefix, isMock, event } = params;
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
 
   // a shaped schedule validates its own rounds against the shape, so the generic roundsCount
   // restriction (which knows only about a single round robin) must not pre-empt it

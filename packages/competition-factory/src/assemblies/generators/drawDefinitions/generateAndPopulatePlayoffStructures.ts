@@ -1,3 +1,4 @@
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { generateAndPopulateRRplayoffStructures } from './generateAndPopulateRRplayoffStructures';
 import { getAvailablePlayoffProfiles } from '@Query/drawDefinition/getAvailablePlayoffProfiles';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
@@ -72,6 +73,9 @@ type GenerateAndPopulateArgs = {
 export function generateAndPopulatePlayoffStructures(
   params: GenerateAndPopulateArgs,
 ): ReturnType<typeof generateAndPopulatePlayoffStructuresDraft> {
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
   return withDraftWrites(() => generateAndPopulatePlayoffStructuresDraft(params));
 }
 

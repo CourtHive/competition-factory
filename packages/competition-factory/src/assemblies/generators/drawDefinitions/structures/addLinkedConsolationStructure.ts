@@ -1,3 +1,4 @@
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { attachConsolationStructures } from '@Mutate/drawDefinitions/attachStructures';
 import { getGenerators } from '@Generators/drawDefinitions/getGenerators';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
@@ -82,6 +83,9 @@ export function addLinkedConsolationStructure({
   links: linkDefs = [],
 }: AddLinkedConsolationStructureArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal({ drawDefinition });
+  if (storedRefusal) return storedRefusal;
 
   if (!mainStructureId) {
     mainStructureId = drawDefinition.structures?.find((s: any) => s.stage === MAIN)?.structureId;

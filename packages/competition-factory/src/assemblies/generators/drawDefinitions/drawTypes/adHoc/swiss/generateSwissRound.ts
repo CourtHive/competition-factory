@@ -1,4 +1,5 @@
 // Query
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
@@ -53,6 +54,9 @@ type GenerateSwissRoundResult = ResultType & {
 export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwissRoundResult {
   const { drawDefinition, tournamentRecord, event } = params;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal as GenerateSwissRoundResult;
 
   const structure = params.structureId
     ? findStructure({ drawDefinition, structureId: params.structureId }).structure

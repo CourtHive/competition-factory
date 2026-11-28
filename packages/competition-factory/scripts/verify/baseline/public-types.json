@@ -2382,6 +2382,9 @@
     "reduceRecordToFootprint": {
       "ret:index": 6
     },
+    "removeNonTeamTieFormats": {
+      "ret:index": 1
+    },
     "repairDrawLinks": {
       "param:index": 1
     },

@@ -8,6 +8,7 @@ import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { addNotice, hasTopic } from '@Global/state/globalState';
+import { nonTeamDrawTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { storeGoesTo } from '@Query/matchUps/addGoesTo';
 import { ensureInt } from '@Tools/ensureInt';
@@ -70,6 +71,10 @@ export function addDrawDefinition(
   } = params;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!event) return { error: MISSING_EVENT };
+
+  // a draw that carries a tieFormat is a TEAM draw: added to an event that is not TEAM it is refused
+  const tieFormatRefusal = nonTeamDrawTieFormatRefusal({ drawDefinition, event });
+  if (tieFormatRefusal) return decorateResult({ result: tieFormatRefusal, stack: 'addDrawDefinition' });
 
   const eventDrawDefinitions = event.drawDefinitions ?? [];
   const { drawId, drawName, entries: drawEntries } = drawDefinition;

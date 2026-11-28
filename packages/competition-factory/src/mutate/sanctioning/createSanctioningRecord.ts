@@ -1,4 +1,5 @@
 import { nowIso } from '@Tools/clock';
+import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -42,6 +43,12 @@ export function createSanctioningRecord({
     return { error: INVALID_VALUES, context: { message: 'Missing proposal.proposedEndDate' } } as any;
   if (!Array.isArray(proposal.events) || proposal.events.length === 0)
     return { error: INVALID_VALUES, context: { message: 'Proposal must include at least one event' } } as any;
+
+  // a tieFormat describes a TEAM tie: an event proposal of another type that carries one is refused
+  for (const eventProposal of proposal.events) {
+    const tieFormatRefusal = nonTeamTieFormatRefusal(eventProposal, eventProposal.eventType);
+    if (tieFormatRefusal) return tieFormatRefusal as any;
+  }
 
   const now = nowIso();
 

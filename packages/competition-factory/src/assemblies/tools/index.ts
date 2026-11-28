@@ -52,6 +52,9 @@ export {
   extractParticipants,
 } from '@Generators/ingestion/buildFromSources/buildFromSources';
 export { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
+// Remove the tieFormats a record written before 8.0.0 stored on its non-TEAM events, draws and structures, which 8.0.0
+// refuses to generate over. A tool on a record the caller holds: it returns a copy and never changes its input.
+export { removeNonTeamTieFormats } from '@Mutate/tieFormat/removeNonTeamTieFormats';
 // What part of a record an executionQueue reads and may write, for a storage layer that keeps a tournament in parts
 // (a shell, its draws, its participants). Pure reads of the methods and their params, called BEFORE anything is
 // loaded, so tools rather than engine methods, which resolve from state. `reduceRecordToFootprint` builds the partial

@@ -1,5 +1,6 @@
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
+import { nonTeamTieFormatTargetRefusal } from '@Validators/nonTeamTieFormat';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
@@ -11,6 +12,9 @@ import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstant
 // A tieFormat written to the event, or to event.tieFormats (where a draw's, structure's or matchUp's
 // shared tieFormat lives), modifies the event: announced with MODIFY_EVENT when it changed.
 export function addCollectionGroup(params: Parameters<typeof addGroup>[0]) {
+  // a tieFormat edit on an event or draw that is not TEAM is refused, before anything is written
+  const targetRefusal = nonTeamTieFormatTargetRefusal(params);
+  if (targetRefusal) return { ...targetRefusal, stack: ['addCollectionGroup'] } as ReturnType<typeof addGroup>;
   return withEventChangeNotice(params, () => addGroup(params));
 }
 

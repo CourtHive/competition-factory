@@ -6,6 +6,7 @@ import { addPlayoffStructures } from '@Generators/drawDefinitions/structures/add
 import { checkDrawCompositionLimits } from '@Query/drawDefinition/checkDrawCompositionLimits';
 import { hydrateRoundNames } from '@Mutate/drawDefinitions/hydrateRoundNames';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
+import { nonTeamTieFormatRefusal, storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
@@ -41,6 +42,15 @@ import {
 export function generateDrawDefinition(
   params: GenerateDrawDefinitionArgs,
 ): ReturnType<typeof generateDrawDefinitionDraft> {
+  // a tieFormat, tieFormatName or tieFormatId for a draw that is not TEAM is refused: it neither outranks the
+  // matchUpFormat nor is silently dropped
+  const eventType = params.event?.eventType;
+  const tieFormatRefusal = nonTeamTieFormatRefusal(params, eventType, params.matchUpType ?? eventType);
+  if (tieFormatRefusal) return decorateResult({ result: tieFormatRefusal, stack: 'generateDrawDefinition' });
+
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return decorateResult({ result: storedRefusal, stack: 'generateDrawDefinition' });
   const resolution = resolveDrawCompositionOverrides(params);
   if (resolution.error) return { error: resolution.error };
   return withDraftWrites(() =>

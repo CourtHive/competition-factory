@@ -41,6 +41,8 @@ import type { Directives } from '@Assemblies/engines/types/engineTypes';
  */
 export const PARTIAL_COMMIT_METHODS: ReadonlySet<string> = new Set([
   'bulkMatchUpStatusUpdate',
+  'bulkScheduleMatchUps',
+  'bulkScheduleTournamentMatchUps',
   'deleteCourts',
   'resetAdHocMatchUps',
 ]);
