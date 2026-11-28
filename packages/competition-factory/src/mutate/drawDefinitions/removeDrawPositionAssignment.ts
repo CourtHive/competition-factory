@@ -1,18 +1,19 @@
 import { conditionallyDisableLinkPositioning } from './positionGovernor/conditionallyDisableLinkPositioning';
+import { clearDrawPosition, collectReducedExits } from '@Mutate/matchUps/drawPositions/positionClear';
 import { carryEmptiedSeatsPastByes } from '@Mutate/matchUps/drawPositions/carryEmptiedSeatsPastByes';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { addPositionActionTelemetry } from './positionGovernor/addPositionActionTelemetry';
-import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
+import { dropWithdrawnExitReasons } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { groupEntryDestructionError } from '@Mutate/entries/destroyGroupEntry';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { composeDrawMutation } from '@Mutate/drawDefinitions/composeThenWrite';
 import { modifyEntriesStatus } from '@Mutate/entries/modifyEntriesStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { composeDrawMutation } from '@Mutate/drawDefinitions/composeThenWrite';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -20,6 +21,7 @@ import { ErrorType, LUCKY_DRAW_BYE_LIMIT } from '@Constants/errorConditionConsta
 import { ALTERNATE, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { ResultType } from '@Types/factoryTypes';
+import { MatchUp } from '@Types/tournamentTypes';
 
 /**
  * Removes the participant (or BYE) at a drawPosition, optionally withdrawing the entry and replacing it with a BYE.
@@ -34,6 +36,28 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
 
 /** The removal itself, against the draw it is given. Not atomic on its own: callers compose first. */
 export function removeAssignment(params): ResultType & { participantId?: string } {
+  const stack = 'removeDrawPositionAssignment';
+
+  // Everything the removal can refuse AFTER emptying the seat is asked BEFORE it: a refusal must
+  // leave the record as it found it, and nothing here snapshots or restores.
+  const refusal = removalRefusal(params);
+  if (refusal) return decorateResult({ result: refusal, stack });
+
+  // the exits the removal re-derives keep only the reasons that still describe them, settled once it is complete
+  const { result, reduced } = collectReducedExits(() => clearAndReplace(params, stack));
+  if (!result.error) settleReducedExitReasons(reduced);
+  return result;
+}
+
+/**
+ * The withdrawn side's reason goes with its exit. Each matchUp here was announced by the removal that re-derived it,
+ * in this call and by reference, so its notice carries what is settled here and its stamp is already taken.
+ */
+function settleReducedExitReasons(reduced: MatchUp[]) {
+  for (const matchUp of new Set<MatchUp>(reduced)) dropWithdrawnExitReasons(matchUp);
+}
+
+function clearAndReplace(params, stack: string): ResultType & { participantId?: string } {
   const {
     tournamentRecord,
     preserveScheduling,
@@ -44,14 +68,6 @@ export function removeAssignment(params): ResultType & { participantId?: string 
     matchUpsMap,
     drawId,
   } = params;
-
-  const stack = 'removeDrawPositionAssignment';
-
-  // Everything the removal can refuse AFTER emptying the seat is asked BEFORE it: a refusal must
-  // leave the record as it found it, and nothing here snapshots or restores.
-  const refusal = removalRefusal(params);
-  if (refusal) return decorateResult({ result: refusal, stack });
-
   const result = clearDrawPosition(params);
   if (result.error) return decorateResult({ result, stack });
 

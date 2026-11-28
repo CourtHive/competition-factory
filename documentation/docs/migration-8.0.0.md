@@ -567,11 +567,13 @@ engine.setMatchUpStatus({ drawId, matchUpId, outcome: { matchUpStatus: ABANDONED
   reasons were given for, the reasons go with the result: a produced exit withdrawn because its source was corrected
   or cleared, a matchUp collapsed to a BYE, a result removed with the position it was carried to, a draw reset. A
   matchUp left `TO_BE_PLAYED`, a `BYE` or any other status that takes no reason keeps none, except that a BYE standing
-  over an exit its `sideExitProvenance` still records keeps that exit's reason. When a withdrawn exit's award is
-  re-derived to the other side, a reason that now names the winner is removed. When a decided matchUp's sides are
-  re-sorted under its winner (a correction upstream changes who reaches it), the reason moves with the side that
-  exited, as the winner and the score do. In 7.x such a matchUp could keep the reasons of a result it no longer held,
-  or a reason keyed to the side that now wins (#6669).
+  over an exit its `sideExitProvenance` still records keeps that exit's reason. When an exit is reduced or relabelled
+  because the exit opposite it was withdrawn (a `DOUBLE_WALKOVER` reduced to a `WALKOVER` when one side's position is
+  removed or its source cleared, an award re-derived to the other side), it keeps only the reason of the side that
+  still exited; a produced exit left pending, with no winner until its opponent arrives, keeps only the reason of the
+  exit that still stands (#6679). When a decided matchUp's sides are re-sorted under its winner (a correction upstream
+  changes who reaches it), the reason moves with the side that exited, as the winner and the score do. In 7.x such a
+  matchUp could keep the reasons of a result it no longer held, or a reason keyed to the side that now wins (#6669).
 - **Clearing a result removes its reasons.** A result cleared or removed leaves the matchUp `TO_BE_PLAYED`, a status
   that takes no reason, so the matchUp keeps none, with or without `clearStatusCodes`. The same holds for a result
   corrected to a played win or to a live score. A clear does not keep the reason for a later re-entry: enter the
