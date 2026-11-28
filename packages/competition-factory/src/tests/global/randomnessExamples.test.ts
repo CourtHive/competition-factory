@@ -1,15 +1,18 @@
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
-import { defined } from '@Tests/helpers/defined';
 import { repoFile } from '@Tests/testHarness/repoRoot';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
+import typedMocksEngine from '@Assemblies/engines/mock';
 import asyncEngine from '@Engines/asyncEngine';
 import * as tools from '@Assemblies/tools';
 import fs from 'node:fs';
 
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+
+// the page's examples read the generated records as plain objects, as a JavaScript reader does; the example code
+// must stay verbatim, so its records are untyped here
+const mocksEngine: any = typedMocksEngine;
 
 /**
  * The worked examples of documentation/docs/concepts/randomness.md, one test per example.
@@ -36,7 +39,7 @@ const fixture = mocksEngine.generateTournamentRecord({
   eventProfiles: [{ participantsProfile: { participantsCount: 25 } }],
   nonRandom: 1,
 }).tournamentRecord;
-const eventId = defined(fixture.events, 'events')[0].eventId;
+const eventId = fixture.events[0].eventId;
 const loadEvent = (engine: any = tournamentEngine) => engine.setState(structuredClone(fixture));
 // end of page example
 
@@ -52,8 +55,8 @@ describe('Worked examples › A reproducible draw', () => {
     tournamentEngine.setRandomSource(seed);
     const second = mocksEngine.generateTournamentRecord({ drawProfiles }).tournamentRecord;
 
-    const [drawA] = defined(defined(first.events, 'events')[0].drawDefinitions, 'drawDefinitions');
-    const [drawB] = defined(defined(second.events, 'events')[0].drawDefinitions, 'drawDefinitions');
+    const [drawA] = first.events[0].drawDefinitions;
+    const [drawB] = second.events[0].drawDefinitions;
     expect(drawB.drawId).toEqual(drawA.drawId);
     expect(placements(drawB)).toEqual(placements(drawA));
     // end of page example
@@ -66,9 +69,7 @@ describe('Worked examples › A reproducible draw', () => {
 
     // discriminating: without re-seeding, the stream continues and the draw is a different one
     const third = mocksEngine.generateTournamentRecord({ drawProfiles }).tournamentRecord;
-    expect(placements(defined(defined(third.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0])).not.toEqual(
-      placements(drawA),
-    );
+    expect(placements(third.events[0].drawDefinitions[0])).not.toEqual(placements(drawA));
   });
 });
 

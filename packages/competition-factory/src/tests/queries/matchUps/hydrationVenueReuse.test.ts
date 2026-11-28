@@ -76,7 +76,8 @@ test('venue and court names are resolved for every matchUp, including allocated 
     const venue = defined(tournamentRecord.venues, 'venues').find((v) => v.venueId === venueId);
     expect(venueName).toEqual(venue?.venueName);
     expect(venueAbbreviation).toEqual(venue?.venueAbbreviation);
-    expect(courtName).toEqual(defined(venue?.courts, 'courts').find((c) => c.courtId === courtId)?.courtName);
+    // the unknown venue has no courts to name: absence is the expectation there
+    expect(courtName).toEqual(venue?.courts?.find((c) => c.courtId === courtId)?.courtName);
     expect(allocatedCourts.map((court) => [court.venueName, court.courtName])).toEqual([
       ['Venue One', 'a court 3'],
       ['Venue Two', 'b court 3'],
