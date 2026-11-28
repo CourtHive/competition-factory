@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
@@ -16,7 +17,7 @@ function loaded({ shared }: { shared: boolean }) {
   // a venue shared by both tournaments holds the same court in each
   if (shared) two.tournamentRecord.venues = structuredClone(one.tournamentRecord.venues);
   tournamentEngine.setState([one.tournamentRecord, two.tournamentRecord]);
-  const courtId = one.tournamentRecord.venues[0].courts[0].courtId;
+  const courtId = defined(defined(one.tournamentRecord.venues, 'venues')[0].courts, 'courts')[0].courtId;
   const records = () => JSON.stringify(tournamentEngine.getState().tournamentRecords);
   return { courtId, records };
 }

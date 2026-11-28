@@ -2,11 +2,11 @@ import { validateCategory } from '@Validators/validateCategory';
 import { definedAttributes } from '@Tools/definedAttributes';
 
 // types
-import type { parseCategoryAgeDetails } from '@Helpers/categories/parseCategoryAgeDetails';
+import type { CategoryAgeDetails } from '@Helpers/categories/parseCategoryAgeDetails';
 import { Category } from '@Types/tournamentTypes';
 
 // what validateCategory returns: the parsed age details, or a refusal (its own result stays untyped)
-type CategoryValidation = ReturnType<typeof parseCategoryAgeDetails> | { error: unknown; context?: unknown };
+type CategoryValidation = CategoryAgeDetails | { error: unknown; context?: unknown };
 
 type CategoryCanContainArgs = {
   childCategory: Category;
