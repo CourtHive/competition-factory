@@ -1,7 +1,6 @@
 import { tournamentEngine } from '@Engines/syncEngine';
 import { defined } from '@Tests/helpers/defined';
 import mocksEngine from '@Assemblies/engines/mock';
-import { defined } from '@Tests/helpers/defined';
 import { expect, test } from 'vitest';
 
 // constants

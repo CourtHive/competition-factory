@@ -2,7 +2,11 @@ import { validateCategory } from '@Validators/validateCategory';
 import { definedAttributes } from '@Tools/definedAttributes';
 
 // types
+import type { parseCategoryAgeDetails } from '@Helpers/categories/parseCategoryAgeDetails';
 import { Category } from '@Types/tournamentTypes';
+
+// what validateCategory returns: the parsed age details, or a refusal (its own result stays untyped)
+type CategoryValidation = ReturnType<typeof parseCategoryAgeDetails> | { error: unknown; context?: unknown };
 
 type CategoryCanContainArgs = {
   childCategory: Category;
@@ -11,8 +15,8 @@ type CategoryCanContainArgs = {
 };
 
 export function categoryCanContain({ childCategory, withDetails, category }: CategoryCanContainArgs): {
-  categoryDetails?: ReturnType<typeof validateCategory>;
-  childCategoryDetails?: ReturnType<typeof validateCategory>;
+  categoryDetails?: CategoryValidation;
+  childCategoryDetails?: CategoryValidation;
   invalidRatingRange?: boolean;
   invalidAgeMinDate?: boolean;
   invalidAgeMaxDate?: boolean;

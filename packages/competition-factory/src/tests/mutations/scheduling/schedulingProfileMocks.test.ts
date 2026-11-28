@@ -1,4 +1,5 @@
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
+import { defined } from '@Tests/helpers/defined';
 import { intersection, unique } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
 import { constantToString } from '@Tools/strings';
@@ -99,7 +100,7 @@ it('can schedule potential rounds properly in scenarios with recovery times grea
     startDate,
   });
 
-  expect(scheduledRounds.length).toEqual(9);
+  expect(defined(scheduledRounds, 'scheduledRounds').length).toEqual(9);
   expect(drawIds).toEqual(['idM16', 'idF16', 'idM18']);
   expect(venueId).toEqual(firstVenueId);
 

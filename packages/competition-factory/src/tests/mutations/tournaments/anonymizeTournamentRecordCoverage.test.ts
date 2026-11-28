@@ -177,14 +177,13 @@ test('anonymize tournament with scheduling profile extension', () => {
   // Verify the scheduling profile IDs were updated
   const schedulingProfile = tournamentRecord.extensions.find((e) => e.name === 'schedulingProfile');
   expect(schedulingProfile).toBeDefined();
-  expect(defined(schedulingProfile, 'schedulingProfile').value[0].tournamentId).toEqual(tournamentRecord.tournamentId);
-  expect(defined(schedulingProfile, 'schedulingProfile').value[0].eventId).toEqual(
-    defined(tournamentRecord.events, 'events')[0].eventId,
-  );
-  expect(defined(schedulingProfile, 'schedulingProfile').value[0].drawId).toEqual(
+  const schedulingProfileValue: any = defined(schedulingProfile, 'schedulingProfile').value;
+  expect(schedulingProfileValue[0].tournamentId).toEqual(tournamentRecord.tournamentId);
+  expect(schedulingProfileValue[0].eventId).toEqual(defined(tournamentRecord.events, 'events')[0].eventId);
+  expect(schedulingProfileValue[0].drawId).toEqual(
     defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].drawId,
   );
-  expect(defined(schedulingProfile, 'schedulingProfile').value[0].structureId).toEqual(
+  expect(schedulingProfileValue[0].structureId).toEqual(
     defined(
       defined(defined(tournamentRecord.events, 'events')[0].drawDefinitions, 'drawDefinitions')[0].structures,
       'structures',
@@ -220,9 +219,10 @@ test('anonymize tournament with person requests extension', () => {
   // Verify the person requests personId was updated via idMap
   const personRequests = tournamentRecord.extensions.find((e) => e.name === 'personRequests');
   expect(personRequests).toBeDefined();
+  const personRequestsValue: any = defined(personRequests, 'personRequests').value;
   // The personId should have been mapped to the new personId
-  expect(defined(personRequests, 'personRequests').value[0].personId).not.toEqual(personId);
-  expect(defined(personRequests, 'personRequests').value[0].personId).toBeDefined();
+  expect(personRequestsValue[0].personId).not.toEqual(personId);
+  expect(personRequestsValue[0].personId).toBeDefined();
 });
 
 // Covers the seedAssignments branch + lineUp.map callback + birthYear path

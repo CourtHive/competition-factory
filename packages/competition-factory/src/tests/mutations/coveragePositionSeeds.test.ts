@@ -11,6 +11,9 @@ import { POLICY_TYPE_AVOIDANCE } from '@Constants/policyConstants';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 
+// the stored participants, handed to the internal positioning call as the test always has
+const storedParticipantsOf = (record: { participants?: unknown }): any => record.participants;
+
 // Targets the uncovered regions of positionSeeds.ts:
 //   - reorderSeedsForAvoidance swap loop (conflict-group seeds in same section
 //     with non-group seeds available to swap with)
@@ -60,7 +63,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
 
     // Direct call bypasses the engine's "one function arg" wrapper limit.
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       random: createSeededRandom(seed),
       structureId: structure.structureId,
       drawDefinition,
@@ -91,7 +94,7 @@ describe('reorderSeedsForAvoidance swap loop', () => {
     const structure = drawDefinition.structures.find((s) => s.stage === MAIN);
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       structureId: structure.structureId,
       drawDefinition,
       structure,
@@ -127,7 +130,7 @@ describe('reorderSeedsForAvoidance early returns', () => {
     });
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       structureId: structure.structureId,
       drawDefinition,
       structure,
@@ -171,7 +174,7 @@ describe('positionSeedBlocks error aggregation', () => {
     }));
 
     const result: any = positionSeedBlocks({
-      participants: tournamentRecord.participants,
+      participants: storedParticipantsOf(tournamentRecord),
       structureId: structure.structureId,
       drawDefinition,
       groupsCount: seedsCount,

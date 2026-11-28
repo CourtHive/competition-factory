@@ -11,8 +11,21 @@ type GenerateSchedulingProfileArgs = {
   tournamentRecord: Tournament;
   schedulingProfile: any;
 };
+/** a round the mock scheduling profile placed: the round as `addSchedulingProfileRound` took it, with its names */
+type ScheduledRound = {
+  tournamentId: string;
+  structureId: string;
+  roundNumber?: number;
+  roundSegment?: unknown;
+  eventId: string;
+  drawId: string;
+  structureName?: string;
+  roundName?: string;
+  drawName?: string;
+};
+
 export function generateScheduledRounds({ schedulingProfile, tournamentRecord }: GenerateSchedulingProfileArgs): {
-  scheduledRounds?: any;
+  scheduledRounds?: ScheduledRound[];
   error?: ErrorType;
 } {
   // an object that is not an array passed this check and threw in the loop below (M15, 2026-10-17)

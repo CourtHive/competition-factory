@@ -40,7 +40,7 @@ test.each(rankingsScenarios)('it can generate rankings for participants', (scena
     expect(timeItem.itemType).toEqual(scenario.expectation.timeItem.itemType);
     const { ratingMin, ratingMax, ratingType } = scenario.category;
     const accessor = ratingType && ratingsParameters[ratingType]?.accessor;
-    const itemValue = timeItem.itemValue;
+    const itemValue: any = timeItem.itemValue;
     const value = accessor ? itemValue[accessor] : itemValue;
 
     expect(value).not.toBeUndefined();

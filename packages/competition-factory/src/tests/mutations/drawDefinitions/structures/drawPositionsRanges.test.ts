@@ -3,7 +3,6 @@ import { defined } from '@Tests/helpers/defined';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
-import { defined } from '@Tests/helpers/defined';
 import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
