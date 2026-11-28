@@ -11,7 +11,7 @@ export type RemovedTieFormat = { eventId: string; drawId?: string; structureId?:
 
 /**
  * A copy of a record with every tieFormat and tieFormatId removed from its non-TEAM events, draw definitions and
- * structures (nested included), and where each was. A record written before 8.0.0 can hold one there; 8.0.0 refuses to
+ * structures (nested included), and a non-TEAM event's `tieFormats` list, and where each was. A record written before 8.0.0 can hold one there; 8.0.0 refuses to
  * generate over it. TEAM events, their draws and their tie formats are left as they are, and the record passed in is
  * never changed.
  */
@@ -29,9 +29,11 @@ export function removeNonTeamTieFormats({ tournamentRecord }: { tournamentRecord
 
   for (const event of copy.events ?? []) {
     const eventNonTeam = event.eventType !== undefined && event.eventType !== TEAM;
-    if (eventNonTeam && (event.tieFormat || event.tieFormatId)) {
+    // one entry per event for whatever it held: a tieFormat, a tieFormatId, or a tieFormats list
+    if (eventNonTeam && (event.tieFormat || event.tieFormatId || event.tieFormats?.length)) {
       delete event.tieFormat;
       delete event.tieFormatId;
+      delete event.tieFormats;
       removed.push({ eventId: event.eventId });
     }
     for (const drawDefinition of event.drawDefinitions ?? []) {

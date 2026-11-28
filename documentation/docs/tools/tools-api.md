@@ -907,9 +907,12 @@ const { tournamentRecord: cleaned, removed } = tools.removeNonTeamTieFormats({ t
 ```
 
 - It removes `tieFormat` and `tieFormatId` from every event whose `eventType` is not TEAM, from its draw definitions and
-  from their structures (nested included), and from a draw whose `matchUpType` is not TEAM.
-- TEAM events, their draws and their tie formats are left as they are.
-- It returns a copy and never changes the record passed in; `removed` lists where each tieFormat was.
+  from their structures (nested included), and from a draw whose `matchUpType` is not TEAM. It also removes such an
+  event's `tieFormats` list.
+- TEAM events, their draws and their tie formats (`tieFormats` included) are left as they are. MatchUps are not
+  changed: a draw whose matchUps hold `tieMatchUps` stays a draw that `addDrawDefinition` refuses for a non-TEAM event.
+- It returns a copy and never changes the record passed in. `removed` lists where each was, one entry per event, draw
+  definition or structure.
 
 ### firstClassOrExtension
 
