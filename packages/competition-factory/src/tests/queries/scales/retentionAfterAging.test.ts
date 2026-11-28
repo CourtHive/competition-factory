@@ -1,5 +1,5 @@
 import { applyRetentionAfterAging, getRetentionCutoff } from '@Query/scales/retentionAfterAging';
-import { POLICY_RANKING_POINTS_LTA } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_LTA';
+import { TEMPLATE_RANKING_POINTS_LTA } from '@courthive/competition-catalogue';
 import { generateRankingList } from '@Query/scales/generateRankingList';
 import type { RankingListWarning } from '@Types/rankingTypes';
 import { describe, expect, it } from 'vitest';
@@ -25,7 +25,7 @@ function makeAward(ageCategoryCode: string, points: number, personId = 'p1') {
   };
 }
 
-const ltaRules: any = POLICY_RANKING_POINTS_LTA[POLICY_TYPE_RANKING_POINTS].aggregationRules;
+const ltaRules: any = TEMPLATE_RANKING_POINTS_LTA[POLICY_TYPE_RANKING_POINTS].aggregationRules;
 const lta14U = ltaRules.categoryAggregation.find((rule) => rule.ruleName === '14U Combined Ranking pool');
 
 // The LTA rule with 12U added to its sources. As encoded, no LTA rule names a

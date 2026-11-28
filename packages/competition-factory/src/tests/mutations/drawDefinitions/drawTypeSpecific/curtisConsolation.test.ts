@@ -3,7 +3,7 @@ import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/posi
 import { verifyStructure } from '@Tests/mutations/drawDefinitions/primitives/verifyStructure';
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
-import { POLICY_SEEDING_ITF as SEEDING_POLICY } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF as SEEDING_POLICY } from '@courthive/competition-catalogue';
 import { addDrawEntries } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';

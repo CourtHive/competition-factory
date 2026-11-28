@@ -5,7 +5,7 @@
  * Each scenario exercises the engine end-to-end, probing for edge cases
  * identified in code review.
  */
-import { POLICY_SANCTIONING_ITF, POLICY_SANCTIONING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SANCTIONING_ITF, TEMPLATE_SANCTIONING_USTA } from '@courthive/competition-catalogue';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -115,18 +115,18 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     expect(result.success).toBe(true);
 
     // 2. Check completeness before endorsement
-    let completeness: any = sanctioningEngine.getCompleteness({ sanctioningPolicy: POLICY_SANCTIONING_ITF });
+    let completeness: any = sanctioningEngine.getCompleteness({ sanctioningPolicy: TEMPLATE_SANCTIONING_ITF });
     expect(completeness.completeness.score).toBeGreaterThan(70);
 
     // 3. Validate proposal
     let validation: any = sanctioningEngine.validateProposal({
-      sanctioningPolicy: POLICY_SANCTIONING_ITF,
+      sanctioningPolicy: TEMPLATE_SANCTIONING_ITF,
       sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     expect(validation.valid).toBe(true);
 
     // 4. Check eligible tiers
-    let tiers: any = sanctioningEngine.getEligibleTiers({ sanctioningPolicy: POLICY_SANCTIONING_ITF });
+    let tiers: any = sanctioningEngine.getEligibleTiers({ sanctioningPolicy: TEMPLATE_SANCTIONING_ITF });
     const w50Tier = tiers.eligibleTiers.find((t: any) => t.tierName === 'W50');
     expect(w50Tier).toBeDefined();
 
@@ -135,7 +135,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     sanctioningEngine.endorseApplication({ endorserNotes: 'Facilities approved by CBT inspection' });
 
     // 6. Submit with policy
-    result = sanctioningEngine.submitApplication({ sanctioningPolicy: POLICY_SANCTIONING_ITF });
+    result = sanctioningEngine.submitApplication({ sanctioningPolicy: TEMPLATE_SANCTIONING_ITF });
     expect(result.success).toBe(true);
 
     // Verify policy snapshot
@@ -157,7 +157,7 @@ describe('Scenario: ITF W50 Full Lifecycle (Brazil)', () => {
     expect(result.success).toBe(true);
 
     // 10. Activate — generates tournament
-    result = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: POLICY_SANCTIONING_ITF });
+    result = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: TEMPLATE_SANCTIONING_ITF });
     expect(result.success).toBe(true);
     expect(result.tournamentRecord.tournamentName).toEqual('W50 Florianopolis');
     expect(result.tournamentRecord.events).toHaveLength(2);
@@ -232,7 +232,7 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     sanctioningEngine.endorseApplication({});
 
     // Submit
-    sanctioningEngine.submitApplication({ sanctioningPolicy: POLICY_SANCTIONING_USTA });
+    sanctioningEngine.submitApplication({ sanctioningPolicy: TEMPLATE_SANCTIONING_USTA });
 
     // Review
     sanctioningEngine.reviewApplication({ reviewer: { reviewerId: 'usta-nat-1' } });
@@ -263,7 +263,7 @@ describe('Scenario: USTA Level 3 with Modification Request', () => {
     });
 
     // Resubmit
-    result = sanctioningEngine.submitApplication({ sanctioningPolicy: POLICY_SANCTIONING_USTA });
+    result = sanctioningEngine.submitApplication({ sanctioningPolicy: TEMPLATE_SANCTIONING_USTA });
     expect(result.success).toBe(true);
 
     // Re-review and approve
@@ -801,7 +801,7 @@ describe('Scenario: Multi-Category Tournament Validation', () => {
 
     // Should be eligible for USTA tiers that support these draw sizes
     let result: any = sanctioningEngine.getEligibleTiers({
-      sanctioningPolicy: POLICY_SANCTIONING_USTA,
+      sanctioningPolicy: TEMPLATE_SANCTIONING_USTA,
     });
     expect(result.success).toBe(true);
 
@@ -874,7 +874,7 @@ describe('Scenario: Endorsement Declined and Re-requested', () => {
 
     // Can now submit
     result = sanctioningEngine.submitApplication({
-      sanctioningPolicy: { ...POLICY_SANCTIONING_ITF, requireEndorsement: true } as any,
+      sanctioningPolicy: { ...TEMPLATE_SANCTIONING_ITF, requireEndorsement: true } as any,
     });
     expect(result.success).toBe(true);
   });

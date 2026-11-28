@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_TENNIS_EUROPE } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_EUROPE';
+import { TEMPLATE_RANKING_POINTS_TENNIS_EUROPE } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
@@ -198,7 +198,7 @@ describe('tierToLevel — numericRank fallback', () => {
       const { tournamentRecord } = tournamentEngine.getTournament();
       const eventId = tournamentRecord.events[0].eventId;
       const result: any = tournamentEngine.getEventRankingPoints({
-        policyDefinitions: POLICY_RANKING_POINTS_TENNIS_EUROPE,
+        policyDefinitions: TEMPLATE_RANKING_POINTS_TENNIS_EUROPE,
         eventId,
       });
       expect(result.error).toBeUndefined();

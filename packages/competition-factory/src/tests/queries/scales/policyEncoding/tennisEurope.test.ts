@@ -1,9 +1,9 @@
-import { POLICY_RANKING_POINTS_TENNIS_EUROPE } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_EUROPE';
+import { TEMPLATE_RANKING_POINTS_TENNIS_EUROPE } from '@courthive/competition-catalogue';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 
 describe('Tennis Europe 2026 policy encoding', () => {
-  const { policy, valid, errorsText } = validateRankingPolicy(POLICY_RANKING_POINTS_TENNIS_EUROPE);
+  const { policy, valid, errorsText } = validateRankingPolicy(TEMPLATE_RANKING_POINTS_TENNIS_EUROPE);
 
   it('validates against rankingPolicy.schema.json', () => {
     if (!valid) console.error(errorsText);

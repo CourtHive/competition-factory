@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { describe, expect, it } from 'vitest';
@@ -10,7 +10,7 @@ import { MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 
-const policyDefinitions = POLICY_RANKING_POINTS_ATP;
+const policyDefinitions = TEMPLATE_RANKING_POINTS_ATP;
 
 describe('getApplicableAwardProfileLevels', () => {
   it('returns error without ranking points policy', () => {

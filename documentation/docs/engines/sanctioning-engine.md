@@ -190,7 +190,7 @@ The policy is snapshot'd onto the record at submission time — all subsequent v
 
 ```js
 sanctioningEngine.submitApplication({
-  sanctioningPolicy: POLICY_SANCTIONING_USTA,
+  sanctioningPolicy: TEMPLATE_SANCTIONING_USTA,
   submittedBy: 'jane@carytennis.com',
 });
 ```
@@ -290,7 +290,7 @@ written alongside `tournamentTier` for one release (6.24.0) and was removed in 6
 
 ```js
 const { tournamentRecord } = sanctioningEngine.activateFromSanctioning({
-  sanctioningPolicy: POLICY_SANCTIONING_ITF,
+  sanctioningPolicy: TEMPLATE_SANCTIONING_ITF,
 });
 
 // tournamentRecord is ready to load into tournamentEngine
@@ -377,7 +377,7 @@ Returns which policy tiers the current proposal is eligible for, with reasons fo
 
 ```js
 const { eligibleTiers, tierEligibilities } = sanctioningEngine.getEligibleTiers({
-  sanctioningPolicy: POLICY_SANCTIONING_USTA,
+  sanctioningPolicy: TEMPLATE_SANCTIONING_USTA,
 });
 ```
 
@@ -433,11 +433,11 @@ other two by the catalogue package (`@courthive/competition-catalogue`):
 | Policy                       | Governing Body | Tiers                                      |
 | ---------------------------- | -------------- | ------------------------------------------ |
 | `POLICY_SANCTIONING_GENERIC` | Generic        | Level 1, 2, 3                              |
-| `POLICY_SANCTIONING_ITF`     | ITF            | M15/W15, M25/W25, W35, W50, W75, W100      |
-| `POLICY_SANCTIONING_USTA`    | USTA           | Level 7 (local) through Level 1 (national) |
+| `TEMPLATE_SANCTIONING_ITF`   | ITF            | M15/W15, M25/W25, W35, W50, W75, W100      |
+| `TEMPLATE_SANCTIONING_USTA`  | USTA           | Level 7 (local) through Level 1 (national) |
 
 Each policy defines: tier constraints (draw types, sizes, formats, prize money, courts, officials), personnel rules, calendar rules, amendment rules, and post-event compliance requirements.
 
 ```js
-import { POLICY_SANCTIONING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SANCTIONING_ITF } from '@courthive/competition-catalogue';
 ```

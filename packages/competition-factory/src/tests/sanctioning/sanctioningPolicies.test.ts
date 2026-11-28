@@ -1,4 +1,4 @@
-import { POLICY_SANCTIONING_ITF, POLICY_SANCTIONING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SANCTIONING_ITF, TEMPLATE_SANCTIONING_USTA } from '@courthive/competition-catalogue';
 import { sanctioningEngine } from '@Assemblies/engines/sanctioning';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -34,34 +34,36 @@ describe('Policy Fixtures — Structure Validation', () => {
   });
 
   it('ITF policy has valid structure with 6 tiers', () => {
-    expect(POLICY_SANCTIONING_ITF.policyName).toContain('ITF');
-    expect(POLICY_SANCTIONING_ITF.governingBodyId).toEqual('itf');
-    expect(POLICY_SANCTIONING_ITF.tiers).toHaveLength(6);
-    expect(POLICY_SANCTIONING_ITF.requireEndorsement).toBe(true);
-    expect(POLICY_SANCTIONING_ITF.requireAntiCorruption).toBe(true);
+    expect(TEMPLATE_SANCTIONING_ITF.policyName).toContain('ITF');
+    expect(TEMPLATE_SANCTIONING_ITF.governingBodyId).toEqual('itf');
+    expect(TEMPLATE_SANCTIONING_ITF.tiers).toHaveLength(6);
+    expect(TEMPLATE_SANCTIONING_ITF.requireEndorsement).toBe(true);
+    expect(TEMPLATE_SANCTIONING_ITF.requireAntiCorruption).toBe(true);
 
     // Tiers should be ordered by level
-    for (let i = 1; i < POLICY_SANCTIONING_ITF.tiers.length; i++) {
-      expect(POLICY_SANCTIONING_ITF.tiers[i].tierLevel).toBeGreaterThan(POLICY_SANCTIONING_ITF.tiers[i - 1].tierLevel);
+    for (let i = 1; i < TEMPLATE_SANCTIONING_ITF.tiers.length; i++) {
+      expect(TEMPLATE_SANCTIONING_ITF.tiers[i].tierLevel).toBeGreaterThan(
+        TEMPLATE_SANCTIONING_ITF.tiers[i - 1].tierLevel,
+      );
     }
 
     // W75 and W100 should have longer lead time
-    const w75 = POLICY_SANCTIONING_ITF.tiers.find((t) => t.tierName === 'W75');
-    const w15 = POLICY_SANCTIONING_ITF.tiers.find((t) => t.tierName === 'M15/W15');
+    const w75 = TEMPLATE_SANCTIONING_ITF.tiers.find((t) => t.tierName === 'W75');
+    const w15 = TEMPLATE_SANCTIONING_ITF.tiers.find((t) => t.tierName === 'M15/W15');
     expect(w75?.minimumLeadWeeks).toEqual(21);
     expect(w15?.minimumLeadWeeks).toEqual(16);
   });
 
   it('USTA policy has valid structure with 7 levels', () => {
-    expect(POLICY_SANCTIONING_USTA.policyName).toContain('USTA');
-    expect(POLICY_SANCTIONING_USTA.governingBodyId).toEqual('usta');
-    expect(POLICY_SANCTIONING_USTA.tiers).toHaveLength(7);
-    expect(POLICY_SANCTIONING_USTA.requireEndorsement).toBe(true);
-    expect(POLICY_SANCTIONING_USTA.requireSafeguarding).toBe(true);
+    expect(TEMPLATE_SANCTIONING_USTA.policyName).toContain('USTA');
+    expect(TEMPLATE_SANCTIONING_USTA.governingBodyId).toEqual('usta');
+    expect(TEMPLATE_SANCTIONING_USTA.tiers).toHaveLength(7);
+    expect(TEMPLATE_SANCTIONING_USTA.requireEndorsement).toBe(true);
+    expect(TEMPLATE_SANCTIONING_USTA.requireSafeguarding).toBe(true);
 
     // Level 1 is highest tier (most restrictive)
-    const level1 = POLICY_SANCTIONING_USTA.tiers.find((t) => t.tierName === 'Level 1');
-    const level7 = POLICY_SANCTIONING_USTA.tiers.find((t) => t.tierName === 'Level 7');
+    const level1 = TEMPLATE_SANCTIONING_USTA.tiers.find((t) => t.tierName === 'Level 1');
+    const level7 = TEMPLATE_SANCTIONING_USTA.tiers.find((t) => t.tierName === 'Level 7');
     expect(level1!.tierLevel).toBeGreaterThan(level7!.tierLevel);
     expect(level1!.minimumParticipants).toEqual(225);
     expect(level7!.tdRefereeSameAllowed).toBe(true);
@@ -121,7 +123,7 @@ describe('Policy Fixtures — Engine Integration', () => {
     });
 
     let result: any = sanctioningEngine.validateProposal({
-      sanctioningPolicy: POLICY_SANCTIONING_ITF,
+      sanctioningPolicy: TEMPLATE_SANCTIONING_ITF,
       sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     expect(result.success).toBe(true);
@@ -142,7 +144,7 @@ describe('Policy Fixtures — Engine Integration', () => {
     });
 
     let result: any = sanctioningEngine.validateProposal({
-      sanctioningPolicy: POLICY_SANCTIONING_ITF,
+      sanctioningPolicy: TEMPLATE_SANCTIONING_ITF,
       sanctioningTier: { system: 'ITF', value: 'W50' },
     });
     const genderIssue = result.errors.find((i: any) => i.field.includes('gender'));
@@ -163,7 +165,7 @@ describe('Policy Fixtures — Engine Integration', () => {
     });
 
     let result: any = sanctioningEngine.getEligibleTiers({
-      sanctioningPolicy: POLICY_SANCTIONING_USTA,
+      sanctioningPolicy: TEMPLATE_SANCTIONING_USTA,
     });
     expect(result.success).toBe(true);
     expect(result.tierEligibilities).toHaveLength(7);
@@ -191,7 +193,7 @@ describe('Policy Fixtures — Engine Integration', () => {
 
     sanctioningEngine.requestEndorsement({ endorserId: 'nat-fed-001', endorserName: 'National Fed' });
     sanctioningEngine.endorseApplication({});
-    sanctioningEngine.submitApplication({ sanctioningPolicy: POLICY_SANCTIONING_ITF });
+    sanctioningEngine.submitApplication({ sanctioningPolicy: TEMPLATE_SANCTIONING_ITF });
 
     let result: any = sanctioningEngine.getSanctioningRecord();
     let record = result.sanctioningRecord;

@@ -1,5 +1,5 @@
 import { validateProposal } from '@Validators/sanctioning/validateProposal';
-import { POLICY_SANCTIONING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SANCTIONING_ITF } from '@courthive/competition-catalogue';
 import { describe, expect, it } from 'vitest';
 
 // Fixtures
@@ -72,7 +72,7 @@ describe('personnelRules enforce minimumCount', () => {
         referee: { personName: 'Bob Referee', certificationLevel: 'White Badge' },
         officials: [{ role: 'CHAIR_UMPIRE', personName: 'Carol Umpire' }],
       },
-      POLICY_SANCTIONING_ITF,
+      TEMPLATE_SANCTIONING_ITF,
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].field).toEqual('personnel.CHAIR_UMPIRE');
@@ -88,7 +88,7 @@ describe('personnelRules enforce minimumCount', () => {
           { role: 'CHAIR_UMPIRE', personName: 'Dave Umpire' },
         ],
       },
-      POLICY_SANCTIONING_ITF,
+      TEMPLATE_SANCTIONING_ITF,
     );
     expect(errors).toHaveLength(0);
   });

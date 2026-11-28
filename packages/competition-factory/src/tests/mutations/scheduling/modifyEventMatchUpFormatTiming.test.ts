@@ -1,5 +1,5 @@
 import { removeEventMatchUpFormatTiming } from '@Mutate/extensions/events/removeEventMatchUpFormatTiming';
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -137,7 +137,7 @@ it('can modify event timing for matchUpFormat codes', () => {
   });
   expect(result.error).toBeUndefined();
 
-  const policyDefinitions = POLICY_SCORING_USTA;
+  const policyDefinitions = TEMPLATE_SCORING_USTA;
   tournamentEngine.attachPolicies({
     allowReplacement: true,
     policyDefinitions,

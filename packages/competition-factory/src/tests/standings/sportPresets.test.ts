@@ -4,9 +4,9 @@ import { getSeasonStandings } from '@Query/season/getSeasonStandings';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { describe, expect, it } from 'vitest';
 import {
-  POLICY_ROUND_ROBIN_TALLY_FIVB,
-  POLICY_ROUND_ROBIN_TALLY_MLS,
-  POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE,
+  TEMPLATE_ROUND_ROBIN_TALLY_FIVB,
+  TEMPLATE_ROUND_ROBIN_TALLY_MLS,
+  TEMPLATE_ROUND_ROBIN_TALLY_PREMIER_LEAGUE,
 } from '@courthive/competition-catalogue';
 
 // constants and types
@@ -23,9 +23,9 @@ const SOCCER = 'HAL2A-S:T45';
 const VOLLEYBALL = 'SET5-S:TB25-F:TB15';
 
 describe.each([
-  ['Premier League', POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE],
-  ['MLS', POLICY_ROUND_ROBIN_TALLY_MLS],
-  ['FIVB', POLICY_ROUND_ROBIN_TALLY_FIVB],
+  ['Premier League', TEMPLATE_ROUND_ROBIN_TALLY_PREMIER_LEAGUE],
+  ['MLS', TEMPLATE_ROUND_ROBIN_TALLY_MLS],
+  ['FIVB', TEMPLATE_ROUND_ROBIN_TALLY_FIVB],
 ])('%s preset', (_name, preset) => {
   it('passes save validation and names its source', () => {
     const tallyPolicy = preset[POLICY_TYPE_ROUND_ROBIN_TALLY];
@@ -109,7 +109,7 @@ describe('Premier League: C.7 shares a place, C.17 separates it only at the end 
     name: 'Season',
     startDate: '2026-01-01',
     status: 'ACTIVE',
-    tallyPolicy: POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE[POLICY_TYPE_ROUND_ROBIN_TALLY],
+    tallyPolicy: TEMPLATE_ROUND_ROBIN_TALLY_PREMIER_LEAGUE[POLICY_TYPE_ROUND_ROBIN_TALLY],
     tiers: [{ tierId: 'T', tier: { system: 'MOCK', value: 'T' } }],
     periods: [
       {
@@ -187,7 +187,7 @@ describe('Premier League: goal difference, then goals scored', () => {
         winningSide: 1,
       },
     ];
-    let result: any = tally(POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE, results);
+    let result: any = tally(TEMPLATE_ROUND_ROBIN_TALLY_PREMIER_LEAGUE, results);
     expect(groupOrder(result, ['X', 'Y', 'Z'])).toEqual(['X', 'Y', 'Z']);
   });
 });
@@ -221,7 +221,7 @@ describe('MLS', () => {
       { sides: ['D', 'E'], sets: oneNil, winningSide: 1 },
       { sides: ['B', 'C'], sets: oneNil, winningSide: 1 },
     ];
-    let result: any = tally(POLICY_ROUND_ROBIN_TALLY_MLS, results);
+    let result: any = tally(TEMPLATE_ROUND_ROBIN_TALLY_MLS, results);
     expect(result.error).toBeUndefined();
     expect(groupOrder(result, ['A', 'B', 'C', 'D', 'E'])).toEqual(['A', 'D', 'E', 'B', 'C']);
   });
@@ -241,7 +241,7 @@ describe('MLS', () => {
       { sides: ['Q', 'R'], sets: oneNil, winningSide: 1 },
       { sides: ['R', 'P'], sets: oneNil, winningSide: 1 },
     ];
-    let result: any = tally(POLICY_ROUND_ROBIN_TALLY_MLS, results, SOCCER, {
+    let result: any = tally(TEMPLATE_ROUND_ROBIN_TALLY_MLS, results, SOCCER, {
       disciplinaryPoints: { P: 6, Q: 5, R: 7 },
     });
     expect(groupOrder(result, ['P', 'Q', 'R'])).toEqual(['Q', 'R', 'P']);
@@ -271,7 +271,7 @@ describe('FIVB', () => {
     }));
   const tallyVolleyball = (results: { sides: [string, string]; sets: [number, number][] }[]) =>
     tallyParticipantResults({
-      policyDefinitions: POLICY_ROUND_ROBIN_TALLY_FIVB,
+      policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_FIVB,
       matchUpFormat: VOLLEYBALL,
       matchUps: volleyballMatchUps(results),
     });

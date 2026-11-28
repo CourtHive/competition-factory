@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_WTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_WTA } from '@courthive/competition-catalogue';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';
@@ -10,7 +10,7 @@ import { MAIN, QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionC
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 
-const policyDefinitions = POLICY_RANKING_POINTS_WTA;
+const policyDefinitions = TEMPLATE_RANKING_POINTS_WTA;
 const policy = policyDefinitions[POLICY_TYPE_RANKING_POINTS];
 
 describe('WTA 2026 Policy Structure', () => {

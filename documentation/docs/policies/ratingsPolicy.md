@@ -32,7 +32,7 @@ For each matchUp, the first found:
 
 1. a `ratingsPolicy` passed to `generateDynamicRatings`;
 2. a ratings policy attached to the matchUp's event, then to the tournament;
-3. the `ratingsPolicy` of the matchUp's `competitionFormat` (its structure's, then its drawDefinition's, then its event's): a policy inline, such as the catalogue package's `ratingsPresets.POLICY_RATINGS_ELO_538_NHL`;
+3. the `ratingsPolicy` of the matchUp's `competitionFormat` (its structure's, then its drawDefinition's, then its event's): a policy inline, such as the catalogue package's `ratingsPresets.TEMPLATE_RATINGS_ELO_538_NHL`;
 4. `POLICY_RATINGS_DEFAULT`.
 
 An inline policy without `expectation`, `k` and `actual` refuses the run with `INVALID_VALUES` before anything is written. So does a preset name: the factory holds no ratings presets, so a string selects nothing. `info` names it and `context` carries it as `ratingsPolicy`, with the `matchUpId`.
@@ -43,7 +43,7 @@ A record that 7.x stored with a preset's full policy (and the name beside it as 
 import { ratingsPresets } from '@courthive/competition-catalogue';
 tournamentEngine.modifyEvent({
   eventId,
-  eventUpdates: { competitionFormat: { sport: 'OTHER', ratingsPolicy: ratingsPresets.POLICY_RATINGS_ELO_538_NHL } },
+  eventUpdates: { competitionFormat: { sport: 'OTHER', ratingsPolicy: ratingsPresets.TEMPLATE_RATINGS_ELO_538_NHL } },
 });
 ```
 
@@ -76,27 +76,27 @@ The factory holds no player's career history, so a `MATCHES_PLAYED` K reads the 
 ## Presets
 
 The factory holds `POLICY_RATINGS_DEFAULT` and `POLICY_RATINGS_COMPETITION_FORM` (in `fixtures.policies`). The others
-are published by the catalogue package, `@courthive/competition-catalogue`, each as a `POLICY_RATINGS_*`
+are published by the catalogue package, `@courthive/competition-catalogue`, as templates, each as a `TEMPLATE_RATINGS_*`
 policyDefinitions export and, as a bare ratings policy, in `ratingsPresets`.
 
 For basketball, American football, ice hockey, football, rugby union and volleyball, with runnable examples, see [Rating Other Sports](./ratingsOtherSports.md).
 
-| Preset                              | Method                                                                                                                                                                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POLICY_RATINGS_DEFAULT`            | J. Huang, "Elo Ratings and the ATP", Berkeley STAT 157, 2014: K = 25 for both players (the paper's flat-K run; its K by event level needs a level to read), actual result by sets played, a walkover rated as a win |
-| `POLICY_RATINGS_ELO_538_TENNIS`     | FiveThirtyEight's tennis Elo as S. Kovalchik describes it ("Searching for the GOAT of tennis win prediction", 2016): K by career matches played, plain win or loss; needs `matchesPlayed`                           |
-| `POLICY_RATINGS_ELO_WELO_TENNIS`    | Angelini, Candila & De Angelis, "Weighted Elo rating for tennis match predictions", 2022: FiveThirtyEight's K, both updates × the winner's game share; needs `matchesPlayed`                                        |
-| `POLICY_RATINGS_ELO_WORLD_FOOTBALL` | World Football Elo Ratings (eloratings.net): K 30 (set the 60 / 50 / 40 / 20 match types in `kByTier`), goal-difference steps, a draw 0.5. Not encoded: the +100 home advantage. No shootout rule is published      |
-| `POLICY_RATINGS_FIFA_SUM`           | FIFA, "Revision of the FIFA / Coca-Cola World Ranking", 2018: spread 600, I in `kByTier` (base 10, a friendly inside the international windows), shootout 0.75 / 0.5, knock-out loss protection, no goal margin     |
-| `POLICY_RATINGS_ELO_538_NHL`        | FiveThirtyEight, "How Our NHL Predictions Work", 2021: K 6, log margin with its autocorrelation term, an overtime or shootout win a full win by one goal. Not encoded: home ice, playoff scaling, season reversion  |
-| `POLICY_RATINGS_COMPETITION_FORM`   | The DrawMatic and Swiss competition policies' dynamic form rating: K 24 for both, spread 400, the share of the points (else games) won. The fallback for a competition policy that names no ratings policy          |
+| Preset                                | Method                                                                                                                                                                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POLICY_RATINGS_DEFAULT`              | J. Huang, "Elo Ratings and the ATP", Berkeley STAT 157, 2014: K = 25 for both players (the paper's flat-K run; its K by event level needs a level to read), actual result by sets played, a walkover rated as a win |
+| `TEMPLATE_RATINGS_ELO_538_TENNIS`     | FiveThirtyEight's tennis Elo as S. Kovalchik describes it ("Searching for the GOAT of tennis win prediction", 2016): K by career matches played, plain win or loss; needs `matchesPlayed`                           |
+| `TEMPLATE_RATINGS_ELO_WELO_TENNIS`    | Angelini, Candila & De Angelis, "Weighted Elo rating for tennis match predictions", 2022: FiveThirtyEight's K, both updates × the winner's game share; needs `matchesPlayed`                                        |
+| `TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL` | World Football Elo Ratings (eloratings.net): K 30 (set the 60 / 50 / 40 / 20 match types in `kByTier`), goal-difference steps, a draw 0.5. Not encoded: the +100 home advantage. No shootout rule is published      |
+| `TEMPLATE_RATINGS_FIFA_SUM`           | FIFA, "Revision of the FIFA / Coca-Cola World Ranking", 2018: spread 600, I in `kByTier` (base 10, a friendly inside the international windows), shootout 0.75 / 0.5, knock-out loss protection, no goal margin     |
+| `TEMPLATE_RATINGS_ELO_538_NHL`        | FiveThirtyEight, "How Our NHL Predictions Work", 2021: K 6, log margin with its autocorrelation term, an overtime or shootout win a full win by one goal. Not encoded: home ice, playoff scaling, season reversion  |
+| `POLICY_RATINGS_COMPETITION_FORM`     | The DrawMatic and Swiss competition policies' dynamic form rating: K 24 for both, spread 400, the share of the points (else games) won. The fallback for a competition policy that names no ratings policy          |
 
 A matchUp has no home or away side, so no preset encodes home advantage.
 
 ```js
 import { scaleEngine, tournamentEngine } from 'tods-competition-factory';
-import { POLICY_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
 
-tournamentEngine.attachPolicies({ policyDefinitions: POLICY_RATINGS_ELO_538_TENNIS });
+tournamentEngine.attachPolicies({ policyDefinitions: TEMPLATE_RATINGS_ELO_538_TENNIS });
 scaleEngine.generateDynamicRatings({ matchUpIds, matchesPlayed: { [participantId]: 42 } });
 ```

@@ -1,4 +1,4 @@
-import { POLICY_ROUND_ROBIN_TALLY_JTT, POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_JTT, TEMPLATE_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { tallyParticipantResults as tallyParticipantResultsV1 } from './v1Reference/tallyParticipantResults';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { buildMatchUps, type CorpusResult } from './standingsFixtures';
@@ -73,7 +73,7 @@ const DIRECTIVE_ATTRIBUTES = [
   'walkovers',
   'retirements',
 ];
-const PRESETS = [POLICY_ROUND_ROBIN_TALLY_DEFAULT, POLICY_ROUND_ROBIN_TALLY_JTT, POLICY_ROUND_ROBIN_TALLY_TOC];
+const PRESETS = [POLICY_ROUND_ROBIN_TALLY_DEFAULT, TEMPLATE_ROUND_ROBIN_TALLY_JTT, TEMPLATE_ROUND_ROBIN_TALLY_TOC];
 
 const flip = (score: string) => score.replaceAll(/(\d+)-(\d+)/g, '$2-$1');
 

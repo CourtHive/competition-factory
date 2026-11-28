@@ -1,4 +1,4 @@
-import { POLICY_RATINGS_ELO_538_NBA, POLICY_RATINGS_ELO_538_NFL } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_538_NBA, TEMPLATE_RATINGS_ELO_538_NFL } from '@courthive/competition-catalogue';
 import { marginMultiplier } from '@Helpers/ratings/ratingsPolicyRules';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -12,8 +12,8 @@ import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 // FiveThirtyEight's NFL and NBA Elo, against the numbers their methodology pages publish
 
-const NFL = POLICY_RATINGS_ELO_538_NFL[POLICY_TYPE_RATINGS];
-const NBA = POLICY_RATINGS_ELO_538_NBA[POLICY_TYPE_RATINGS];
+const NFL = TEMPLATE_RATINGS_ELO_538_NFL[POLICY_TYPE_RATINGS];
+const NBA = TEMPLATE_RATINGS_ELO_538_NBA[POLICY_TYPE_RATINGS];
 
 describe('the published examples', () => {
   it("NBA: the Warriors (218 Elo ahead with home court) win by 4, × ~0.54; the Rockets' upset by 4, × ~0.77", () => {

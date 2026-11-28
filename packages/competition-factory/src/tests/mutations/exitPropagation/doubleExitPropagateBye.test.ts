@@ -25,7 +25,7 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  * not award ranking points for first round walkovers"*. It defaulted to FALSE when this test was
  * written; since 2026-09-29 it defaults to TRUE, which is why `build` below states the setting both
  * ways. `false` is a supported configuration, not a legacy one: USTA requires it
- * (`POLICY_PROGRESSION_USTA`).
+ * (`TEMPLATE_PROGRESSION_USTA`).
  *
  * ## The gap
  *

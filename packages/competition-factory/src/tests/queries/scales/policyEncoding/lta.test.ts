@@ -1,9 +1,9 @@
-import { POLICY_RANKING_POINTS_LTA } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_LTA';
+import { TEMPLATE_RANKING_POINTS_LTA } from '@courthive/competition-catalogue';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 
 describe('LTA Combined Rankings policy encoding', () => {
-  const { policy, valid, errorsText } = validateRankingPolicy(POLICY_RANKING_POINTS_LTA);
+  const { policy, valid, errorsText } = validateRankingPolicy(TEMPLATE_RANKING_POINTS_LTA);
 
   it('validates against rankingPolicy.schema.json', () => {
     if (!valid) console.error(errorsText);

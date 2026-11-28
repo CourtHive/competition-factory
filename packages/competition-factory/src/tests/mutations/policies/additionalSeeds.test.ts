@@ -1,5 +1,5 @@
 import { PROTECTED_RANKING, RATING } from '@Constants/seedingConstants';
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -17,11 +17,11 @@ import {
 // as a policy rule with a ceiling, rather than as `enforcePolicyLimits: false` — which is an
 // operator override, indistinguishable from a mistake, and unbounded.
 //
-// POLICY_SEEDING_ITF yields 8 seeds at drawSize 32 with 24+ participants.
+// TEMPLATE_SEEDING_ITF yields 8 seeds at drawSize 32 with 24+ participants.
 
 const withAllowance = (maxCount: number, bases?: string[]) => ({
   [POLICY_TYPE_SEEDING]: {
-    ...POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING],
+    ...TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING],
     additionalSeeds: { maxCount, ...(bases ? { bases } : {}) },
   },
 });
@@ -43,7 +43,7 @@ function generate({ policyDefinitions, seedsCount, drawSize = 32, participantsCo
 
 it('clamps to the threshold when the policy declares no allowance', () => {
   // The unchanged ITF policy is the control: 10 requested, 8 granted.
-  expect(generate({ policyDefinitions: POLICY_SEEDING_ITF, seedsCount: 10 }).structure.seedLimit).toEqual(8);
+  expect(generate({ policyDefinitions: TEMPLATE_SEEDING_ITF, seedsCount: 10 }).structure.seedLimit).toEqual(8);
 });
 
 it('permits seeds above the threshold, up to the declared allowance', () => {
@@ -59,7 +59,7 @@ it('additional seeds displace nobody', () => {
   // The point of the feature. The eight seeds the draw would have had occupy the same eight
   // drawPositions whether or not two more seeds exist; the extras take positions from the NEXT
   // seed block. Compare position SETS — which position each seed drew within a block is random.
-  const baseline = generate({ policyDefinitions: POLICY_SEEDING_ITF, seedsCount: 8 });
+  const baseline = generate({ policyDefinitions: TEMPLATE_SEEDING_ITF, seedsCount: 8 });
   const extended = generate({ policyDefinitions: withAllowance(2), seedsCount: 10 });
 
   const sorted = (positions: number[]) => [...positions].sort((a, b) => a - b);
@@ -229,7 +229,7 @@ it('restores seedLimit when the seed assignment itself fails', () => {
   // seedLimit must not survive the refusal, or the draw silently claims a seed it does not have.
   const strict = {
     [POLICY_TYPE_SEEDING]: {
-      ...POLICY_SEEDING_ITF[POLICY_TYPE_SEEDING],
+      ...TEMPLATE_SEEDING_ITF[POLICY_TYPE_SEEDING],
       validSeedPositions: { strict: true },
       additionalSeeds: { maxCount: 2 },
     },

@@ -14,8 +14,9 @@ const DEFAULT_FORMAT = 'SET3-S:6/TB7';
  * shows the outcome the dialog reports through `onSubmit`. Nothing here builds or edits that outcome:
  * it is the object a host hands to `tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome })`.
  *
- * The reason codes offered for a status come from the factory's `POLICY_SCORING_USTA` fixture, the same
- * vocabulary a tournament gets by attaching that scoring policy.
+ * The reason codes offered for a status come from the USTA scoring policy, the same vocabulary a tournament gets by
+ * attaching it. The site builds against tods-competition-factory 7.50.0, which still holds it as
+ * `fixtures.policies.POLICY_SCORING_USTA`; from 8.0 it is the catalogue's `TEMPLATE_SCORING_USTA`.
  */
 export default function ScoreEntryDemo() {
   const libraryRef = useRef(null);

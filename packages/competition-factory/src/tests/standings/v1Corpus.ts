@@ -1,5 +1,5 @@
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
-import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { CorpusCase } from './standingsFixtures';
@@ -206,9 +206,9 @@ export const V1_CORPUS: CorpusCase[] = [
     id: 'toc-preset',
     clauses: ['V1-11', 'V1-12'],
     description:
-      'POLICY_ROUND_ROBIN_TALLY_TOC (key matchUpsPct; head-to-head only for two) on a cycle with different ' +
+      'TEMPLATE_ROUND_ROBIN_TALLY_TOC (key matchUpsPct; head-to-head only for two) on a cycle with different ' +
       'margins: games A 30-20 (.6), B 32-16 (.667), C 28-18 (.609) → B, C, A',
-    policyDefinitions: POLICY_ROUND_ROBIN_TALLY_TOC,
+    policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_TOC,
     results: [
       { sides: ['A', 'B'], score: '6-4 6-4', winningSide: 1 },
       { sides: ['B', 'C'], score: '6-2 6-2', winningSide: 1 },

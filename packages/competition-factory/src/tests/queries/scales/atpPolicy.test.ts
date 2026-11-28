@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';
@@ -10,7 +10,7 @@ import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '
 import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 
-const policyDefinitions = POLICY_RANKING_POINTS_ATP;
+const policyDefinitions = TEMPLATE_RANKING_POINTS_ATP;
 const policy = policyDefinitions[POLICY_TYPE_RANKING_POINTS];
 
 describe('ATP 2026 Policy Structure', () => {

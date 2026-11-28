@@ -1,6 +1,6 @@
 import { sumAgainstBound, describeAmount } from '@Helpers/sanctioning/comparePrizeMoney';
 import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
-import { POLICY_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_ATP } from '@courthive/competition-catalogue';
 import { validateProposal } from '@Validators/sanctioning/validateProposal';
 import { expect, it, describe } from 'vitest';
 
@@ -263,7 +263,7 @@ describe('prizeMoneyAwards', () => {
    * fails, the two models have diverged and the join is silently wrong.
    */
   it('uses the same keys the ATP ranking-points policy uses for a Grand Slam', () => {
-    const profiles = POLICY_RANKING_POINTS_ATP[POLICY_TYPE_RANKING_POINTS].awardProfiles;
+    const profiles = TEMPLATE_RANKING_POINTS_ATP[POLICY_TYPE_RANKING_POINTS].awardProfiles;
     const grandSlamSingles: any = profiles.find((p: any) => p.profileName === 'Grand Slam Singles');
     const pointKeys = Object.keys(grandSlamSingles.finishingPositionRanges).map(Number);
     const moneyKeys = toAwards(mainDrawLadder, 128).map((a) => a.finishingPosition);

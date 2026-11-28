@@ -1,4 +1,4 @@
-import { POLICY_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF as SEEDING_ITF_POLICY } from '@courthive/competition-catalogue';
 import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';

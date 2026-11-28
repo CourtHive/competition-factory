@@ -6,7 +6,9 @@ import { mocksEngine } from '../../..';
 import { FULL_TO_EACH, SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 import { SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
+import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { getTournamentPointAwards } from '@Query/scales/getTournamentPointAwards';
 
 const simplePolicy = {
   [POLICY_TYPE_RANKING_POINTS]: {
@@ -218,5 +220,42 @@ describe('getTournamentPointAwards', () => {
 
     expect(personAwards).toHaveLength(0);
     expect(pairAwards.length).toBeGreaterThan(0);
+  });
+});
+
+describe('getTournamentPointAwards: team awards and refusal', () => {
+  it('keeps team awards at the team participant, named from the record', () => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4, eventType: TEAM_EVENT }],
+      completeAllMatchUps: true,
+      setState: true,
+    });
+    const teamIds = new Set(
+      tournamentRecord.participants.filter((p: any) => p.participantType === 'TEAM').map((p: any) => p.participantId),
+    );
+
+    const result = scaleEngine.getTournamentPointAwards({
+      policyDefinitions: {
+        [POLICY_TYPE_RANKING_POINTS]: {
+          awardProfiles: [{ profileName: 'team', finishingPositionRanges: { 1: 200, 2: 120, 4: 60 } }],
+        },
+      },
+    });
+
+    expect(result.success).toEqual(true);
+    const teamAwards = result.pointAwards.filter((award: any) => teamIds.has(award.participantId));
+    expect(teamAwards.length).toBeGreaterThan(0);
+    for (const award of teamAwards) {
+      expect(award.personId).toBeUndefined();
+      expect(typeof award.participantName).toEqual('string');
+      expect(award.tournamentId).toEqual(tournamentRecord.tournamentId);
+      expect(award.endDate).toEqual(tournamentRecord.endDate);
+    }
+  });
+
+  it('refuses without a tournament record', () => {
+    expect(getTournamentPointAwards({ policyDefinitions: simplePolicy } as any)).toEqual({
+      error: MISSING_TOURNAMENT_RECORD,
+    });
   });
 });

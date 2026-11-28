@@ -892,7 +892,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 Policies applied to a specific draw override event and tournament-level policies:
 
 ```js
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
@@ -905,7 +905,7 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
       drawSize: 32,
       drawName: 'Professional Draw',
       // Draw-level override
-      policyDefinitions: POLICY_SEEDING_ITF, // This draw uses ITF seeding
+      policyDefinitions: TEMPLATE_SEEDING_ITF, // This draw uses ITF seeding
     },
     {
       drawSize: 16,

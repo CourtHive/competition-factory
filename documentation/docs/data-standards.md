@@ -48,18 +48,18 @@ World Aquatics and World Rugby in dropping an acronym-based identity.
 
 Nothing in the factory's API changes because of this, deliberately:
 
-|                                                                               |                                                                                                                                                                                                         |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POLICY_SEEDING_ITF`, `POLICY_SANCTIONING_ITF`, `POLICY_RANKING_POINTS_ITF_*` | **unchanged** — renaming an export is a breaking change with no functional benefit                                                                                                                      |
-| `ITF_JUNIOR`, `ITF_WHEELCHAIR`, `ITF_CHAIR` and peers                         | **unchanged** — enum values                                                                                                                                                                             |
-| `policyName: 'ITF SEEDING'`                                                   | **unchanged** — it is _data_. It is written into `appliedPolicies` on tournament records and consumers match attached policies on it, so changing the string would orphan every policy already attached |
-| `governingBodyId: 'itf'`                                                      | **unchanged** — persisted on `SanctioningRecord`                                                                                                                                                        |
-| `ITF W15`, `ITF M25`, `ITF J500`                                              | **unchanged** — tournament level codes in active use                                                                                                                                                    |
+|                                                                                     |                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TEMPLATE_SEEDING_ITF`, `TEMPLATE_SANCTIONING_ITF`, `TEMPLATE_RANKING_POINTS_ITF_*` | **ITF kept** — a template is named for what it models. 8.0.0 changed only the prefix, `POLICY_` to `TEMPLATE_`, so that a catalogue template is not mistaken for an engine default                      |
+| `ITF_JUNIOR`, `ITF_WHEELCHAIR`, `ITF_CHAIR` and peers                               | **unchanged** — enum values                                                                                                                                                                             |
+| `policyName: 'ITF SEEDING'`                                                         | **unchanged** — it is _data_. It is written into `appliedPolicies` on tournament records and consumers match attached policies on it, so changing the string would orphan every policy already attached |
+| `governingBodyId: 'itf'`                                                            | **unchanged** — persisted on `SanctioningRecord`                                                                                                                                                        |
+| `ITF W15`, `ITF M25`, `ITF J500`                                                    | **unchanged** — tournament level codes in active use                                                                                                                                                    |
 
 Two things are easy to conflate and worth stating plainly:
 
 - **"World Tennis Tour" is a circuit, not the organisation.** It predates the rebrand.
-  `POLICY_RANKING_POINTS_ITF_WTT` is about that circuit. "World Tennis" alone is the governing body.
+  `TEMPLATE_RANKING_POINTS_ITF_WTT` is about that circuit. "World Tennis" alone is the governing body.
 - **TODS remains an ITF-published standard.** It was released under that name and is frozen at 0.8;
   the factory cites it as origin rather than as a live authority. See [CODES](#codes) below.
 

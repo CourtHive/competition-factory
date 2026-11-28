@@ -1,4 +1,4 @@
-import { POLICY_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF as SEEDING_ITF } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect } from 'vitest';

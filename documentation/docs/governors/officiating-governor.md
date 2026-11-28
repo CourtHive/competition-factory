@@ -361,7 +361,7 @@ warns on `ORGANISATION`, and leaves `NATIONALITY` **disabled**. Shared nationali
 international events at World Tennis (formerly the ITF) level and meaningless at national ones, where every official necessarily shares
 the players' nationality — enabling it by default would make the check noise at most events.
 
-`POLICY_OFFICIATING_CONFLICT_OF_INTEREST_ITF`, published by the catalogue package (`@courthive/competition-catalogue`), enables all
+`TEMPLATE_OFFICIATING_CONFLICT_OF_INTEREST_ITF`, published by the catalogue package (`@courthive/competition-catalogue`), enables all
 four rules at `BLOCK`.
 
 ---

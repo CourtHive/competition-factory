@@ -9,12 +9,12 @@ The **Seeding Policy** controls how seeds are positioned in draw structures, how
 ## Reaching the built-in policies
 
 The factory's own policies are reached through the `fixtures` namespace. There are **no** root-level
-`POLICY_*` exports, and no default export. Organisation policies, such as `POLICY_SEEDING_ITF`, are published by the
+`POLICY_*` exports, and no default export. Organisation policies, such as `TEMPLATE_SEEDING_ITF`, are published by the
 catalogue package, `@courthive/competition-catalogue`:
 
 ```javascript
 import { drawDefinitionConstants, fixtures, policyConstants, tournamentEngine } from 'tods-competition-factory';
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 
 const { POLICY_SEEDING_DEFAULT, POLICY_SEEDING_BYES } = fixtures.policies;
 const { POLICY_TYPE_SEEDING } = policyConstants;
@@ -27,7 +27,7 @@ const { CLUSTER, SEPARATE, WATERFALL } = drawDefinitionConstants;
 // These do NOT work — each resolves to `undefined`:
 import { POLICY_SEEDING_DEFAULT } from 'tods-competition-factory'; // ✗ no root-level POLICY_* export
 import { fixtures } from 'tods-competition-factory';
-const { POLICY_SEEDING_ITF } = fixtures.policies; // ✗ an organisation policy: import it from the catalogue package
+const { TEMPLATE_SEEDING_ITF } = fixtures.policies; // ✗ an organisation policy: import it from the catalogue package
 import tournamentEngine from 'tods-competition-factory'; // ✗ no default export
 ```
 
@@ -347,11 +347,11 @@ differently (`SEPARATE` vs `CLUSTER`). `validSeedPositions` is consulted only by
 
 There are three states, not two:
 
-| setting            | a seed may be placed                                   | used by                                                                      |
-| ------------------ | ------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `{ ignore: true }` | in **any** draw position                               | `POLICY_SEEDING_DEFAULT` (USTA), `POLICY_SEEDING_ITF`, `POLICY_SEEDING_BYES` |
-| **absent**         | in any position belonging to **some** valid seed block | the default                                                                  |
-| `{ strict: true }` | only in positions of **that seed's own** block         | —                                                                            |
+| setting            | a seed may be placed                                   | used by                                                                        |
+| ------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `{ ignore: true }` | in **any** draw position                               | `POLICY_SEEDING_DEFAULT` (USTA), `TEMPLATE_SEEDING_ITF`, `POLICY_SEEDING_BYES` |
+| **absent**         | in any position belonging to **some** valid seed block | the default                                                                    |
+| `{ strict: true }` | only in positions of **that seed's own** block         | —                                                                              |
 
 The middle row is the one that is easy to get wrong. With the key absent, seed 1 is not pinned to
 position 1 — it may sit anywhere in the union of all seed-block positions. Only `strict: true`
@@ -360,7 +360,7 @@ confines a seed to its own block.
 **Examples:**
 
 ```javascript
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
@@ -460,7 +460,7 @@ const policy = {
 **Notes:**
 
 - Required for tournaments using rating-based seeding where ties occur
-- Both POLICY_SEEDING_ITF and POLICY_SEEDING_DEFAULT set `true`
+- Both TEMPLATE_SEEDING_ITF and POLICY_SEEDING_DEFAULT set `true`
 - **Absent means `true`, not `false`.** The engine reads
   `typeof duplicateSeedNumbers === 'boolean' ? duplicateSeedNumbers : true`, so omitting the key is
   identical to setting it `true`; only an explicit `false` requires unique seed numbers. The
@@ -749,7 +749,7 @@ A 128-draw with 32 seeds becomes one with 32 seeds _plus one_.
 
 ```javascript
 const protectedSeeding = policyComposer(POLICY_TYPE_SEEDING)
-  .extend(POLICY_SEEDING_ITF)
+  .extend(TEMPLATE_SEEDING_ITF)
   .set('policyName', 'PROTECTED RANKING SEEDING')
   .set('additionalSeeds', { maxCount: 4, bases: ['PROTECTED_RANKING'] })
   .build();
@@ -841,7 +841,7 @@ const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 
 ---
 
-### POLICY_SEEDING_ITF
+### TEMPLATE_SEEDING_ITF
 
 **Purpose:** International Tennis Federation standard seeding  
 **Positioning:** CLUSTER (seeds may be adjacent)  
@@ -850,7 +850,7 @@ const { POLICY_SEEDING_DEFAULT } = fixtures.policies;
 **Full Policy:**
 
 ```javascript
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 // Policy structure:
@@ -947,7 +947,7 @@ tournamentEngine.generateDrawDefinition({
 
 ## Composing a variant {#composing-a-variant}
 
-`POLICY_SEEDING_NATIONAL` used to sit here. It was removed in 7.x: it was `POLICY_SEEDING_ITF` with
+`POLICY_SEEDING_NATIONAL` used to sit here. It was removed in 7.x: it was `TEMPLATE_SEEDING_ITF` with
 two keys omitted, one of which (`duplicateSeedNumbers`) does nothing when omitted, so its entire
 distinguishing content was a single absent key. It was never exported, so nothing could import it.
 
@@ -955,14 +955,14 @@ Express that — or any federation's rules — with [`policyComposer`](../engine
 is a root export:
 
 ```javascript
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures, policyComposer, policyConstants } from 'tods-competition-factory';
 
 const { POLICY_TYPE_SEEDING } = policyConstants;
 
 // ITF rules, but a seed may not be hand-placed outside a seed block.
 const positionsEnforced = policyComposer(POLICY_TYPE_SEEDING)
-  .extend(POLICY_SEEDING_ITF)
+  .extend(TEMPLATE_SEEDING_ITF)
   .unset('validSeedPositions')
   .set('policyName', 'ITF SEEDING, POSITIONS ENFORCED')
   .build();
@@ -976,7 +976,7 @@ gets. All three built-ins stop at `drawSize / 4`:
 ```javascript
 // 16 seeds in a 32 draw, where the built-ins allow 8.
 const deepSeeding = policyComposer(POLICY_TYPE_SEEDING)
-  .extend(POLICY_SEEDING_ITF)
+  .extend(TEMPLATE_SEEDING_ITF)
   .set('policyName', 'DEEP SEEDING')
   .set('seedsCountThresholds', [
     { drawSize: 4, minimumParticipantCount: 3, seedsCount: 2 },
@@ -1266,7 +1266,7 @@ const { drawId } = tournamentEngine.generateDrawDefinition({
 ### Scenario 2: ITF World Tour Event
 
 ```javascript
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { drawDefinitionConstants, fixtures } from 'tods-competition-factory';
 const { SINGLE_ELIMINATION } = drawDefinitionConstants;
 
@@ -1289,7 +1289,7 @@ const eventId = tournamentEngine.addEvent({
 const { drawId: qualifyingDrawId } = tournamentEngine.generateDrawDefinition({
   eventId,
   stage: 'QUALIFYING',
-  policyDefinitions: POLICY_SEEDING_ITF,
+  policyDefinitions: TEMPLATE_SEEDING_ITF,
   participants: qualifyingPlayers,
   drawSize: 64,
   seedsCount: 16 // 48 participants >= 48 threshold
@@ -1299,7 +1299,7 @@ const { drawId: qualifyingDrawId } = tournamentEngine.generateDrawDefinition({
 const { drawId: mainDrawId } = tournamentEngine.generateDrawDefinition({
   eventId,
   stage: 'MAIN',
-  policyDefinitions: POLICY_SEEDING_ITF,
+  policyDefinitions: TEMPLATE_SEEDING_ITF,
   participants: mainDrawPlayers,
   drawSize: 128,
   seedsCount: 32 // 98 participants >= 97 threshold (ITF lower than USTA)
@@ -1559,12 +1559,12 @@ Seeding policy works with:
 Example:
 
 ```javascript
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures, policyConstants } from 'tods-competition-factory';
 const { POLICY_TYPE_AVOIDANCE } = policyConstants;
 
 const combinedPolicies = {
-  ...POLICY_SEEDING_ITF,
+  ...TEMPLATE_SEEDING_ITF,
   [POLICY_TYPE_AVOIDANCE]: {
     // Avoidance rules
   },
@@ -1635,7 +1635,7 @@ Seed blocks for a specific structure with the policy applied.
 const { validSeedBlocks } = getValidSeedBlocks({
   structure,
   drawDefinition,
-  appliedPolicies: POLICY_SEEDING_ITF,
+  appliedPolicies: TEMPLATE_SEEDING_ITF,
 });
 ```
 
@@ -1683,7 +1683,7 @@ Primary method for draw generation with seeding policy.
 tournamentEngine.generateDrawDefinition({
   drawSize: 32,
   seedsCount: 8,
-  policyDefinitions: POLICY_SEEDING_ITF,
+  policyDefinitions: TEMPLATE_SEEDING_ITF,
   // ...
 });
 ```
@@ -1850,7 +1850,7 @@ The **Seeding Policy** is one of the most critical tournament policies, controll
 **Four built-in policies provided:**
 
 - **POLICY_SEEDING_DEFAULT** - USTA style (SEPARATE positioning)
-- **POLICY_SEEDING_ITF** - ITF style (CLUSTER positioning)
+- **TEMPLATE_SEEDING_ITF** - ITF style (CLUSTER positioning)
 - **POLICY_SEEDING_BYES** - BYE placement ignores seeding
 
 The policy ensures fair competitive balance by strategically placing top players throughout the draw, preventing early meetings between the strongest competitors.

@@ -4,10 +4,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { expect, it } from 'vitest';
 import {
-  POLICY_RATINGS_ELO_538_NHL,
-  POLICY_RATINGS_ELO_WELO_TENNIS,
-  POLICY_RATINGS_ELO_WORLD_FOOTBALL,
-  POLICY_RATINGS_FIFA_SUM,
+  TEMPLATE_RATINGS_ELO_538_NHL,
+  TEMPLATE_RATINGS_ELO_WELO_TENNIS,
+  TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL,
+  TEMPLATE_RATINGS_FIFA_SUM,
 } from '@courthive/competition-catalogue';
 
 // constants
@@ -26,9 +26,9 @@ const SOCCER = 'HAL2A-S:T45';
 const periods = (...goals: [number, number][]) =>
   goals.map(([side1Score, side2Score], index) => ({ setNumber: index + 1, side1Score, side2Score }));
 
-const WORLD_FOOTBALL = POLICY_RATINGS_ELO_WORLD_FOOTBALL[POLICY_TYPE_RATINGS];
-const NHL = POLICY_RATINGS_ELO_538_NHL[POLICY_TYPE_RATINGS];
-const FIFA = POLICY_RATINGS_FIFA_SUM[POLICY_TYPE_RATINGS];
+const WORLD_FOOTBALL = TEMPLATE_RATINGS_ELO_WORLD_FOOTBALL[POLICY_TYPE_RATINGS];
+const NHL = TEMPLATE_RATINGS_ELO_538_NHL[POLICY_TYPE_RATINGS];
+const FIFA = TEMPLATE_RATINGS_FIFA_SUM[POLICY_TYPE_RATINGS];
 
 function rated({
   drawType = ROUND_ROBIN,
@@ -158,7 +158,7 @@ it("WElo scales both updates by the winner's share of the games", () => {
   const matchUp = tournamentEngine.allTournamentMatchUps().matchUps[0];
   const ids = matchUp.sides.map((side) => side.participantId);
   const result: any = scaleEngine.generateDynamicRatings({
-    ratingsPolicy: POLICY_RATINGS_ELO_WELO_TENNIS[POLICY_TYPE_RATINGS],
+    ratingsPolicy: TEMPLATE_RATINGS_ELO_WELO_TENNIS[POLICY_TYPE_RATINGS],
     matchesPlayed: { [ids[0]]: 95, [ids[1]]: 95 },
     matchUpIds: [matchUp.matchUpId],
   });
@@ -179,6 +179,6 @@ it('counts a match tiebreak as one game to its winner in the game share', () => 
       ],
     },
   };
-  const result = ratedResultOf(matchUp, POLICY_RATINGS_ELO_WELO_TENNIS[POLICY_TYPE_RATINGS]);
+  const result = ratedResultOf(matchUp, TEMPLATE_RATINGS_ELO_WELO_TENNIS[POLICY_TYPE_RATINGS]);
   expect(result?.margin.winnerGameShare).toEqual(11 / 21);
 });

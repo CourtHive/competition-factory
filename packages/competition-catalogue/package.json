@@ -1,12 +1,13 @@
 {
   "name": "@courthive/competition-catalogue",
   "version": "0.0.0",
-  "description": "Named tie formats, organisation policies and competition formats for tods-competition-factory, as plain data",
+  "description": "Starting templates for tods-competition-factory: tie formats, policies and competition formats modelled on published sources. Copy one and own it. CourtHive does not maintain them against their sources, and the bodies they are modelled on have not endorsed them.",
   "keywords": [
     "TODS",
     "CODES",
     "tie format",
     "policies",
+    "templates",
     "competition",
     "tournament"
   ],
@@ -50,13 +51,16 @@
   "scripts": {
     "build": "node build.mjs",
     "check-types": "tsc --noEmit -p tsconfig.json",
-    "verify": "pnpm check-types && pnpm build && node scripts/verify-dist.mjs",
+    "test": "vitest run --coverage",
+    "verify": "pnpm check-types && pnpm test && pnpm build && node scripts/verify-dist.mjs",
     "prepublishOnly": "pnpm verify"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "5.1.1",
     "esbuild": "0.28.2",
     "rollup": "4.68.7",
     "rollup-plugin-dts": "6.5.1",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "5.1.1"
   }
 }

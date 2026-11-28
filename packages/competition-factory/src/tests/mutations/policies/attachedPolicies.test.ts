@@ -1,5 +1,5 @@
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
@@ -15,7 +15,7 @@ it('generateDrawDefinition will find seeding policy attached to tournamentRecord
     tournamentRecord,
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
-    policyDefinitions: { ...ROUND_NAMING_POLICY, ...POLICY_SEEDING_ITF },
+    policyDefinitions: { ...ROUND_NAMING_POLICY, ...TEMPLATE_SEEDING_ITF },
     drawProfiles: [{ drawSize: 32, drawType: AD_HOC }],
   });
 
@@ -41,7 +41,7 @@ it('generateDrawDefinition will find seeding policy attached to event', () => {
   const eventProfiles = [
     {
       eventName: 'Event Flights Test',
-      policyDefinitions: { ...ROUND_NAMING_POLICY, ...POLICY_SEEDING_ITF },
+      policyDefinitions: { ...ROUND_NAMING_POLICY, ...TEMPLATE_SEEDING_ITF },
       category: {
         categoryName: 'U12',
       },
@@ -82,7 +82,7 @@ it('policyDefinitions can be passed directly into generateDrawDefintion from dra
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [
       {
-        policyDefinitions: { ...ROUND_NAMING_POLICY, ...POLICY_SEEDING_ITF },
+        policyDefinitions: { ...ROUND_NAMING_POLICY, ...TEMPLATE_SEEDING_ITF },
         drawSize: 32,
       },
     ],

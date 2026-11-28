@@ -368,7 +368,7 @@ const { matchUps } = tournamentEngine.allTournamentMatchUps();
 **Use**: [Policy Governor](./policy-governor.md)
 
 ```js
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 const { POLICY_SCHEDULING_DEFAULT } = fixtures.policies;
@@ -383,7 +383,7 @@ tournamentEngine.attachPolicies({
 // Attach seeding policy
 tournamentEngine.attachPolicies({
   eventId,
-  policyDefinitions: POLICY_SEEDING_ITF,
+  policyDefinitions: TEMPLATE_SEEDING_ITF,
 });
 ```
 

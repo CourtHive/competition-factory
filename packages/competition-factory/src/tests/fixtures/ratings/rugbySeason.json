@@ -1,6 +1,6 @@
 {
   "sport": "rugby",
-  "policy": "POLICY_RATINGS_WORLD_RUGBY",
+  "policy": "TEMPLATE_RATINGS_WORLD_RUGBY",
   "ratingType": "WORLD_RUGBY",
   "k": 2,
   "start": 30,

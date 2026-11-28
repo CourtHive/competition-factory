@@ -500,7 +500,7 @@ const { buckets, totalPoints } = getParticipantPoints({
 
 The factory ships with complete ranking policies that demonstrate real-world aggregation configurations. These are located in `src/fixtures/policies/`:
 
-### ATP (`POLICY_RANKING_POINTS_ATP.ts`)
+### ATP (`TEMPLATE_RANKING_POINTS_ATP.ts`)
 
 The ATP policy demonstrates:
 
@@ -510,7 +510,7 @@ The ATP policy demonstrates:
 - **No gender/category separation** — ATP is a single-gender tour
 
 ```js
-// from POLICY_RANKING_POINTS_ATP.ts
+// from TEMPLATE_RANKING_POINTS_ATP.ts
 countingBuckets: [
   {
     bucketName: 'Singles',
@@ -531,7 +531,7 @@ countingBuckets: [
 ],
 ```
 
-### WTA (`POLICY_RANKING_POINTS_WTA.ts`)
+### WTA (`TEMPLATE_RANKING_POINTS_WTA.ts`)
 
 The WTA policy demonstrates:
 
@@ -540,7 +540,7 @@ The WTA policy demonstrates:
 - **Tiebreakers** — `highestSingleResult` then `mostCountingResults`
 
 ```js
-// from POLICY_RANKING_POINTS_WTA.ts
+// from TEMPLATE_RANKING_POINTS_WTA.ts
 countingBuckets: [
   {
     bucketName: 'Singles',

@@ -19,15 +19,31 @@ import * as eventConstants from '@Constants/eventConstants';
  * it copies. The copies must equal the factory's constants, so an entry means what the engine reads it as.
  */
 describe('catalogue', () => {
-  it('holds 50 entries, each with a name and a version', () => {
-    expect(catalogue.catalogueEntries).toHaveLength(50);
+  it('holds 57 entries, each with a name, a version and template provenance', () => {
+    expect(catalogue.catalogueEntries).toHaveLength(57);
     for (const entry of catalogue.catalogueEntries) {
       expect(entry.definition).toBeDefined();
       expect(entry.version).toEqual(catalogue.entryVersions[entry.name]);
+      expect(entry.provenance, entry.name).toEqual(catalogue.provenance[entry.name]);
+      expect(entry.provenance, entry.name).toMatchObject({
+        status: 'template',
+        maintainer: 'CourtHive',
+        maintained: false,
+        endorsed: false,
+      });
+      expect(entry.provenance.modelledOn, entry.name).toBeTruthy();
     }
-    expect(Object.keys(catalogue.entryVersions)).toHaveLength(50);
-    expect(Object.keys(catalogue.policies)).toHaveLength(30);
+    expect(Object.keys(catalogue.entryVersions)).toHaveLength(57);
+    expect(Object.keys(catalogue.provenance).sort()).toEqual(Object.keys(catalogue.entryVersions).sort());
+    expect(Object.keys(catalogue.policies)).toHaveLength(37);
     expect(Object.keys(catalogue.ratingsPresets)).toHaveLength(10);
+  });
+
+  it('names its policies TEMPLATE_; POLICY_ is left to the engine defaults', () => {
+    expect(Object.keys(catalogue).filter((name) => name.startsWith('POLICY_'))).toEqual([]);
+    for (const name of [...Object.keys(catalogue.policies), ...Object.keys(catalogue.ratingsPresets)]) {
+      expect(name.startsWith('TEMPLATE_'), name).toEqual(true);
+    }
   });
 
   it('resolveTieFormat returns a fresh copy of a named tie format, without collectionIds', () => {

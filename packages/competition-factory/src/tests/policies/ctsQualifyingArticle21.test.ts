@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_CTS } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_CTS';
+import { TEMPLATE_RANKING_POINTS_CTS } from '@courthive/competition-catalogue';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { tournamentEngine } from '@Engines/syncEngine';
 import scaleEngine from '@Assemblies/engines/scale';
@@ -16,7 +16,7 @@ import { MALE } from '@Constants/genderConstants';
 //  qualifying winners get 42 points, qualifying finalists 29 points,
 //  qualifying semifinalists 20 points."
 //
-// Mapped onto POLICY_RANKING_POINTS_CTS.ts:
+// Mapped onto TEMPLATE_RANKING_POINTS_CTS.ts:
 //   - Q WINNERS (advanced) → MAIN R1-equivalent points via Article 17 (the
 //     MAIN awardProfile handles this naturally). NOT encoded as a Q award.
 //   - Q FINALISTS (lost final-shy round) → MAIN R1 column +1 in Tabulka IV.
@@ -27,7 +27,7 @@ import { MALE } from '@Constants/genderConstants';
 //   accessor = participantWon ? 1 : 2^finishingRound
 // So Q non-advancers' rangeKey == 2 (one round shy), 4 (two rounds shy), etc.
 
-describe('CTS POLICY_RANKING_POINTS_CTS — Article 21 qualifying-stage points', () => {
+describe('CTS TEMPLATE_RANKING_POINTS_CTS — Article 21 qualifying-stage points', () => {
   test('Q non-advancers receive Tabulka IV column-shifted points', () => {
     // 16-MAIN with 8-Q (4 qualifying-positions). Factory auto-generates
     // participants + completes all matchUps. The 4 Q-final losers (the
@@ -71,7 +71,7 @@ describe('CTS POLICY_RANKING_POINTS_CTS — Article 21 qualifying-stage points',
 
     const r = scaleEngine.getTournamentPoints({
       tournamentRecord: tr,
-      policyDefinitions: POLICY_RANKING_POINTS_CTS,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_CTS,
       level: 12,
     });
     expect(r.success).toEqual(true);
@@ -97,7 +97,7 @@ describe('CTS POLICY_RANKING_POINTS_CTS — Article 21 qualifying-stage points',
   });
 
   test('policy exposes one Q awardProfile per (level, Q drawSize) where columns exist', () => {
-    const policyBlock = (POLICY_RANKING_POINTS_CTS as any)[Object.keys(POLICY_RANKING_POINTS_CTS)[0]];
+    const policyBlock = (TEMPLATE_RANKING_POINTS_CTS as any)[Object.keys(TEMPLATE_RANKING_POINTS_CTS)[0]];
     const profiles = policyBlock.awardProfiles ?? [];
     const qProfiles = profiles.filter((p: any) => p.stages?.includes(QUALIFYING));
     // 21 levels × 4 Q drawSizes (4, 8, 16, 32) max — minus low-level drops
@@ -140,7 +140,7 @@ describe('CTS POLICY_RANKING_POINTS_CTS — Article 21 qualifying-stage points',
     const tr = tournamentEngine.getState().tournamentRecords[tournamentRecord.tournamentId];
     const r = scaleEngine.getTournamentPoints({
       tournamentRecord: tr,
-      policyDefinitions: POLICY_RANKING_POINTS_CTS,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_CTS,
       level: 12,
     });
     expect(r.success).toEqual(true);

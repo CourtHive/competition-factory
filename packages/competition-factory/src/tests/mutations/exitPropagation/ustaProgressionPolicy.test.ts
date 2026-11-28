@@ -1,4 +1,4 @@
-import { POLICY_PROGRESSION_USTA, POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_PROGRESSION_USTA, TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -13,7 +13,7 @@ import { DOUBLE_WALKOVER, WALKOVER, BYE } from '@Constants/matchUpStatusConstant
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
 /**
- * `POLICY_PROGRESSION_USTA`: a double walkover produces a WALKOVER in BOTH structures.
+ * `TEMPLATE_PROGRESSION_USTA`: a double walkover produces a WALKOVER in BOTH structures.
  *
  * Confirmed with USTA, 2026-10-22: *"USTA requires a double walkover to produce a walkover in both
  * the same structure and the connected structure where the loser would have appeared. This is because
@@ -22,7 +22,7 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
  * USTA tournament has to say so, and this fixture is how it does.
  *
  * The fixture is read through the catalogue package's public exports, the path a consumer uses, so a
- * fixture that is defined but not exported fails here too. It is attached beside `POLICY_SCORING_USTA`, as a USTA
+ * fixture that is defined but not exported fails here too. It is attached beside `TEMPLATE_SCORING_USTA`, as a USTA
  * tournament carries both: the scoring policy turns exit propagation on, the progression policy decides
  * what a double exit sends to the connected structure.
  *
@@ -37,7 +37,7 @@ function build(drawId: string, progressionPolicy?: any) {
   setSubscriptions({});
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION, drawId }],
-    policyDefinitions: POLICY_SCORING_USTA,
+    policyDefinitions: TEMPLATE_SCORING_USTA,
     nonRandom: 1,
     setState: true,
   });
@@ -68,19 +68,21 @@ function build(drawId: string, progressionPolicy?: any) {
   return { find, inconsistencies };
 }
 
-test('POLICY_PROGRESSION_USTA is exported and states doubleExitPropagateBye: false', () => {
+test('TEMPLATE_PROGRESSION_USTA is exported and states doubleExitPropagateBye: false', () => {
   const { POLICY_PROGRESSION_DEFAULT } = fixtures.policies;
-  expect(POLICY_PROGRESSION_USTA?.[POLICY_TYPE_PROGRESSION]?.doubleExitPropagateBye).toBe(false);
+  expect(TEMPLATE_PROGRESSION_USTA?.[POLICY_TYPE_PROGRESSION]?.doubleExitPropagateBye).toBe(false);
   // the same setting the produced-exit pins run under
-  expect(POLICY_PROGRESSION_USTA[POLICY_TYPE_PROGRESSION]).toMatchObject(PRODUCED_EXIT_POLICY[POLICY_TYPE_PROGRESSION]);
+  expect(TEMPLATE_PROGRESSION_USTA[POLICY_TYPE_PROGRESSION]).toMatchObject(
+    PRODUCED_EXIT_POLICY[POLICY_TYPE_PROGRESSION],
+  );
   // and nothing else differs from the default
-  expect({ ...POLICY_PROGRESSION_USTA[POLICY_TYPE_PROGRESSION], doubleExitPropagateBye: true }).toEqual(
+  expect({ ...TEMPLATE_PROGRESSION_USTA[POLICY_TYPE_PROGRESSION], doubleExitPropagateBye: true }).toEqual(
     POLICY_PROGRESSION_DEFAULT[POLICY_TYPE_PROGRESSION],
   );
 });
 
 test('USTA: a double walkover produces a WALKOVER in the connected structure, not a BYE', () => {
-  const { find, inconsistencies } = build('usta-dwo', POLICY_PROGRESSION_USTA);
+  const { find, inconsistencies } = build('usta-dwo', TEMPLATE_PROGRESSION_USTA);
 
   // the connected structure: the seat the double walkover's loser would have taken is a produced
   // WALKOVER, awarded to the loser of Main|1|2 who arrived opposite it

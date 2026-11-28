@@ -1,4 +1,4 @@
-import { POLICY_ROUND_ROBIN_TALLY_JTT, POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_JTT, TEMPLATE_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
@@ -103,14 +103,14 @@ it('supports multiple policy configurations', () => {
   expect(structureGroupOrder(RR.structures[1])).toEqual([4, 1, 3, 2]);
 
   participantResults = tallyParticipantResults({
-    policyDefinitions: POLICY_ROUND_ROBIN_TALLY_JTT,
+    policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_JTT,
     matchUps: structure2MatchUps,
   }).participantResults;
 
   expect(structureGroupOrder(RR.structures[1])).toEqual([4, 1, 1, 1]);
 
   participantResults = tallyParticipantResults({
-    policyDefinitions: POLICY_ROUND_ROBIN_TALLY_TOC,
+    policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_TOC,
     matchUps: structure2MatchUps,
   }).participantResults;
 

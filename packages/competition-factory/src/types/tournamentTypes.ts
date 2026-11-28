@@ -2567,7 +2567,7 @@ export interface PrizeMoney extends MonetaryAmount {
  * of the range the award covers. In a 128 draw the first-round losers finish 65th-128th, so their
  * rung is `128`; semi-finalists finish 3rd-4th, so theirs is `4`. A Grand Slam singles ladder
  * therefore lands on 1, 2, 4, 8, 16, 32, 64, 128 — the exact keys `grandSlamSingles` already uses
- * in `POLICY_RANKING_POINTS_ATP`, because they describe the same eight outcomes. That is the point
+ * in `TEMPLATE_RANKING_POINTS_ATP`, because they describe the same eight outcomes. That is the point
  * of reusing the key: "R16 was worth 200 points and 480,000" becomes one join rather than two
  * vocabularies.
  *

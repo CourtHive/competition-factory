@@ -1,4 +1,4 @@
-import { POLICY_ROUND_ROBIN_TALLY_JTT, POLICY_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
+import { TEMPLATE_ROUND_ROBIN_TALLY_JTT, TEMPLATE_ROUND_ROBIN_TALLY_TOC } from '@courthive/competition-catalogue';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -27,14 +27,14 @@ it('built-in tally policies exist with correct structure', () => {
   expect(Array.isArray(POLICY_ROUND_ROBIN_TALLY_DEFAULT[POLICY_TYPE_ROUND_ROBIN_TALLY].tallyDirectives)).toBe(true);
 
   // JTT policy
-  expect(POLICY_ROUND_ROBIN_TALLY_JTT).toBeDefined();
-  expect(POLICY_ROUND_ROBIN_TALLY_JTT[POLICY_TYPE_ROUND_ROBIN_TALLY].policyName).toBe('JTT Round Robin Tally');
-  expect(POLICY_ROUND_ROBIN_TALLY_JTT[POLICY_TYPE_ROUND_ROBIN_TALLY].groupOrderKey).toBe('gamesWon');
+  expect(TEMPLATE_ROUND_ROBIN_TALLY_JTT).toBeDefined();
+  expect(TEMPLATE_ROUND_ROBIN_TALLY_JTT[POLICY_TYPE_ROUND_ROBIN_TALLY].policyName).toBe('JTT Round Robin Tally');
+  expect(TEMPLATE_ROUND_ROBIN_TALLY_JTT[POLICY_TYPE_ROUND_ROBIN_TALLY].groupOrderKey).toBe('gamesWon');
 
   // TOC policy
-  expect(POLICY_ROUND_ROBIN_TALLY_TOC).toBeDefined();
-  expect(POLICY_ROUND_ROBIN_TALLY_TOC[POLICY_TYPE_ROUND_ROBIN_TALLY].policyName).toBe('TOC Round Robin Tally');
-  expect(POLICY_ROUND_ROBIN_TALLY_TOC[POLICY_TYPE_ROUND_ROBIN_TALLY].groupOrderKey).toBe('matchUpsPct');
+  expect(TEMPLATE_ROUND_ROBIN_TALLY_TOC).toBeDefined();
+  expect(TEMPLATE_ROUND_ROBIN_TALLY_TOC[POLICY_TYPE_ROUND_ROBIN_TALLY].policyName).toBe('TOC Round Robin Tally');
+  expect(TEMPLATE_ROUND_ROBIN_TALLY_TOC[POLICY_TYPE_ROUND_ROBIN_TALLY].groupOrderKey).toBe('matchUpsPct');
 });
 
 it('precision controls decimal precision of percentage calculations', () => {
@@ -1042,7 +1042,7 @@ it('built-in policies produce deterministic group orders', () => {
 
   // Test JTT policy
   ({ participantResults } = tallyParticipantResults({
-    policyDefinitions: POLICY_ROUND_ROBIN_TALLY_JTT,
+    policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_JTT,
     matchUps,
   }));
 
@@ -1051,7 +1051,7 @@ it('built-in policies produce deterministic group orders', () => {
 
   // Test TOC policy
   ({ participantResults } = tallyParticipantResults({
-    policyDefinitions: POLICY_ROUND_ROBIN_TALLY_TOC,
+    policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_TOC,
     matchUps,
   }));
 

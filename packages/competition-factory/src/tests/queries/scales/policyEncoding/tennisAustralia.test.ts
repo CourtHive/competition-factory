@@ -1,9 +1,9 @@
-import { POLICY_RANKING_POINTS_TENNIS_AUSTRALIA } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_TENNIS_AUSTRALIA';
+import { TEMPLATE_RANKING_POINTS_TENNIS_AUSTRALIA } from '@courthive/competition-catalogue';
 import { validateRankingPolicy } from './validatePolicy';
 import { describe, expect, it } from 'vitest';
 
 describe('Tennis Australia (De Minaur Junior Tour) policy encoding', () => {
-  const { policy, valid, errorsText } = validateRankingPolicy(POLICY_RANKING_POINTS_TENNIS_AUSTRALIA);
+  const { policy, valid, errorsText } = validateRankingPolicy(TEMPLATE_RANKING_POINTS_TENNIS_AUSTRALIA);
 
   it('validates against rankingPolicy.schema.json', () => {
     if (!valid) console.error(errorsText);

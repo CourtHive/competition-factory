@@ -4,8 +4,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 import {
-  POLICY_ROUND_ROBIN_TALLY_FIBA,
-  POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE,
+  TEMPLATE_ROUND_ROBIN_TALLY_FIBA,
+  TEMPLATE_ROUND_ROBIN_TALLY_USTA_LEAGUE,
   resolveTieFormat,
 } from '@courthive/competition-catalogue';
 
@@ -19,8 +19,8 @@ import { TEAM_EVENT } from '@Constants/eventConstants';
  */
 
 describe.each([
-  ['USTA League', POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE],
-  ['FIBA', POLICY_ROUND_ROBIN_TALLY_FIBA],
+  ['USTA League', TEMPLATE_ROUND_ROBIN_TALLY_USTA_LEAGUE],
+  ['FIBA', TEMPLATE_ROUND_ROBIN_TALLY_FIBA],
 ])('%s preset', (_name, preset) => {
   it('passes save validation and names its source', () => {
     const tallyPolicy = preset[POLICY_TYPE_ROUND_ROBIN_TALLY];
@@ -47,7 +47,7 @@ describe('FIBA Appendix D', () => {
 
   it('separates three level teams by points scored in the games between them', () => {
     let result: any = runCase({
-      policyDefinitions: POLICY_ROUND_ROBIN_TALLY_FIBA,
+      policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_FIBA,
       format: 'SET1-S:P32',
       orderField: 'groupOrder',
       description: '',
@@ -72,7 +72,7 @@ describe('USTA League championship', () => {
       drawProfiles: [
         { drawSize: 4, drawType: ROUND_ROBIN, eventType: TEAM_EVENT, tieFormat: resolveTieFormat('DOMINANT_DUO') },
       ],
-      policyDefinitions: POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE,
+      policyDefinitions: TEMPLATE_ROUND_ROBIN_TALLY_USTA_LEAGUE,
       completeAllMatchUps: true,
       setState: false,
     });

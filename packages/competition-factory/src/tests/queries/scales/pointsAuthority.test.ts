@@ -1,4 +1,4 @@
-import { POLICY_RANKING_POINTS_ATP, POLICY_RANKING_POINTS_ITF_WTT } from '@courthive/competition-catalogue';
+import { TEMPLATE_RANKING_POINTS_ATP, TEMPLATE_RANKING_POINTS_ITF_WTT } from '@courthive/competition-catalogue';
 import { POLICY_RANKING_POINTS_BASIC } from '@Fixtures/policies/POLICY_RANKING_POINTS_BASIC';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -24,7 +24,7 @@ describe('pointsAuthority round-trips from policy to award', () => {
     // ATP 250, 32-draw is level 8 — chosen because it's the most common ATP main-tour size.
     const result = tournamentEngine.getEventRankingPoints({
       eventId,
-      policyDefinitions: POLICY_RANKING_POINTS_ATP,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ATP,
       level: 8,
     });
 
@@ -47,7 +47,7 @@ describe('pointsAuthority round-trips from policy to award', () => {
 
     const result = tournamentEngine.getEventRankingPoints({
       eventId,
-      policyDefinitions: POLICY_RANKING_POINTS_ITF_WTT,
+      policyDefinitions: TEMPLATE_RANKING_POINTS_ITF_WTT,
       level: 1,
     });
 

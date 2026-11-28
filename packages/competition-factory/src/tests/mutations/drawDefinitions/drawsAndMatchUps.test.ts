@@ -1,4 +1,4 @@
-import { POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -355,7 +355,7 @@ test('can modify event timing for matchUpFormat codes', () => {
 
   expect(eventMatchUpFormatTiming).toBeDefined();
 
-  const policyDefinitions = POLICY_SCORING_USTA;
+  const policyDefinitions = TEMPLATE_SCORING_USTA;
   tournamentEngine.attachPolicies({
     allowReplacement: true,
     policyDefinitions,

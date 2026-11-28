@@ -691,7 +691,7 @@ no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7).
    or timed with a tiebreak (`-F:T10P/TB1`). Only a format CHANGE is refused, so a stored draw is untouched and a
    score submitted with the matchUp's existing format is accepted; TEAM structures are skipped (the tieFormat
    decides the dual). A policy may still offer such a format for round robin and team play
-   (`POLICY_SCORING_USTA`'s `SET1-S:T20` stays as it is). This is a v1 change (§ 16, 3).
+   (`TEMPLATE_SCORING_USTA`'s `SET1-S:T20` stays as it is). This is a v1 change (§ 16, 3).
 
 v1 opens further segments after a level timed segment and after a level aggregate, and keeps a level
 exactly-N match `IN_PROGRESS`: v1 defects (§ 16, 3, 12, 18). Entries v1 recorded past a level close

@@ -106,7 +106,7 @@ tournamentEngine.attachPolicies({
 - You award ranking points by `matchUpStatus` and a produced walkover must count where a BYE would not
 - Your published results must show that a position was vacated by a walkover rather than by a BYE
 
-### USTA (`POLICY_PROGRESSION_USTA`)
+### USTA (`TEMPLATE_PROGRESSION_USTA`)
 
 USTA requires a double walkover to produce a walkover in both the structure where it happened and the
 connected structure where its loser would have appeared. Ranking points are awarded by
@@ -114,16 +114,16 @@ connected structure where its loser would have appeared. Ranking points are awar
 Tournament Desk (ustatournamentdesk.com, on factory 2.2.32), confirmed with USTA on 2026-10-22.
 
 The factory default changed to `doubleExitPropagateBye: true` on 2026-09-29, so a USTA tournament has
-to state the setting. `POLICY_PROGRESSION_USTA`, published by the catalogue package (`@courthive/competition-catalogue`), is
-`POLICY_PROGRESSION_DEFAULT` with `doubleExitPropagateBye: false` and nothing else changed. Attach it beside `POLICY_SCORING_USTA`,
+to state the setting. `TEMPLATE_PROGRESSION_USTA`, published by the catalogue package (`@courthive/competition-catalogue`), is
+`POLICY_PROGRESSION_DEFAULT` with `doubleExitPropagateBye: false` and nothing else changed. Attach it beside `TEMPLATE_SCORING_USTA`,
 which turns exit propagation on:
 
 ```js
-import { POLICY_PROGRESSION_USTA, POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_PROGRESSION_USTA, TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import { fixtures } from 'tods-competition-factory';
 
 tournamentEngine.attachPolicies({
-  policyDefinitions: { ...POLICY_SCORING_USTA, ...POLICY_PROGRESSION_USTA },
+  policyDefinitions: { ...TEMPLATE_SCORING_USTA, ...TEMPLATE_PROGRESSION_USTA },
 });
 
 // a DOUBLE_WALKOVER in the main structure:
@@ -332,7 +332,7 @@ tournamentEngine.attachPolicies({
 
 ## Notes
 
-- **Default behavior**: All qualifier automation disabled; a double exit propagates a BYE to the connected structure (`POLICY_PROGRESSION_USTA` turns that off)
+- **Default behavior**: All qualifier automation disabled; a double exit propagates a BYE to the connected structure (`TEMPLATE_PROGRESSION_USTA` turns that off)
 - **doubleExitPropagateBye**: Only affects a structure linked to the double exit's own by a loser link (e.g. a consolation, playback or Curtis Consolation). The double exit's own structure produces an exit either way
 - **autoPlaceQualifiers**: Requires qualifier positions defined in main draw
 - **autoReplaceQualifiers**: Only works when `autoPlaceQualifiers: true`

@@ -26,7 +26,7 @@ export const POLICY_SCORING_DEFAULT = {
      * that is silent leaves it to the call, and the engine's own default applies when neither
      * speaks (`undefined` for the two below, `false` for `propagateRetirementAsExit`). The DEFAULT
      * is the policy of "no governing rule", so it says nothing; a provider that forbids a flag sets
-     * it `false` explicitly, as `POLICY_SCORING_USTA` sets its two `true`.
+     * it `false` explicitly, as `TEMPLATE_SCORING_USTA` sets its two `true`.
      */
     allowChangePropagation: undefined, // silent: a call's `allowChangePropagation` decides
     propagateExitStatus: undefined, // silent: a call's `propagateExitStatus` decides
@@ -49,7 +49,7 @@ export const POLICY_SCORING_DEFAULT = {
      * This DOES change behaviour for a caller who passes `propagateExitStatus: true` while using the
      * default policy — previously a retirement carried onward there. That is the point of the
      * ruling, and the one place the engine was deciding a rules question on a federation's behalf.
-     * `POLICY_SCORING_USTA` sets it `true` explicitly so its observable behaviour is unchanged.
+     * `TEMPLATE_SCORING_USTA` sets it `true` explicitly so its observable behaviour is unchanged.
      *
      * It has no effect when `propagateExitStatus` is off, which is the factory default — so a
      * provider that has never enabled exit propagation is unaffected either way.

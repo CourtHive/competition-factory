@@ -5,9 +5,9 @@
  * WHY THIS EXISTS
  *
  * The policy docs contained 68 import statements across 17 files that resolve to `undefined`:
- * `import { POLICY_SEEDING_ITF } from 'tods-competition-factory'` names something that is not a root
+ * `import { TEMPLATE_SEEDING_ITF } from 'tods-competition-factory'` names something that is not a root
  * export. Nothing caught it, for a specific and repeatable reason — `src/tests/documentation/*`
- * import by MODULE PATH (`@Fixtures/policies/POLICY_SEEDING_ITF`), so they stay green while the
+ * import by MODULE PATH (`@Fixtures/policies/TEMPLATE_SEEDING_ITF`), so they stay green while the
  * documented package-level path is broken. A test that never crosses the public surface cannot see a
  * public-surface defect. That is the same shape as the LADDER reachability gap.
  *

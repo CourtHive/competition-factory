@@ -33,7 +33,7 @@ const baseRecord = (overrides: any = {}) =>
     },
     approvedAt: '2026-03-14T10:00:00.000Z',
     reviewer: { reviewerId: 'rev-1', reviewerName: 'Yannick Yoshizawa' },
-    sanctioningPolicy: 'POLICY_SANCTIONING_USTA',
+    sanctioningPolicy: 'TEMPLATE_SANCTIONING_USTA',
     policyVersion: '2026.1',
     proposal: {
       tournamentName: 'Peachtree Summer Open',
@@ -82,7 +82,7 @@ describe('Tournament.sanction on activation', () => {
   it('pins the ruleset edition the decision was made under', () => {
     const { sanction } = (activate(baseRecord()) as any).tournamentRecord;
 
-    expect(sanction.ruleset.rulesetId).toEqual('POLICY_SANCTIONING_USTA');
+    expect(sanction.ruleset.rulesetId).toEqual('TEMPLATE_SANCTIONING_USTA');
     expect(sanction.ruleset.edition).toEqual('2026.1');
   });
 

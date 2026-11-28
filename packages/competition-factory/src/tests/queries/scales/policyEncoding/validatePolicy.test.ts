@@ -7,13 +7,13 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { POLICY_RANKING_POINTS_CTS } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_CTS';
+import { TEMPLATE_RANKING_POINTS_CTS } from '@courthive/competition-catalogue';
 import { dateTimeFormat, validateRankingPolicy } from './validatePolicy';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 
 describe('validateRankingPolicy', () => {
   it('returns valid=true and an empty errorsText for a known-valid federation policy', () => {
-    const result = validateRankingPolicy(POLICY_RANKING_POINTS_CTS);
+    const result = validateRankingPolicy(TEMPLATE_RANKING_POINTS_CTS);
     expect(result.valid).toBe(true);
     expect(result.errors).toBeFalsy();
     expect(result.errorsText).toBe('');

@@ -1,4 +1,4 @@
-import { POLICY_SEEDING_ITF } from '@courthive/competition-catalogue';
+import { TEMPLATE_SEEDING_ITF } from '@courthive/competition-catalogue';
 import { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -138,7 +138,7 @@ it('resolves the attached seeding policy when none is passed', () => {
   // policy it was being asked about — on an engine method whose whole purpose is to answer
   // "how many seeds does THIS draw get".
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ policyDefinitions: POLICY_SEEDING_ITF, participantsCount: 32, seedsCount: 8, drawSize: 32 }],
+    drawProfiles: [{ policyDefinitions: TEMPLATE_SEEDING_ITF, participantsCount: 32, seedsCount: 8, drawSize: 32 }],
   });
   tournamentEngine.setState(tournamentRecord);
   const drawId = tournamentRecord.events?.[0]?.drawDefinitions?.[0]?.drawId;

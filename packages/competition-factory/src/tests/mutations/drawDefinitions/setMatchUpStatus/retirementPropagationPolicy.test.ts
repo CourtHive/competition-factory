@@ -44,7 +44,7 @@ import {
  *
  * That is the BREAKING arm, which is why this ships with migration §11b. It changes behaviour for a
  * caller passing `propagateExitStatus: true` under the default policy, where a retirement used to
- * carry onward. `POLICY_SCORING_USTA` sets it `true` explicitly, so its observable behaviour is
+ * carry onward. `TEMPLATE_SCORING_USTA` sets it `true` explicitly, so its observable behaviour is
  * unchanged, and with `propagateExitStatus` off — the factory default — nothing changes either way.
  *
  * Three cases in `propagateExitStatus.test.ts` were re-authored to ask for

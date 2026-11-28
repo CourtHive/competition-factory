@@ -1,5 +1,5 @@
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
-import { POLICY_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
+import { TEMPLATE_RATINGS_ELO_538_TENNIS } from '@courthive/competition-catalogue';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
@@ -69,7 +69,7 @@ it('rates a walkover as a win under the default, and not at all where the policy
 });
 
 it("reads a ratings policy attached to the tournament, and refuses FiveThirtyEight's K without career counts", () => {
-  const { result } = rate({ scoreString: '6-1 6-2', policyDefinitions: POLICY_RATINGS_ELO_538_TENNIS });
+  const { result } = rate({ scoreString: '6-1 6-2', policyDefinitions: TEMPLATE_RATINGS_ELO_538_TENNIS });
   expect(result.error).toEqual(MISSING_VALUE);
   expect(result.info).toMatch(/matchesPlayed/);
 });
@@ -85,7 +85,7 @@ it("gives each player FiveThirtyEight's K from the career count the caller passe
   const [winnerId, loserId] = matchUp.sides.map((side) => side.participantId);
 
   const result: any = scaleEngine.generateDynamicRatings({
-    ratingsPolicy: POLICY_RATINGS_ELO_538_TENNIS[POLICY_TYPE_RATINGS],
+    ratingsPolicy: TEMPLATE_RATINGS_ELO_538_TENNIS[POLICY_TYPE_RATINGS],
     matchesPlayed: { [winnerId]: 0, [loserId]: 95 },
     matchUpIds: [matchUp.matchUpId],
   });
@@ -98,7 +98,7 @@ it("gives each player FiveThirtyEight's K from the career count the caller passe
 it('takes a policy passed by the caller ahead of one attached to the tournament', () => {
   const { ratings } = rate({
     params: { ratingsPolicy: POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS] },
-    policyDefinitions: POLICY_RATINGS_ELO_538_TENNIS,
+    policyDefinitions: TEMPLATE_RATINGS_ELO_538_TENNIS,
     scoreString: '6-1 6-2',
   });
   expect(ratings).toEqual([1513, 1488]);

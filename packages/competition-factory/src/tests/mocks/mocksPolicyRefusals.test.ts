@@ -1,4 +1,4 @@
-import { POLICY_SANCTIONING_USTA, POLICY_SCORING_USTA } from '@courthive/competition-catalogue';
+import { TEMPLATE_SANCTIONING_USTA, TEMPLATE_SCORING_USTA } from '@courthive/competition-catalogue';
 import POLICY_DRAWS_DEFAULT from '@Fixtures/policies/POLICY_DRAWS_DEFAULT';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -17,24 +17,24 @@ import { WALKOVER } from '@Constants/matchUpStatusConstants';
 describe('mocksEngine policyDefinitions', () => {
   // the type refuses a bare body too; the runtime refusal is for a caller the types do not reach
   it('refuses a bare policy body passed as policyDefinitions', () => {
-    const result: any = mocksEngine.generateTournamentRecord({ policyDefinitions: POLICY_SANCTIONING_USTA as any });
+    const result: any = mocksEngine.generateTournamentRecord({ policyDefinitions: TEMPLATE_SANCTIONING_USTA as any });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.option).toEqual('policyDefinitions.policyName');
   });
 
   it('attaches the same body under its policy type', () => {
     const result: any = mocksEngine.generateTournamentRecord({
-      policyDefinitions: { [POLICY_TYPE_SANCTIONING]: POLICY_SANCTIONING_USTA },
+      policyDefinitions: { [POLICY_TYPE_SANCTIONING]: TEMPLATE_SANCTIONING_USTA },
       setState: true,
     });
     expect(result.success).toEqual(true);
     const { appliedPolicies } = tournamentEngine.getAppliedPolicies();
-    expect(appliedPolicies[POLICY_TYPE_SANCTIONING].policyName).toEqual(POLICY_SANCTIONING_USTA.policyName);
+    expect(appliedPolicies[POLICY_TYPE_SANCTIONING].policyName).toEqual(TEMPLATE_SANCTIONING_USTA.policyName);
   });
 
   it('refuses a policy with no values', () => {
     const result: any = mocksEngine.generateTournamentRecord({
-      policyDefinitions: { ...POLICY_SCORING_USTA, [POLICY_TYPE_DRAWS]: {} },
+      policyDefinitions: { ...TEMPLATE_SCORING_USTA, [POLICY_TYPE_DRAWS]: {} },
     });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.option).toEqual('policyDefinitions.draws');
@@ -48,7 +48,7 @@ describe('mocksEngine policyDefinitions', () => {
 
   it('treats an undefined policy as absent', () => {
     const result: any = mocksEngine.generateTournamentRecord({
-      policyDefinitions: { ...POLICY_SCORING_USTA, [POLICY_TYPE_DRAWS]: undefined },
+      policyDefinitions: { ...TEMPLATE_SCORING_USTA, [POLICY_TYPE_DRAWS]: undefined },
       setState: true,
     });
     expect(result.success).toEqual(true);
@@ -77,7 +77,7 @@ describe('mocksEngine policyDefinitions', () => {
   it('modifyTournamentRecord names the eventProfile, not the position the new event would take', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
     const result: any = mocksEngine.modifyTournamentRecord({
-      eventProfiles: [{ eventName: 'New', policyDefinitions: POLICY_SANCTIONING_USTA as any }],
+      eventProfiles: [{ eventName: 'New', policyDefinitions: TEMPLATE_SANCTIONING_USTA as any }],
       tournamentRecord,
     });
     expect(result.error).toEqual(INVALID_VALUES);

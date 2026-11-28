@@ -1,6 +1,6 @@
 {
   "sport": "nba",
-  "policy": "POLICY_RATINGS_ELO_538_NBA",
+  "policy": "TEMPLATE_RATINGS_ELO_538_NBA",
   "ratingType": "ELO",
   "k": 20,
   "start": 1500,
