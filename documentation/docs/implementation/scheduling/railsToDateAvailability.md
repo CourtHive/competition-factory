@@ -30,7 +30,7 @@ The declaration below is copied from the pinned source revision; referenced type
 export function railsToDateAvailability(
   timelines: VenueDayTimeline[],
   config: BridgeConfig = {},
-): TodsDateAvailability[];
+): VenueDateAvailability[];
 ```
 
 ## Engine effects

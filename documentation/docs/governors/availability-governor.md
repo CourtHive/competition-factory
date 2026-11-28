@@ -143,7 +143,7 @@ The only place availability structures meet CODES (TODS) structures.
 | export                                                        | what it does                                         |
 | ------------------------------------------------------------- | ---------------------------------------------------- |
 | `railsToDateAvailability`                                     | rails to a court's CODES `dateAvailability`          |
-| `todsAvailabilityToBlocks`                                    | CODES availability to blocks                         |
+| `dateAvailabilityToBlocks`                                    | CODES availability to blocks                         |
 | `applyAvailabilityToTournamentRecord`                         | writes derived availability into a tournament record |
 | `buildSchedulingProfileFromUISelections`                      | a scheduling profile from plan selections            |
 | `validateSchedulingProfileFormat`, `validateDateAvailability` | shape checks for both                                |

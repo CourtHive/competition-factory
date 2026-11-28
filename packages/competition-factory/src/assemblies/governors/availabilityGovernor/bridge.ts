@@ -24,7 +24,7 @@ import { resolveVenueId, resolveCourtId } from './railDerivation';
  * TODS dateAvailability structure
  * Represents when courts are available at a venue
  */
-export interface TodsDateAvailability {
+export interface VenueDateAvailability {
   date: string; // 'YYYY-MM-DD'
   startTime: string; // 'HH:MM'
   endTime: string; // 'HH:MM'
@@ -35,19 +35,19 @@ export interface TodsDateAvailability {
 /**
  * TODS venue structure (simplified for our needs)
  */
-export interface TodsVenue {
+export interface AvailabilityVenue {
   venueId?: string;
   venueName?: string;
   defaultStartTime?: string;
   defaultEndTime?: string;
-  courts?: TodsCourt[];
-  dateAvailability?: TodsDateAvailability[];
+  courts?: AvailabilityCourt[];
+  dateAvailability?: VenueDateAvailability[];
 }
 
 /**
  * TODS court structure (simplified)
  */
-export interface TodsCourt {
+export interface AvailabilityCourt {
   courtId?: string;
   courtName?: string;
   surfaceType?: string;
@@ -141,9 +141,9 @@ const DEFAULT_CONFIG: Required<BridgeConfig> = {
 export function railsToDateAvailability(
   timelines: VenueDayTimeline[],
   config: BridgeConfig = {},
-): TodsDateAvailability[] {
+): VenueDateAvailability[] {
   const cfg = { ...DEFAULT_CONFIG, ...config };
-  const result: TodsDateAvailability[] = [];
+  const result: VenueDateAvailability[] = [];
 
   for (const venueTimeline of timelines) {
     const { day, venueId, rails } = venueTimeline;
@@ -226,8 +226,8 @@ function extractTime(isoDateTime: string): string {
  * Aggregate availability entries by venue
  * Combines entries with same date/time/venue into single entry with multiple courtIds
  */
-function aggregateAvailabilityByVenue(entries: TodsDateAvailability[]): TodsDateAvailability[] {
-  const aggregated = new Map<string, TodsDateAvailability>();
+function aggregateAvailabilityByVenue(entries: VenueDateAvailability[]): VenueDateAvailability[] {
+  const aggregated = new Map<string, VenueDateAvailability>();
 
   for (const entry of entries) {
     const key = `${entry.venueId}|${entry.date}|${entry.startTime}|${entry.endTime}`;
@@ -273,7 +273,7 @@ export function applyAvailabilityToTournamentRecord(params: {
   const updated = structuredClone(tournamentRecord);
 
   // Group availability by venueId
-  const byVenue = new Map<string, TodsDateAvailability[]>();
+  const byVenue = new Map<string, VenueDateAvailability[]>();
   for (const entry of dateAvailability) {
     const existing = byVenue.get(entry.venueId) ?? [];
     existing.push(entry);
@@ -350,8 +350,8 @@ export function buildSchedulingProfileFromUISelections(selections: SchedulingSel
  * @param tournamentId - Tournament ID for block references
  * @returns Array of blocks representing availability
  */
-export function todsAvailabilityToBlocks(params: {
-  venue: TodsVenue;
+export function dateAvailabilityToBlocks(params: {
+  venue: AvailabilityVenue;
   tournamentId: string;
   blockType?: BlockType;
 }): Array<{
@@ -466,7 +466,7 @@ export function validateSchedulingProfileFormat(profile: SchedulingProfile): {
 /**
  * Validate TODS dateAvailability entries
  */
-export function validateDateAvailability(entries: TodsDateAvailability[]): {
+export function validateDateAvailability(entries: VenueDateAvailability[]): {
   valid: boolean;
   errors: string[];
 } {
@@ -515,11 +515,11 @@ export function validateDateAvailability(entries: TodsDateAvailability[]): {
  * Merge overlapping availability entries
  * Useful for simplifying availability after bulk operations
  */
-export function mergeOverlappingAvailability(entries: TodsDateAvailability[]): TodsDateAvailability[] {
+export function mergeOverlappingAvailability(entries: VenueDateAvailability[]): VenueDateAvailability[] {
   if (entries.length === 0) return entries;
 
   // Group by venue and date
-  const groups = new Map<string, TodsDateAvailability[]>();
+  const groups = new Map<string, VenueDateAvailability[]>();
   for (const entry of entries) {
     const key = `${entry.venueId}|${entry.date}`;
     const existing = groups.get(key) ?? [];
@@ -527,7 +527,7 @@ export function mergeOverlappingAvailability(entries: TodsDateAvailability[]): T
     groups.set(key, existing);
   }
 
-  const merged: TodsDateAvailability[] = [];
+  const merged: VenueDateAvailability[] = [];
 
   for (const groupEntries of groups.values()) {
     // Sort by start time
@@ -564,7 +564,7 @@ export function mergeOverlappingAvailability(entries: TodsDateAvailability[]): T
 /**
  * Calculate total court-hours from availability entries
  */
-export function calculateCourtHours(entries: TodsDateAvailability[]): number {
+export function calculateCourtHours(entries: VenueDateAvailability[]): number {
   let totalHours = 0;
 
   for (const entry of entries) {

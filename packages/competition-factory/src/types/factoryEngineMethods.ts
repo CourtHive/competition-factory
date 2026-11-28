@@ -171,6 +171,7 @@ export type FactoryEngineMethod =
   | 'createTeamsFromParticipantAttributes'
   | 'createTournamentRecord'
   | 'credits'
+  | 'dateAvailabilityToBlocks'
   | 'declineChallenge'
   | 'declineEndorsement'
   | 'deduceMatchUpFormat'
@@ -762,7 +763,6 @@ export type FactoryEngineMethod =
   | 'tallyParticipantResults'
   | 'tieFormatGenderValidityCheck'
   | 'timeInsideBlock'
-  | 'todsAvailabilityToBlocks'
   | 'toggleParticipantCheckInState'
   | 'toStatObjects'
   | 'tournamentMatchUps'
@@ -986,6 +986,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'createTeamsFromParticipantAttributes',
   'createTournamentRecord',
   'credits',
+  'dateAvailabilityToBlocks',
   'declineChallenge',
   'declineEndorsement',
   'deduceMatchUpFormat',
@@ -1577,7 +1578,6 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'tallyParticipantResults',
   'tieFormatGenderValidityCheck',
   'timeInsideBlock',
-  'todsAvailabilityToBlocks',
   'toggleParticipantCheckInState',
   'toStatObjects',
   'tournamentMatchUps',

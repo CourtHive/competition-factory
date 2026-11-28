@@ -19,7 +19,7 @@ The declaration below is copied from the pinned source revision; referenced type
  * Merge overlapping availability entries
  * Useful for simplifying availability after bulk operations
  */
-export function mergeOverlappingAvailability(entries: TodsDateAvailability[]): TodsDateAvailability[];
+export function mergeOverlappingAvailability(entries: VenueDateAvailability[]): VenueDateAvailability[];
 ```
 
 ## Engine effects

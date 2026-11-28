@@ -18,7 +18,7 @@ The declaration below is copied from the pinned source revision; referenced type
 /**
  * Validate TODS dateAvailability entries
  */
-export function validateDateAvailability(entries: TodsDateAvailability[]): {
+export function validateDateAvailability(entries: VenueDateAvailability[]): {
   valid: boolean;
   errors: string[];
 };
