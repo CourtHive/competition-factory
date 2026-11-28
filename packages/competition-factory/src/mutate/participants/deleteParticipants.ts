@@ -4,7 +4,6 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { removeParticipantIdsFromAllTeams } from './removeIndividualParticipantIds';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { removeEventEntries } from '@Mutate/entries/removeEventEntries';
-import { getParticipants } from '@Query/participants/getParticipants';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addNotice } from '@Global/state/globalState';
 import { intersection } from '@Tools/arrays';
@@ -163,12 +162,11 @@ function isRemoved(participant: Participant, participantIds: string[]): boolean 
 /**
  * The refusals `removeEventEntries` would make for each event, asked of EVERY event before any is written.
  *
- * The draw-assignment check above skips TEAM draws (an individual is "in" a TEAM draw through lineUps,
- * which must not block deleting them), so a TEAM participant positioned in a TEAM draw passed it. The
- * per-event loop then removed its entries from every earlier event before `removeEventEntries` refused
- * at the event holding the position. This asks the same question `removeEventEntries` asks — is any
- * requested participant assigned a drawPosition in any of the event's draws, TEAM draws included — of
- * all events at once.
+ * This is the drawPosition check: is any participant being removed assigned a drawPosition in any structure
+ * of any draw, TEAM draws included, read from the draw definitions' own `positionAssignments`. Asked event by
+ * event inside the loop, the refusal came only at the event holding the position, after the entries of every
+ * earlier event had been removed. An individual is "in" a TEAM draw through lineUps, never a drawPosition, so
+ * TEAM draws refuse only for the TEAM participant they position.
  */
 function entriesRemovalRefusal({
   tournamentRecord,
@@ -197,14 +195,6 @@ export function resolveParticipantRemoval({ tournamentRecord, participantIds }: 
     .map((event) => event?.drawDefinitions?.map(({ drawId }) => drawId))
     .flat(Infinity);
 
-  // cannot use getParticipants() because event objects don't have drawIds array
-  const tournamentParticipants =
-    getParticipants({
-      participantFilters: { participantIds },
-      tournamentRecord,
-      withDraws: true,
-    }).participants ?? [];
-
   const getPlacedPairParticipantIds = (teamDrawIds) => {
     const matchUps =
       allTournamentMatchUps({
@@ -222,16 +212,7 @@ export function resolveParticipantRemoval({ tournamentRecord, participantIds }: 
   // for team draws it is necessary to check matchUps for pair participantIds "discovered" in collectionAssignments
   const placedPairParticipantIds = teamDrawIds?.length ? getPlacedPairParticipantIds(teamDrawIds) : [];
 
-  const participantsInDraws = tournamentParticipants.filter(
-    (participant) =>
-      participant.draws?.filter(
-        (drawInfo) => (!teamDrawIds?.length || !teamDrawIds?.includes(drawInfo.drawId)) && drawInfo.positionAssignments,
-      ).length,
-  );
-
-  if (placedPairParticipantIds?.length || participantsInDraws.length) {
-    return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
-  }
+  if (placedPairParticipantIds?.length) return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
 
   // Deleting an individual deletes every PAIR containing it, so those PAIRs must hold no drawPosition and
   // their entries go with them: the refusal and the entries removal both cover the derived PAIR ids.
@@ -242,7 +223,8 @@ export function resolveParticipantRemoval({ tournamentRecord, participantIds }: 
     .map(({ participantId }) => participantId);
   const entryParticipantIds = [...participantIds, ...derivedPairIds];
 
-  // Every refusal the writes below could make is asked here, before the first write.
+  // Every refusal the writes below could make is asked here, before the first write: a drawPosition held by a
+  // participant being removed, a derived PAIR included, in any draw.
   const refusal = entriesRemovalRefusal({ tournamentRecord, participantIds: entryParticipantIds });
   if (refusal) return refusal;
   if (!(tournamentRecord.participants ?? []).some((participant) => isRemoved(participant, participantIds))) {
