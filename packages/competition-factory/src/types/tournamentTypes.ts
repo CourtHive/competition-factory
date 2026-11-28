@@ -3036,7 +3036,8 @@ export enum AuthorityRoleEnum {
   /** the organisation running the competition, when it is itself part of the chain */
   PROVIDER = 'PROVIDER',
 }
-export type AuthorityRoleUnion = `${AuthorityRoleEnum}`;
+/** An authority's role: one the enum names, or the role a provider's own hierarchy uses. */
+export type AuthorityRoleUnion = `${AuthorityRoleEnum}` | (string & {});
 
 /** How hard a ruleset bites. Three independent policy systems converged on these three values. */
 export enum SanctionEnforcementEnum {

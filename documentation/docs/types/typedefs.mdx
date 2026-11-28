@@ -2671,7 +2671,8 @@ export type RecognitionUnion = `${RecognitionEnum}`;
 #### AuthorityRoleUnion
 
 ```ts
-export type AuthorityRoleUnion = `${AuthorityRoleEnum}`;
+/** An authority's role: one the enum names, or the role a provider's own hierarchy uses. */
+export type AuthorityRoleUnion = `${AuthorityRoleEnum}` | (string & {});
 ```
 
 #### SanctionEnforcementUnion

@@ -465,7 +465,8 @@ export const ComplianceItemTypeEnum = {
   CUSTOM: 'CUSTOM',
 } as const;
 
-export type ComplianceItemType = (typeof ComplianceItemTypeEnum)[keyof typeof ComplianceItemTypeEnum];
+/** A compliance item's type: one the enum names, or a sanctioning body's own. */
+export type ComplianceItemType = (typeof ComplianceItemTypeEnum)[keyof typeof ComplianceItemTypeEnum] | (string & {});
 
 export interface ComplianceItem {
   itemId: string;
