@@ -217,7 +217,7 @@ Each outcome is one unit, applied whole or not at all. Outcomes are processed in
 
 This item-by-item behaviour applies **within this one call**. Inside an `executionQueue`, a refused directive stops the queue instead: see [A call, a bulk call's items, and a queue](/docs/engines/mutation-engines#a-call-a-bulk-calls-items-and-a-queue).
 
-Before this release the call located every outcome first and refused the whole call when one named something not there; an outcome refused by `setMatchUpStatus` stopped the call, with the outcomes before it written.
+Before 7.50.0 the call located every outcome first and refused the whole call when one named something not there; an outcome refused by `setMatchUpStatus` stopped the call, with the outcomes before it written.
 
 ---
 
@@ -1116,6 +1116,20 @@ engine.setMatchUpStatus({
   },
 });
 ```
+
+### A refused result writes nothing
+
+Under the default outcome pipeline (`v2`), `setMatchUpStatus` returns a refusal before it writes anything: the record
+is left exactly as it was and nothing is announced. Since 7.51.0 this includes a result refused over a loser seat
+downstream that cannot be filled, reached directly or through exit propagation: a seat already holding that
+participant (`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`) or one held by a BYE placed there by hand
+(`ERR_OCCUPIED_DRAW_POSITION`). It holds with several tournament records loaded too: every record the call names is
+copied, and the refusal is returned before any of them is written.
+
+Under `v1` or `differential` (see [outcomePipeline](../engines/engine-methods.md#outcomepipeline)), such a refusal is
+met only after the result and the winner's advance are written, and those writes stay. Pass `rollbackOnError: true` to
+have the call take a snapshot and restore it: since 7.51.0 the result then reports `rolledBack: true` only over a
+record that was restored. See [Rollback on Error](../engines/mutation-engines.md#rollback-on-error).
 
 ### What one call sets in motion
 

@@ -2,6 +2,14 @@
 title: Installation
 ---
 
+:::info[7.51.0 is the final release of `tods-competition-factory`]
+
+The factory continues as [`competition-factory`](https://www.npmjs.com/package/competition-factory) from 8.0.0.
+There are no further 7.x releases, and every published 7.x version stays installable. These pages document 7.51.0;
+[Migration to 8.0.0](./migration-8.0.0.md) lists what to change before switching to the new package.
+
+:::
+
 ## Requirements
 
 - **Node.js 24 or later** for server-side and build-time use (`engines.node` is `>=24`).
@@ -63,7 +71,7 @@ Only these entry points are supported. Paths inside `dist/` are not part of the 
 ```js
 import { askEngine } from 'tods-competition-factory';
 
-askEngine.version(); // the installed version, e.g. '7.40.0'
+askEngine.version(); // the installed version, e.g. '7.51.0'
 ```
 
 ## A first tournament

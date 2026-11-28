@@ -563,7 +563,7 @@ if (appliedPolicies?.[SEEDING_POLICY]) {
 ## getDefaultsDrift
 
 Reports whether the engine defaults a tournament record relies on have changed since the record was stamped, and for
-which policy types.
+which policy types. Added in 7.51.0.
 
 A policy that differs from the factory default is pinned onto the record by its full value, so it never changes with
 the factory. A policy type the record does not pin follows the running factory's default, which a later release may

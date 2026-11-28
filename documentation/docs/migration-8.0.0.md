@@ -6,6 +6,11 @@ title: Migration to 8.0.0 (preparation)
 
 This guide describes preparation for the next major release. **The engine routes described below remain available in 7.x.**
 
+7.51.0 is the final release of `tods-competition-factory`. The factory continues as
+[`competition-factory`](https://www.npmjs.com/package/competition-factory) from 8.0.0. Migrate in two steps: first, on
+7.51.0, clear the deprecations this guide lists, where every route 8.0.0 removes still works and says what replaces it;
+then change the package name.
+
 ## Governor and engine route removals
 
 See the [engine API transition manifest and per-method guidance](/docs/implementation/engine-api-transition-8). Selected methods are removal candidates pending symbol-aware consumer review and external-integrator confirmation. Their full references have moved outside the governor API listings, with migration stubs at old anchors.
@@ -388,7 +393,7 @@ instead. Methods that stay are not listed.
 
 Each change below is planned for 8.0.0 and announced in 7.x; one marked _proposed_ still awaits its final decision. The 8.0.0 release notes repeat this list with links.
 
-From the first 7.x release after 7.48.0, the published type declarations carry a `@deprecated` tag, which an editor
+From 7.49.0, the published type declarations carry a `@deprecated` tag, which an editor
 shows as a strike-through with its message, on:
 
 - each method leaving the engines and governors, and each positional governor function moving to `tools` or
@@ -459,7 +464,7 @@ Status reasons travel side-keyed:
 
 ### Packaging
 
-- **The package is `competition-factory`.** `tods-competition-factory` 7.x stays installable and is not maintained after 8.0.0.
+- **The package is `competition-factory`.** 7.51.0 is the final release of `tods-competition-factory`. Every published 7.x version stays installable, and 7.x is not maintained after 8.0.0.
 - **Named catalogue formats and provider policies move to a separate resource package.** Defaults the engine reads stay in the core. The resource package is named in the 8.0.0 release notes.
 
 ### Named catalogue inputs
@@ -484,7 +489,7 @@ A `tieFormatName` that matches a tieFormat the event already holds is a label, n
 warn.
 
 Stored records read unchanged. Every stored TEAM tie carries its full `tieFormat`, and a `tieFormatName` on a stored
-record is a label. From 7.x, a preset name is stored by value when it is attached: a `competitionFormat` (`addEvent`,
+record is a label. From 7.51.0, a preset name is stored by value when it is attached: a `competitionFormat` (`addEvent`,
 `modifyEvent`) and a competition policy's `dynamicFormRating` (`attachPolicies`) store the preset's full policy as
 `ratingsPolicy`, and keep the name beside it as `ratingsPolicyName`, a label. Such a record rates in 8.0.0 without the
 preset. A record stored earlier with only a preset name rates in 7.x; to rate it in 8.0.0, attach the policy object
@@ -493,9 +498,8 @@ preset. A record stored earlier with only a preset name rates in 7.x; to rate it
 
 ### The outcome pipeline selector is removed
 
-v2 is the outcome pipeline's default in 7.x, and `v1` stays selectable as a fallback through 7.x (see
+v2 is the outcome pipeline's default in 7.x, and `v1` stays selectable as a fallback through 7.51.0, the final 7.x release (see
 [the outcome pipeline § 7.1](/docs/concepts/outcome-pipeline#71-two-implementations-s2)). The selector is
 deprecated in 7.x and removed in 8.0.0: `engine.outcomePipeline` and `engine.getOutcomePipeline`, `globalState`'s
-`setOutcomePipeline` and `getOutcomePipeline`, and the `outcomePipeline` option of `tools.getMutationFootprint`. Once
-the `v1` and `differential` modes are removed, still within 7.x, the selector accepts only `'v2'`. Remove the calls;
+`setOutcomePipeline` and `getOutcomePipeline`, and the `outcomePipeline` option of `tools.getMutationFootprint`. Remove the calls;
 nothing replaces them, because there is one pipeline.

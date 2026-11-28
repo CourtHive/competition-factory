@@ -928,7 +928,7 @@ Chooses which implementation of the outcome pipeline (`setMatchUpStatus`) decide
 
 No argument restores `'v2'`. Any other value is refused with `INVALID_VALUES`. Process-wide, like `schemaWriteMode`: a run configuration, not request state. Added in 7.5.0; v2 the default since the flip.
 
-**Deprecated.** The selector is deprecated in 7.x and removed in 8.0.0. Once the `v1` and `differential` modes are removed (still in 7.x), it accepts only `'v2'`.
+**Deprecated.** The selector is deprecated in 7.x and removed in 8.0.0. `'v1'` and `'differential'` stay selectable through 7.51.0, the final 7.x release.
 
 ```js
 engine.outcomePipeline('v1'); // the fallback

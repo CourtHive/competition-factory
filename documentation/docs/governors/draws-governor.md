@@ -229,6 +229,11 @@ engine.assignDrawPositionBye({
 });
 ```
 
+A placement is checked against the record as it stands before anything is written. One refused because its walk meets
+an exit (a loser seat downstream already filled, active, missing, or in a structure the draw does not hold), or because
+the record's matchUpIds repeat, leaves the record untouched and announces nothing (7.51.0). The same holds for
+`assignDrawPosition` with `bye: true`.
+
 ---
 
 ## attachQualifyingStructure
@@ -1324,6 +1329,10 @@ The selection must match exactly one malformed link (`INVALID_VALUES` otherwise)
 ## resetDrawDefinition
 
 Resets a drawDefinition to its initial state. For all matchUps: removes scores, extensions, and notes; restores drawPositions for rounds beyond round 1 (removes progressed positions). For structures that are not QUALIFYING or MAIN stageSequence 1: clears participant positionAssignments (preserving byes) and seed assignments. Optionally removes scheduling timeItems.
+
+A consolation or playoff seat that still holds a BYE placed by hand keeps its `disableLinks` marker through the reset,
+so a seat a director closed stays closed and no loser is sent to it. A seat the reset empties is fed again (7.51.0).
+The same holds for `resetStructure`.
 
 ```js
 engine.resetDrawDefinition({

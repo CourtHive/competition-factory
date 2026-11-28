@@ -16,7 +16,7 @@ const features = [
       </svg>
     ),
     description:
-      'Built on the Tennis Open Data Standards (TODS) co-developed with the International Tennis Federation, extended to support a wide range of competitions via CODES.',
+      'Built on CODES, an open, documented data model for competition records that supports a wide range of sports and formats.',
   },
   {
     title: 'Proven in Production',
