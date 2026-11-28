@@ -33,9 +33,9 @@ export function participantHeadToHead({ mappedMatchUps, participants }: Particip
   const matchUpIds: [string[], string[]] = [[], []];
 
   participants.forEach((participant, i) => {
-    participant.matchUps.forEach((matchUpStub) => {
+    participant.matchUps!.forEach((matchUpStub) => {
       const matchUpId = matchUpStub.matchUpId;
-      const opponentId = matchUpStub.opponentParticipantInfo[0].participantId;
+      const opponentId = matchUpStub.opponentParticipantInfo![0].participantId;
       opponentIds[i].push(opponentId);
       matchUpIds[i].push(matchUpId);
       const { score, winningSide, matchUpFormat, matchUpStatus } = mappedMatchUps[matchUpId];
@@ -86,9 +86,9 @@ export function participantHeadToHead({ mappedMatchUps, participants }: Particip
 
   encounterIds.forEach((matchUpId) => {
     participants.forEach((participant, i) => {
-      const encounter = participant.matchUps.find((matchUpStub) => matchUpStub.matchUpId === matchUpId);
+      const encounter = participant.matchUps!.find((matchUpStub) => matchUpStub.matchUpId === matchUpId);
       const { winningSide, score, matchUpFormat, matchUpStatus } = mappedMatchUps[matchUpId];
-      const wl = encounter.participantWon ? 'won' : 'lost';
+      const wl = encounter!.participantWon ? 'won' : 'lost';
       if (winningSide && score) h2h[i][wl].push({ winningSide, score, matchUpFormat, matchUpStatus });
     });
   });

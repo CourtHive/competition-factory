@@ -135,7 +135,7 @@
     },
     "addGoesTo": {
       "param:index": 1,
-      "ret:index": 10,
+      "ret:index": 9,
       "ret:keys": 1
     },
     "addIndividualParticipantIds": {
@@ -275,30 +275,30 @@
     },
     "allCompetitionMatchUps": {
       "param:index": 1,
-      "ret:index": 7,
+      "ret:index": 6,
       "ret:keys": 1
     },
     "allDrawMatchUps": {
-      "param:index": 4,
+      "param:index": 3,
       "param:keys": 1,
-      "ret:index": 9,
+      "ret:index": 8,
       "ret:keys": 2
     },
     "allEventMatchUps": {
-      "param:index": 4,
+      "param:index": 3,
       "param:keys": 1,
-      "ret:index": 7,
+      "ret:index": 6,
       "ret:keys": 2
     },
     "allocateTeamMatchUpCourts": {
       "param:index": 1,
-      "ret:index": 8,
+      "ret:index": 7,
       "ret:keys": 1
     },
     "allTournamentMatchUps": {
-      "param:index": 4,
+      "param:index": 3,
       "param:keys": 1,
-      "ret:index": 8,
+      "ret:index": 7,
       "ret:keys": 1
     },
     "alternateDrawPositionAssignment": {
@@ -412,7 +412,7 @@
       "ret:index": 1
     },
     "automatedPositioning": {
-      "param:index": 3,
+      "param:index": 2,
       "ret:index": 3,
       "ret:keys": 1
     },
@@ -440,7 +440,7 @@
     "bulkRescheduleMatchUps": {
       "param:index": 1,
       "param:keys": 1,
-      "ret:index": 8,
+      "ret:index": 7,
       "ret:keys": 1
     },
     "bulkScheduleMatchUps": {
@@ -525,7 +525,7 @@
     },
     "competitionScheduleMatchUps": {
       "param:index": 1,
-      "ret:index": 11,
+      "ret:index": 10,
       "ret:keys": 1
     },
     "completeDrawMatchUps": {
@@ -630,9 +630,9 @@
       "ret:index": 1
     },
     "drawMatchUps": {
-      "param:index": 4,
+      "param:index": 3,
       "param:keys": 1,
-      "ret:index": 10,
+      "ret:index": 9,
       "ret:keys": 2
     },
     "drawMatic": {
@@ -665,9 +665,9 @@
       "fallback": 1
     },
     "eventMatchUps": {
-      "param:index": 4,
+      "param:index": 3,
       "param:keys": 1,
-      "ret:index": 11,
+      "ret:index": 10,
       "ret:keys": 1
     },
     "execute": {
@@ -688,12 +688,13 @@
     },
     "filterMatchUps": {
       "param:index": 1,
-      "ret:index": 10,
+      "ret:index": 9,
       "ret:keys": 1
     },
     "filterParticipants": {
-      "param:index": 2,
-      "ret:index": 2
+      "param:index": 1,
+      "ret:index": 4,
+      "ret:keys": 6
     },
     "finalSetGoverns": {
       "param:index": 1
@@ -712,7 +713,7 @@
       "ret:keys": 1
     },
     "findMatchUp": {
-      "ret:index": 7,
+      "ret:index": 6,
       "ret:keys": 4
     },
     "findMatchUpFormatTiming": {
@@ -721,7 +722,7 @@
     },
     "findParticipant": {
       "param:index": 1,
-      "ret:index": 2,
+      "ret:index": 3,
       "ret:keys": 1
     },
     "findPolicy": {
@@ -751,7 +752,7 @@
     },
     "generateBookings": {
       "param:index": 3,
-      "ret:index": 7,
+      "ret:index": 6,
       "ret:keys": 1
     },
     "generateCapacityCurve": {
@@ -781,7 +782,7 @@
     },
     "generateDrawTypeAndModifyDrawDefinition": {
       "param:keys": 2,
-      "ret:index": 9,
+      "ret:index": 8,
       "ret:keys": 4
     },
     "generateEventsFromTieFormat": {
@@ -812,7 +813,7 @@
     },
     "generateParticipants": {
       "param:index": 1,
-      "ret:index": 2
+      "ret:index": 3
     },
     "generateQualifyingStructure": {
       "param:keys": 1
@@ -874,7 +875,7 @@
     },
     "getAllDrawMatchUps": {
       "param:index": 1,
-      "ret:index": 9,
+      "ret:index": 8,
       "ret:keys": 1
     },
     "getAllEventData": {
@@ -945,7 +946,7 @@
     },
     "getCompetitionMatchUps": {
       "param:index": 1,
-      "ret:index": 10,
+      "ret:index": 9,
       "ret:keys": 1
     },
     "getCompetitionParticipants": {
@@ -1049,7 +1050,7 @@
     },
     "getEventData": {
       "param:keys": 2,
-      "ret:index": 3
+      "ret:index": 4
     },
     "getEventDateIssues": {
       "param:index": 1,
@@ -1145,7 +1146,7 @@
     },
     "getMatchUpDependencies": {
       "param:index": 2,
-      "ret:index": 8,
+      "ret:index": 7,
       "ret:keys": 3
     },
     "getMatchUpFormat": {
@@ -1262,7 +1263,7 @@
     },
     "getParticipants": {
       "param:index": 1,
-      "ret:index": 11,
+      "ret:index": 10,
       "ret:keys": 4
     },
     "getParticipantScaleItem": {
@@ -1290,7 +1291,7 @@
     "getParticipantStats": {
       "param:index": 1,
       "param:keys": 1,
-      "ret:index": 10,
+      "ret:index": 9,
       "ret:keys": 1
     },
     "getParticipantTimeItem": {
@@ -1369,7 +1370,7 @@
     "getRounds": {
       "param:index": 3,
       "param:keys": 1,
-      "ret:index": 7,
+      "ret:index": 6,
       "ret:keys": 2
     },
     "getRoundVisibilityState": {
@@ -1491,7 +1492,7 @@
     },
     "getTournamentInfo": {
       "param:keys": 1,
-      "ret:index": 4
+      "ret:index": 3
     },
     "getTournamentPersons": {
       "param:keys": 2
@@ -1500,7 +1501,7 @@
       "ret:keys": 1
     },
     "getTournamentPoints": {
-      "ret:index": 2
+      "ret:index": 3
     },
     "getTournamentPublishStatus": {
       "param:index": 1,
@@ -1750,7 +1751,7 @@
     },
     "orderCollectionDefinitions": {
       "param:keys": 1,
-      "ret:index": 8,
+      "ret:index": 7,
       "ret:keys": 1
     },
     "outcomePipeline": {
@@ -1788,7 +1789,7 @@
     },
     "proAutoSchedule": {
       "param:index": 3,
-      "ret:index": 10,
+      "ret:index": 9,
       "ret:keys": 1
     },
     "processCompetitionMatchUp": {
@@ -1919,7 +1920,7 @@
       "ret:any": 1
     },
     "removeEventEntries": {
-      "param:index": 2
+      "param:index": 1
     },
     "removeEventExtension": {
       "param:index": 1,
@@ -1942,7 +1943,7 @@
     },
     "removeMatchUpCourtAssignment": {
       "param:index": 1,
-      "ret:index": 7,
+      "ret:index": 6,
       "ret:keys": 1
     },
     "removeMatchUpOutcome": {
@@ -2112,7 +2113,7 @@
     },
     "setDelegatedOutcome": {
       "param:index": 1,
-      "ret:index": 7,
+      "ret:index": 6,
       "ret:keys": 1
     },
     "setDrawOtherIds": {
@@ -2335,9 +2336,9 @@
       "ret:any": 1
     },
     "tournamentMatchUps": {
-      "param:index": 4,
+      "param:index": 3,
       "param:keys": 1,
-      "ret:index": 11,
+      "ret:index": 10,
       "ret:keys": 1
     },
     "transitionAssignmentStatus": {
@@ -2696,7 +2697,7 @@
       "ret:any": 1
     },
     "matchUpChronologicalSort": {
-      "param:index": 7,
+      "param:index": 6,
       "param:keys": 1
     },
     "matchUps.analyzeMatchUp": {
@@ -2710,7 +2711,7 @@
     },
     "matchUps.filterMatchUps": {
       "param:index": 1,
-      "ret:index": 10,
+      "ret:index": 9,
       "ret:keys": 1
     },
     "matchUps.getCheckedInParticipantIds": {
@@ -3048,7 +3049,7 @@
       "type:index": 1
     },
     "EventDataResult": {
-      "type:index": 3
+      "type:index": 2
     },
     "ExitProfiles": {
       "type:index": 1
@@ -3068,26 +3069,26 @@
     },
     "GetMatchUpsArgs": {
       "type:any": 1,
-      "type:index": 4
+      "type:index": 3
     },
     "GroupInfo": {
       "type:index": 1
     },
     "GroupsMatchUpsResult": {
-      "type:index": 4
+      "type:index": 3
     },
     "HydratedCourt": {
       "type:index": 1
     },
     "HydratedMatchUp": {
       "type:any": 1,
-      "type:index": 7
+      "type:index": 6
     },
     "HydratedParticipant": {
-      "type:index": 2
+      "type:index": 3
     },
     "HydratedSide": {
-      "type:index": 3
+      "type:index": 2
     },
     "HydratedVenue": {
       "type:index": 1
@@ -3174,7 +3175,7 @@
       "type:any": 2
     },
     "PublicParticipant": {
-      "type:index": 2
+      "type:index": 3
     },
     "RankingListAward": {
       "type:index": 1
@@ -3192,7 +3193,7 @@
       "type:index": 1
     },
     "ReadModelPublicParticipantRow": {
-      "type:index": 2
+      "type:index": 1
     },
     "ReportContext": {
       "type:any": 2,
@@ -3276,7 +3277,7 @@
       "type:index": 1
     },
     "TournamentInfo": {
-      "type:index": 4
+      "type:index": 3
     },
     "TournamentPublishState": {
       "type:index": 1

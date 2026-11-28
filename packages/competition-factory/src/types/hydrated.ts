@@ -1,34 +1,45 @@
 import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { Substitution } from './factoryTypes';
+import type { ScheduleConflict, StructureParticipation, Substitution } from './factoryTypes';
 import {
   Category,
   Court,
   DisciplineUnion,
   DrawTypeUnion,
+  Entry,
   EventTypeUnion,
   GenderUnion,
   IndoorOutdoorUnion,
   MatchUp,
   MatchUpSchedule,
   Participant,
+  Person,
   SeedingBasisUnion,
   SexUnion,
   Side,
+  TimeItem,
   StageTypeUnion,
   TeamPresentation,
   Venue,
 } from './tournamentTypes';
 
+/**
+ * A court as `getVenuesAndCourts` and the scheduling queries return it: a copy of the stored court with its venue's id,
+ * and with its availability narrowed by the venue's (and, with `ignoreDisabled`, by the dates it is disabled).
+ */
 export type HydratedCourt = {
-  [key: string]: any;
   // Always present on a hydrated court: getInContextCourt attaches the parent venue's id, and
   // addCourt writes it on every stored court. Declared as REQUIRED here so callers can pass it
   // where a string is expected; the stored `Court.venueId` stays optional.
   venueId: string;
+
+  /** with `convertExtensions`: a stored extension, copied as an attribute: `_` + the extension's name, holding its value */
+  [extension: `_${string}`]: unknown;
 } & Court;
 
+/** A venue as `getVenuesAndCourts` returns it: a copy of the stored venue */
 export type HydratedVenue = {
-  [key: string]: any;
+  /** with `convertExtensions`: a stored extension, copied as an attribute: `_` + the extension's name, holding its value */
+  [extension: `_${string}`]: unknown;
 } & Venue;
 
 /**
@@ -167,10 +178,217 @@ type HydratedCompetitiveProfile = {
   info?: string;
 };
 
-export type HydratedParticipant = {
+/**
+ * A participant as the queries return it: the stored participant plus the context hydration adds.
+ *
+ * Every key hydration adds is declared. Most are present only when the query was asked for them (`withEvents`,
+ * `withDraws`, `withMatchUps`, `withOpponents`, `withStatistics`, `withScheduleItems`, `withPotentialMatchUps`,
+ * `withScaleValues`, `withSignInStatus`, `withIOC`/`withISO2`, `withIndividualParticipants`, `withGroupings`, …), so
+ * they are optional. A stored extension is copied as an attribute named `_` + its name, holding its value.
+ */
+export interface HydratedParticipant extends Participant {
+  /** the participant's person, with the country attributes `withIOC` / `withISO2` add */
+  person?: HydratedPerson;
+  /** a PAIR, TEAM or GROUP: its individual participants, hydrated */
   individualParticipants?: HydratedParticipant[];
-  [key: string | number]: any;
-} & Participant;
+
+  // an individual's groupings (`withGroupings`, and always in a participantMap)
+  /** the GROUP participants listing this individual */
+  groupParticipantIds?: string[];
+  /** the PAIR participants listing this individual */
+  pairParticipantIds?: string[];
+  /** the TEAM participants listing this individual */
+  teamParticipantIds?: string[];
+  /** the GROUP participants listing this individual */
+  groups?: HydratedParticipantMembership[];
+  /** the TEAM participants listing this individual */
+  teams?: HydratedParticipantMembership[];
+
+  // `withScaleValues`: the latest value of each scale, by event type (see `getScaleValues`)
+  rankings?: HydratedScales;
+  ratings?: HydratedScales;
+  /** with `withSeeding`, also the draws' seedings, each with the drawId as its `scaleName` */
+  seedings?: HydratedSeedings;
+
+  /** `withSignInStatus`: the latest recorded presence state is SIGNED_IN */
+  signedIn?: boolean;
+
+  // a matchUp side's participant: its entry in the draw (else the event)
+  entryStatus?: Entry['entryStatus'];
+  entryStage?: Entry['entryStage'];
+  /** a matchUp side's participant: its position was filled by a lucky loser's advancement */
+  luckyAdvancement?: boolean;
+  /** the participants a position or matchUp action offers: the entry position, by which they are sorted */
+  entryPosition?: number;
+
+  /** `withEvents`: the participant's entry in each event */
+  events?: HydratedParticipantEvent[];
+  /** `withDraws`: the participant's entry in each draw */
+  draws?: HydratedParticipantDraw[];
+  /** `withMatchUps`: the participant's part in each matchUp */
+  matchUps?: HydratedParticipantMatchUp[];
+  /** `withOpponents`: each participant faced, with the matchUp */
+  opponents?: HydratedParticipantOpponent[];
+  /** `withPotentialMatchUps` or `scheduleAnalysis`: the matchUps the participant may yet reach */
+  potentialMatchUps?: HydratedParticipantPotentialMatchUp[];
+  /** `withStatistics`: win ratios, overall and by matchUp type */
+  statistics?: HydratedParticipantStatistic[];
+  /** `withScheduleItems` or `scheduleAnalysis`: the scheduled matchUps, played and potential */
+  scheduleItems?: HydratedScheduleItem[];
+  /** `scheduleAnalysis`: the pairs of the participant's matchUps scheduled too close together */
+  scheduleConflicts?: ScheduleConflict[];
+
+  /** a stored extension, copied as an attribute: `_` + the extension's name, holding its value */
+  [extension: `_${string}`]: unknown;
+}
+
+/** `HydratedParticipant.person`: with `withIOC` / `withISO2`, the codes and name of its nationality's country */
+type HydratedPerson = Person & {
+  iocNationalityCode?: string;
+  iso2NationalityCode?: string;
+  countryName?: string;
+};
+
+/** `HydratedParticipant.groups` / `teams`: a grouping that lists the individual */
+type HydratedParticipantMembership = {
+  participantRoleResponsibilities?: string[];
+  participantOtherName?: string;
+  participantName?: string;
+  participantId: string;
+  teamId?: string;
+};
+
+/** `HydratedParticipant.rankings` / `ratings`: by event type, one entry per scale name, in no set order */
+type HydratedScales = {
+  [eventType in EventTypeUnion]?: HydratedScaleValue[];
+};
+
+/** the latest value of one scale */
+type HydratedScaleValue = {
+  scaleName: string;
+  scaleValue: TimeItem['itemValue'];
+  scaleDate?: string;
+};
+
+/** `HydratedParticipant.seedings`: a scale value, or a draw's seeding (whose `scaleName` is the drawId) */
+type HydratedSeedings = {
+  [eventType in EventTypeUnion]?: (HydratedScaleValue | HydratedDrawSeeding)[];
+};
+
+type HydratedDrawSeeding = {
+  scaleName: string;
+  seedNumber?: number;
+  seedValue?: number | string;
+};
+
+/** an entry's seeding, by stage */
+type HydratedSeedAssignments = {
+  [stage: string]: { seedNumber?: number; seedValue?: number | string };
+};
+
+/** `HydratedParticipant.events` */
+type HydratedParticipantEvent = {
+  eventId: string;
+  entryPosition?: number;
+  entryStatus?: Entry['entryStatus'];
+  entryStage?: Entry['entryStage'];
+  /** the ranking for the event's category, from the participant's scale values */
+  ranking?: HydratedScaleValue['scaleValue'];
+  /** `withSeeding` */
+  seedAssignments?: HydratedSeedAssignments;
+  /** `withSeeding` */
+  seedValue?: number | string;
+  /** a PAIR's individual: the other individual */
+  partnerParticipantIds?: string[];
+
+  /** with `convertExtensions`: an entry extension, copied as an attribute: `_` + its name, holding its value */
+  [extension: `_${string}`]: unknown;
+};
+
+/** `HydratedParticipant.draws` */
+type HydratedParticipantDraw = {
+  drawId: string;
+  eventId: string;
+  entryPosition?: number;
+  entryStatus?: Entry['entryStatus'];
+  entryStage?: Entry['entryStage'];
+  ranking?: HydratedScaleValue['scaleValue'];
+  seedAssignments?: HydratedSeedAssignments;
+  seedValue?: number | string;
+  partnerParticipantIds?: string[];
+  /** `withOpponents`: the opponents faced in this draw */
+  opponents?: HydratedParticipantOpponent[];
+  /** `withRankingProfile`: the best finishing position range reached */
+  finishingPositionRange?: number[];
+  /** `withRankingProfile`: the participation in each structure, in structure order */
+  structureParticipation?: HydratedDrawParticipation[];
+};
+
+/** `HydratedParticipantDraw.structureParticipation` */
+type HydratedDrawParticipation = StructureParticipation & {
+  finishingPositionRange?: number[];
+  finishingMatchUpId?: string;
+  finishingRound?: number;
+  roundNumber?: number;
+  participantWon?: boolean;
+  /** the order among the structures that are not QUALIFYING */
+  participationOrder?: number;
+  flightNumber?: number;
+};
+
+/** `HydratedParticipant.matchUps`; a TEAM matchUp's entry (`withTeamMatchUps`) has no structure, event or draw */
+type HydratedParticipantMatchUp = {
+  matchUpId: string;
+  matchUpType?: MatchUp['matchUpType'];
+  participantWon: boolean;
+  sideNumber?: number;
+  structureId?: string;
+  eventId?: string;
+  drawId?: string;
+  stage?: StageTypeUnion;
+  collectionId?: string;
+  /** `withOpponents`: the opponent and, for a PAIR, its individuals */
+  opponentParticipantInfo?: { participantId: string; participantType?: Participant['participantType'] }[];
+  partnerParticipantIds?: string[];
+};
+
+/** `HydratedParticipant.opponents` */
+type HydratedParticipantOpponent = {
+  participantId: string;
+  matchUpId: string;
+  eventId: string;
+  drawId: string;
+};
+
+/** `HydratedParticipant.potentialMatchUps` */
+type HydratedParticipantPotentialMatchUp = {
+  tournamentId?: string;
+  matchUpId: string;
+  eventId: string;
+  drawId: string;
+};
+
+/** `HydratedParticipant.statistics` */
+type HydratedParticipantStatistic = {
+  statCode: string;
+  numerator: number;
+  denominator: number;
+  statValue: number;
+};
+
+/** `HydratedParticipant.scheduleItems`: a matchUp's schedule, with the matchUp it belongs to */
+type HydratedScheduleItem = MatchUpSchedule & {
+  matchUpId: string;
+  drawId: string;
+  structureId: string;
+  matchUpStatus?: MatchUp['matchUpStatus'];
+  matchUpType?: MatchUp['matchUpType'];
+  roundNumber?: number;
+  roundPosition?: number;
+  checkScoreHasValue: boolean;
+  /** a matchUp the participant may yet reach */
+  potential?: boolean;
+};
 
 export interface HydratedSide extends Side {
   participant?: HydratedParticipant;

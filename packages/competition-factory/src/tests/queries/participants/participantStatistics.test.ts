@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 
 // constants and types
 import { WIN_RATIO } from '@Constants/statsConstants';
-import { HydratedParticipant } from '@Types/hydrated';
+import { MappedParticipant } from '@Types/factoryTypes';
 
 const scenarios = [{ drawProfiles: [{ drawSize: 8 }], matchUpsCount: 7 }];
 
@@ -32,7 +32,7 @@ test.each(scenarios)('it can calculate new ratings given matchUp results', ({ dr
 
   expect(participants.every(({ statistics }) => statistics.length)).toEqual(true);
 
-  const hydratedParticipants: HydratedParticipant[] = Object.values(participantMap);
+  const hydratedParticipants: MappedParticipant[] = Object.values(participantMap);
 
   expect(
     hydratedParticipants.every(({ structureParticipation }) => {
