@@ -871,7 +871,9 @@ export function unfillableByeChain(
   if (unfillable.seat.opponentBye && !standing) return undefined;
   if (unfillable.matchUpStatus !== (standing ? BYE : TO_BE_PLAYED) || unfillable.hasResult) return undefined;
   const record = indexed(view, unfillable.matchUpId);
-  if (!record || holdsReasons(record) || Object.keys(record.sideExitProvenance ?? {}).length) return undefined;
+  // No reason check: a reason the matchUp holds changes nothing the BYE and its chain write, and the BYE drops it, as
+  // any write does on a status that takes no reason
+  if (!record || Object.keys(record.sideExitProvenance ?? {}).length) return undefined;
   const { structureId, drawPosition, matchUpId } = unfillable;
   const first = { structureId, drawPosition, matchUpId };
   return byeChain(view, first, from.levels, false, standing);
