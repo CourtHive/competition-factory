@@ -173,11 +173,11 @@ See [Subscriptions](/docs/engines/subscriptions) for complete notification docum
 
 Three different units can succeed or fail, and they behave differently. Keep them apart:
 
-| Unit                                                                                      | When part of it is refused                                                               | Without rollback                                                                                                       | With `rollbackOnError: true`                            |
-| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| **One call** (any mutation)                                                               | The call writes nothing                                                                  | Nothing to undo: a refused call leaves the record unchanged                                                            | Same; nothing to undo                                   |
-| **A bulk call's items** (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`) | The refused **item** writes nothing; the items before **and after** it are still applied | The applied items stay, and the call returns its first refusal with `committed: true` and one `results` entry per item | Every item is undone; nothing is kept or announced      |
-| **A queue's directives** (`executionQueue`)                                               | The queue **stops** at the refused directive; later directives never run                 | The directives before it stay and are announced; the refused one wrote nothing                                         | Every directive is undone; nothing is kept or announced |
+| Unit                                                                                                                                       | When part of it is refused                                                               | Without rollback                                                                                                       | With `rollbackOnError: true`                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **One call** (any mutation)                                                                                                                | The call writes nothing                                                                  | Nothing to undo: a refused call leaves the record unchanged                                                            | Same; nothing to undo                                   |
+| **A bulk call's items** (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`; the bulk schedulers stop at the refused matchUp) | The refused **item** writes nothing; the items before **and after** it are still applied | The applied items stay, and the call returns its first refusal with `committed: true` and one `results` entry per item | Every item is undone; nothing is kept or announced      |
+| **A queue's directives** (`executionQueue`)                                                                                                | The queue **stops** at the refused directive; later directives never run                 | The directives before it stay and are announced; the refused one wrote nothing                                         | Every directive is undone; nothing is kept or announced |
 
 "Skip the refused one and carry on" happens **only inside a single bulk call**, among its own items. A queue never
 skips a refused directive and carries on.
@@ -258,7 +258,8 @@ selection, the buffered notices and the modification flag, and returns the same 
 A snapshot is still taken for:
 
 - a queue of two or more directives;
-- a bulk method (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`), which commits item by item;
+- a bulk method (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`, `bulkScheduleTournamentMatchUps`,
+  `bulkScheduleMatchUps`), which commits item by item;
 - a BYE placement (`assignDrawPositionBye`, and `assignDrawPosition` with `bye: true`);
 - a custom method, whether imported with `importMethods` or passed to `execute`: the factory cannot know whether it
   writes before refusing.
