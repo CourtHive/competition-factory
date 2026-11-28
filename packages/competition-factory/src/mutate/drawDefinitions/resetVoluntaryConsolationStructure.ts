@@ -5,20 +5,11 @@ import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotificati
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import type { DrawDefinition, Event, ItemStructure, Tournament } from '@Types/tournamentTypes';
 
-type ResetVoluntaryConsolationStructureArgs = {
-  tournamentRecord?: Tournament;
-  drawDefinition: DrawDefinition;
-  resetEntries?: boolean;
-  event?: Event;
-};
-// prettier-ignore
-export function resetVoluntaryConsolationStructure({ tournamentRecord, drawDefinition, resetEntries, event }: ResetVoluntaryConsolationStructureArgs) {
+export function resetVoluntaryConsolationStructure({ tournamentRecord, drawDefinition, resetEntries, event }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  const structure = drawDefinition.structures?.find((structure) => structure.stage === VOLUNTARY_CONSOLATION) as
-    ItemStructure | undefined;
+  const structure = drawDefinition.structures?.find((structure) => structure.stage === VOLUNTARY_CONSOLATION);
 
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
@@ -36,8 +27,8 @@ export function resetVoluntaryConsolationStructure({ tournamentRecord, drawDefin
   });
 
   if (resetEntries) {
-    const before = drawDefinition.entries!.length;
-    drawDefinition.entries = drawDefinition.entries!.filter((entry) => entry.entryStage !== VOLUNTARY_CONSOLATION);
+    const before = drawDefinition.entries.length;
+    drawDefinition.entries = drawDefinition.entries.filter((entry) => entry.entryStage !== VOLUNTARY_CONSOLATION);
     if (drawDefinition.entries.length !== before) {
       modifyDrawEntriesNotice({
         tournamentId: tournamentRecord?.tournamentId,

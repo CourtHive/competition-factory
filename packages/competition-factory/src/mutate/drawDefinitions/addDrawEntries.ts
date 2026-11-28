@@ -117,7 +117,7 @@ export function addDrawEntries({
     const targetStage = entryStage ?? MAIN;
     const sameStageEntryIds = (drawDefinition.entries ?? [])
       .filter((entry) => (entry.entryStage ?? MAIN) === targetStage)
-      .filter((entry) => DIRECT_ENTRY_STATUSES.includes(entry.entryStatus!))
+      .filter((entry) => (DIRECT_ENTRY_STATUSES as (string | undefined)[]).includes(entry.entryStatus))
       .map(getParticipantId);
 
     const conflictingPairs = getSharedIndividualConflicts({

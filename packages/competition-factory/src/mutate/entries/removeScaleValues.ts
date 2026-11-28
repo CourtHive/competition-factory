@@ -50,7 +50,7 @@ export function removeScaleValues({
   const stageEntries = (entries ?? []).filter(
     (entry) =>
       (!stage || !entry.entryStage || entry.entryStage === stage) &&
-      (!entryStatuses || entryStatuses.includes(entry.entryStatus!)),
+      (!entryStatuses || (entryStatuses as (string | undefined)[]).includes(entry.entryStatus)),
   );
 
   const participantIds = stageEntries.map(getParticipantId);
