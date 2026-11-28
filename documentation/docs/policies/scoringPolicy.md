@@ -36,7 +36,7 @@ The **Scoring Policy** (`POLICY_TYPE_SCORING`) controls scoring requirements, fo
 
     // Scoring requirements
     requireParticipantsForScoring?: boolean;           // Both participants must be present (default: false)
-    requireAllPositionsAssigned?: boolean | undefined; // All positions assigned before scoring (default: undefined = true)
+    requireAllPositionsAssigned?: boolean;             // Every structure fully positioned before scoring (default: not required)
 
     // Change propagation: a value set here (true or false) overrides the setMatchUpStatus call;
     // left out, the call decides (see Exit-Status Propagation below)
@@ -98,14 +98,14 @@ const { POLICY_SCORING_DEFAULT } = fixtures.policies;
 //       structures: false                             // Cannot delete structures with scores
 //     },
 //     requireParticipantsForScoring: false,           // Participants not required
-//     requireAllPositionsAssigned: undefined,         // Defaults to true for MAIN stage
+//     requireAllPositionsAssigned: undefined,         // Not required
 //     allowChangePropagation: undefined,              // Silent: the setMatchUpStatus call decides
 //     propagateExitStatus: undefined,                 // Silent: the setMatchUpStatus call decides
 //     propagateRetirementAsExit: undefined,           // Silent: the call decides; absent both, false
 //     stage: {
 //       MAIN: {
 //         stageSequence: {
-//           1: { requireAllPositionsAssigned: true }  // Main draw must be complete
+//           1: { requireAllPositionsAssigned: false } // MAIN may be scored while still being positioned
 //         }
 //       }
 //     },
@@ -698,8 +698,7 @@ const processCodePolicy = {
 
 ## Notes
 
-- **requireAllPositionsAssigned**: `undefined` defaults to `true` for MAIN stage
-- **Stage-specific overrides**: More specific than global setting
+- **requireAllPositionsAssigned**: not required unless a policy sets it `true`, at the top of the policy (every structure) or under `stage[stage].stageSequence[n]` (that stage sequence). A structure is fully positioned when every drawPosition holds a participant, a BYE or a qualifier. Either setting `true` requires it; a stage-level `false` does not lift a top-level `true`. The default does not require it; `POLICY_SCORING_USTA` requires it for MAIN stage sequence 1
 - **Format restrictions**: Empty array = no restrictions (all formats allowed)
 - **Status codes**: Used for detailed match outcome tracking
 - **Deletion protection**: Prevents accidental data loss
