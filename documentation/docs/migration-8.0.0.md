@@ -636,6 +636,12 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
   builders' `DrawOpts.drawType` is a `DrawTypeUnion`. Correct the params a directive passes, and narrow payload fields
   before reading them (#6705).
 
+- **A result's `info` and `context` are `unknown`.** `ResultType.info` was `any` and `ResultType.context`
+  `{ [key: string]: any }`; they are now `unknown` and `Record<string, unknown>`, and the results that declared
+  `info?: string` (`modifyCourtAvailability`, `addVenue`, the matchUp format and playoff-group validators, among
+  others) declare `info?: unknown`. What a method puts there is its own: a message, a name, or an object. Check the
+  value before using it (`typeof result.info === 'string'`) or assert the shape you know (#6693).
+
 ### Packaging
 
 - **The package is `competition-factory`.** `tods-competition-factory` 7.x stays installable and is not maintained after 8.0.0.

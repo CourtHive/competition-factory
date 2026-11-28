@@ -64,7 +64,7 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
   clearedPrimaryVenues?: Venue[];
   error?: ErrorType;
   venue?: Venue;
-  info?: string;
+  info?: unknown;
 } {
   const paramsCheck = requireParams({ tournamentRecord }, [TOURNAMENT_RECORD]);
   if (paramsCheck.error) return paramsCheck;

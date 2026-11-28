@@ -39,7 +39,7 @@ type RoundsDetailsResult = {
   error?: ErrorType;
   success?: boolean;
   minutesMap?: any;
-  info?: string;
+  info?: unknown;
 };
 export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs): RoundsDetailsResult {
   const paramsCheck = checkRequiredParameters(params, [

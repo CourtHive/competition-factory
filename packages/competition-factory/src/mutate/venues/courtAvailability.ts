@@ -25,14 +25,14 @@ type ModifyCourtAvailabilityArgs = {
   courtId: string;
   force?: boolean;
 };
-type CourtAvailabilityRefusal = { error?: ErrorType; info?: string; matchUpIds?: string[] };
+type CourtAvailabilityRefusal = { error?: ErrorType; info?: unknown; matchUpIds?: string[] };
 
 export function modifyCourtAvailability(params: ModifyCourtAvailabilityArgs): {
   error?: ErrorType;
   success?: boolean;
   totalMergeCount?: number;
   matchUpIds?: string[];
-  info?: string;
+  info?: unknown;
 } {
   const plan = planCourtAvailability(params);
   if (!('commit' in plan)) return plan;

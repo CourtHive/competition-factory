@@ -36,24 +36,21 @@
     "abandonTournamentMatchUps": {
       "param:index": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "acceptChallenge": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "activateFromSanctioning": {
       "ret:index": 1
     },
     "addAdditionalSeed": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addAdHocMatchUps": {
       "param:keys": 4,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addCertification": {
       "param:keys": 1,
@@ -65,12 +62,11 @@
     },
     "addCollectionDefinition": {
       "ret:index": 1,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "addCollectionGroup": {
       "param:keys": 10,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addConflictDeclaration": {
       "param:keys": 1,
@@ -82,25 +78,22 @@
     },
     "addCourtGridBooking": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "addCourts": {
       "param:index": 1,
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addDrawDefinition": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addDrawDefinitionTimeItem": {
       "param:keys": 2
     },
     "addDrawEntries": {
       "param:keys": 11,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addDrawOtherId": {
       "param:keys": 2,
@@ -123,8 +116,7 @@
       "ret:keys": 1
     },
     "addEventEntries": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addEventEntryPairs": {
       "ret:any": 1
@@ -139,43 +131,39 @@
     },
     "addFinishingRounds": {
       "ret:index": 4,
-      "ret:keys": 6
+      "ret:keys": 5
     },
     "addGoesTo": {
       "param:index": 2,
       "ret:index": 10,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "addIndividualParticipantIds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addLadderParticipant": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addLinkedConsolationStructure": {
       "param:keys": 1,
       "ret:any": 1
     },
     "addMatchUpCourtOrder": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addMatchUpEndTime": {
       "ret:any": 1
     },
     "addMatchUpOfficial": {
       "ret:index": 1,
-      "ret:keys": 3
+      "ret:keys": 1
     },
     "addMatchUpResumeTime": {
       "ret:any": 1
     },
     "addMatchUpScheduledDate": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addMatchUpScheduledTime": {
       "ret:any": 1
@@ -195,8 +183,7 @@
       "param:index": 1
     },
     "addOnlineResource": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addParticipant": {
       "param:index": 1,
@@ -205,13 +192,11 @@
     },
     "addParticipantExtension": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addParticipantOtherId": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addParticipants": {
       "ret:any": 1
@@ -221,18 +206,15 @@
     },
     "addPenalty": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addPersonOtherId": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addPersonRequests": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addPersons": {
       "param:keys": 2,
@@ -240,16 +222,13 @@
     },
     "addPlayoffStructures": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addPracticeRegistration": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addQualifyingStructure": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "addScheduleScenario": {
       "param:index": 1,
@@ -270,7 +249,7 @@
     "addTournamentOtherId": {
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "addTournamentTimeItem": {
       "param:index": 1,
@@ -286,15 +265,13 @@
       "ret:keys": 1
     },
     "adHocPositionSwap": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "aggregateDeciderSetNumber": {
       "param:index": 1
     },
     "aggregateTieFormats": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "allCompetitionMatchUps": {
       "param:index": 1,
@@ -305,7 +282,7 @@
       "param:index": 4,
       "param:keys": 1,
       "ret:index": 9,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "allEventMatchUps": {
       "param:index": 4,
@@ -316,18 +293,17 @@
     "allocateTeamMatchUpCourts": {
       "param:index": 1,
       "ret:index": 8,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "allTournamentMatchUps": {
       "param:index": 4,
       "param:keys": 1,
       "ret:index": 8,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "alternateDrawPositionAssignment": {
       "param:keys": 6,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "analyzeDraws": {
       "param:keys": 1,
@@ -336,7 +312,7 @@
     "analyzeMatchUp": {
       "param:index": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "analyzeSet": {
       "param:index": 1,
@@ -353,32 +329,28 @@
       "fallback": 1
     },
     "applyDerivedRankings": {
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "applyLadderMovement": {
       "param:keys": 4,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "applyLineUps": {
       "ret:any": 1
     },
     "applyOutcomes": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "applyScheduleScenario": {
       "param:index": 1,
       "ret:index": 1,
-      "ret:keys": 3
+      "ret:keys": 1
     },
     "applyTournamentRankingPoints": {
       "ret:any": 1
     },
     "assignDrawPosition": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "assignDrawPositionBye": {
       "param:index": 2,
@@ -391,16 +363,14 @@
       "param:index": 1
     },
     "assignMatchUpSideParticipant": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "assignMatchUpTimekeeper": {
       "param:index": 1
     },
     "assignMatchUpVenue": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "assignOfficial": {
       "param:index": 1,
@@ -408,42 +378,35 @@
       "ret:keys": 1
     },
     "assignSeedPositions": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "assignTieMatchUpParticipantId": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "attachConsolationStructures": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "attachFlightProfile": {
       "param:keys": 3,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "attachPlayoffStructures": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "attachPolicies": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "attachQualifyingStructure": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "attachStructures": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "automatedPlayoffPositioning": {
       "ret:index": 1
@@ -451,7 +414,7 @@
     "automatedPositioning": {
       "param:index": 4,
       "ret:index": 3,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "autoSeeding": {
       "param:keys": 1,
@@ -472,20 +435,19 @@
     },
     "bulkMatchUpStatusUpdate": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "bulkRescheduleMatchUps": {
       "param:index": 1,
       "param:keys": 1,
       "ret:index": 8,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "bulkScheduleMatchUps": {
       "param:index": 1,
       "param:keys": 3,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "bulkScheduleTournamentMatchUps": {
       "param:index": 3,
@@ -515,8 +477,7 @@
       "ret:keys": 2
     },
     "calculateWinCriteria": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "categoryCanContain": {
       "ret:any": 1
@@ -553,8 +514,7 @@
     },
     "clearScheduledMatchUps": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "compareCapacityCurves": {
       "fallback": 1
@@ -576,12 +536,11 @@
     },
     "confirmResult": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "copyTournamentRecord": {
       "ret:index": 1,
-      "ret:keys": 6
+      "ret:keys": 5
     },
     "courtDayKey": {
       "fallback": 1
@@ -616,12 +575,10 @@
     },
     "declineChallenge": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "deleteAdHocMatchUps": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "deleteCourt": {
       "param:index": 1,
@@ -630,17 +587,16 @@
     "deleteDrawDefinitions": {
       "param:keys": 2,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "deleteEvents": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "deleteFlightAndFlightDraw": {
       "param:keys": 5,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "deleteFlightProfileAndFlightDraws": {
       "param:keys": 4,
@@ -663,18 +619,15 @@
     },
     "disableCourts": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "disableVenues": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "disputeResult": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "drawMatchUps": {
       "param:index": 4,
@@ -685,7 +638,7 @@
     "drawMatic": {
       "param:index": 1,
       "ret:index": 5,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "dryRun": {
       "param:index": 6,
@@ -693,18 +646,16 @@
     },
     "enableCourts": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "enableTieAutoCalc": {
       "param:keys": 4,
       "ret:index": 3,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "enableVenues": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "enrichPointHistory": {
       "param:keys": 1,
@@ -724,8 +675,7 @@
     },
     "executionQueue": {
       "param:index": 6,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "explain": {
       "ret:keys": 2
@@ -759,7 +709,7 @@
       "param:index": 2,
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "findMatchUp": {
       "ret:index": 7,
@@ -789,16 +739,15 @@
     },
     "generateAdHocRounds": {
       "ret:index": 4,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "generateAmericanoPairings": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "generateAndPopulatePlayoffStructures": {
       "param:index": 3,
       "ret:index": 1,
-      "ret:keys": 5
+      "ret:keys": 4
     },
     "generateBookings": {
       "param:index": 4,
@@ -812,19 +761,18 @@
       "ret:any": 1
     },
     "generateCourts": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "generateDrawDefinition": {
       "param:index": 3,
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 5
+      "ret:keys": 4
     },
     "generateDrawMaticRound": {
       "param:index": 1,
       "ret:index": 5,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "generateDrawStructuresAndLinks": {
       "param:index": 2,
@@ -834,7 +782,7 @@
     "generateDrawTypeAndModifyDrawDefinition": {
       "param:keys": 2,
       "ret:index": 9,
-      "ret:keys": 5
+      "ret:keys": 4
     },
     "generateEventsFromTieFormat": {
       "ret:any": 1
@@ -849,11 +797,10 @@
     "generateLineUps": {
       "param:keys": 1,
       "ret:index": 2,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "generateMexicanoPairings": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "generateOutcome": {
       "param:index": 1,
@@ -872,8 +819,7 @@
     },
     "generateRankingList": {
       "param:index": 2,
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "generateReport": {
       "param:index": 1,
@@ -882,14 +828,13 @@
     },
     "generateRotatingPartnerRound": {
       "ret:index": 4,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "generateScoreString": {
       "param:keys": 1
     },
     "generateSeason": {
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "generateSeedingScaleItems": {
       "param:keys": 1,
@@ -898,16 +843,16 @@
     "generateStatCrew": {
       "param:index": 1,
       "ret:index": 1,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "generateSwissRound": {
       "ret:index": 4,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "generateTieMatchUpScore": {
       "param:index": 2,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "generateTournamentRecord": {
       "param:index": 2,
@@ -921,18 +866,16 @@
       "param:index": 2
     },
     "getAdditionalSeedsAllowance": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getAggregateTeamResults": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getAllDrawMatchUps": {
       "param:index": 1,
       "ret:index": 9,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getAllEventData": {
       "param:keys": 2,
@@ -957,19 +900,16 @@
       "ret:index": 3
     },
     "getAssignedParticipantIds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getAvailableMatchUpsCount": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getAvailablePlayoffProfiles": {
       "ret:any": 1
     },
     "getAvailableQualifyingTargets": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getAvailableReports": {
       "ret:keys": 1
@@ -982,8 +922,7 @@
       "ret:keys": 1
     },
     "getAwardProfile": {
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "getCategoryAgeDetails": {
       "ret:any": 1
@@ -993,8 +932,7 @@
     },
     "getCheckedInParticipantIds": {
       "param:index": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getCompetitionDateRange": {
       "param:index": 1
@@ -1003,37 +941,32 @@
       "ret:keys": 1
     },
     "getCompetitionLeaderboard": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getCompetitionMatchUps": {
       "param:index": 1,
       "ret:index": 10,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getCompetitionParticipants": {
       "param:index": 1,
       "ret:index": 8,
-      "ret:keys": 4
+      "ret:keys": 3
     },
     "getCompetitionParticipantState": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getCompetitionPenalties": {
       "param:index": 1
     },
     "getCompetitionPolicy": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getCompetitionProfile": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getCompetitionState": {
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "getCompetitionVenues": {
       "param:index": 1
@@ -1056,7 +989,7 @@
     },
     "getDrawCompleteness": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getDrawData": {
       "param:index": 1,
@@ -1065,32 +998,28 @@
     },
     "getDrawDefinitionTimeItem": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getDrawFit": {
       "param:index": 3,
       "param:keys": 1,
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getDrawFitProposals": {
       "param:index": 3,
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getDrawInconsistencies": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getDrawParticipantRepresentativeIds": {
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "getDrawStructures": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getDrawTypeCoercion": {
       "ret:any": 1
@@ -1099,8 +1028,7 @@
       "param:index": 2
     },
     "getEligibleEvents": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getEvaluations": {
       "ret:keys": 1
@@ -1117,7 +1045,7 @@
     },
     "getEventCompleteness": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getEventData": {
       "param:keys": 2,
@@ -1125,28 +1053,25 @@
     },
     "getEventDateIssues": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getEventEntryFees": {
       "ret:keys": 1
     },
     "getEventInconsistencies": {
       "param:index": 1,
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getEventMatchUpFormatTiming": {
       "ret:keys": 1
     },
     "getEventPlayingDates": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getEventProperties": {
       "param:keys": 2,
       "ret:index": 1,
-      "ret:keys": 5
+      "ret:keys": 4
     },
     "getEventPublishStatus": {
       "param:keys": 1,
@@ -1157,15 +1082,14 @@
     },
     "getEvents": {
       "param:keys": 1,
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getEventStructures": {
       "param:keys": 7
     },
     "getEventTimeItem": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getHighestSeverity": {
       "fallback": 1
@@ -1174,7 +1098,7 @@
       "param:index": 1,
       "param:keys": 1,
       "ret:index": 2,
-      "ret:keys": 6
+      "ret:keys": 5
     },
     "getIndividualParticipantMergePreview": {
       "param:index": 1
@@ -1196,8 +1120,7 @@
     },
     "getLinkedTournamentIds": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getMatchUpCheckInHistory": {
       "param:keys": 1
@@ -1215,7 +1138,7 @@
     "getMatchUpDailyLimits": {
       "param:index": 1,
       "ret:index": 3,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getMatchUpDailyLimitsUpdate": {
       "param:keys": 1
@@ -1229,15 +1152,13 @@
       "ret:any": 1
     },
     "getMatchUpFormatTiming": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getMatchUpFormatTimingUpdate": {
       "param:keys": 1
     },
     "getMatchUpFormatVariance": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getMatchUpOfficialConflicts": {
       "param:index": 1,
@@ -1245,20 +1166,17 @@
     },
     "getMatchUpParticipantIds": {
       "param:index": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getMatchUpRatingDelta": {
       "param:keys": 1
     },
     "getMatchUpReadiness": {
       "param:index": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getMatchUpScheduleBounds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getMatchUpScheduleDetails": {
       "param:index": 2,
@@ -1279,8 +1197,7 @@
       "ret:keys": 2
     },
     "getMatchUpType": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getMatchUpUpset": {
       "param:index": 2
@@ -1290,7 +1207,7 @@
     },
     "getModifiedMatchUpFormatTiming": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getOfficialAssignments": {
       "ret:keys": 1
@@ -1313,41 +1230,35 @@
       "ret:keys": 1
     },
     "getParticipantEligibility": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getParticipantEventDetails": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getParticipantIdFinishingPositions": {
       "ret:any": 1
     },
     "getParticipantMembership": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getParticipantPaymentStatus": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getParticipantPoints": {
       "param:index": 1,
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getParticipantPresenceHistory": {
       "ret:keys": 1
     },
     "getParticipantRest": {
       "param:index": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getParticipantResults": {
       "param:keys": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getParticipants": {
       "param:index": 1,
@@ -1367,27 +1278,24 @@
     },
     "getParticipantSignInStatus": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getParticipantsRest": {
       "param:index": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getParticipantsStillSignedInOnDate": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getParticipantStats": {
       "param:index": 2,
       "param:keys": 1,
       "ret:index": 10,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getParticipantTimeItem": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getPersonRequests": {
       "param:index": 1,
@@ -1421,7 +1329,7 @@
     },
     "getPublishState": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getQualityWinPoints": {
       "param:index": 2,
@@ -1432,7 +1340,7 @@
     },
     "getRandomQualifierList": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getRegistrationProfile": {
       "ret:keys": 1
@@ -1441,24 +1349,19 @@
       "param:keys": 5
     },
     "getRotatingPartnerRoundPreview": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getRotatingPartnerScoringContract": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getRotatingPartnerScoringPolicy": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getRotatingPartnerStandings": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getRotatingPartnerTallyPolicy": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getRoundMatchUps": {
       "ret:index": 2
@@ -1479,8 +1382,7 @@
     },
     "getScaleValues": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getScenarioScheduleProjection": {
       "param:index": 1,
@@ -1518,27 +1420,22 @@
     },
     "getSeasonAdvancement": {
       "param:index": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getSeasonMovement": {
       "param:index": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getSeasonStandings": {
       "param:index": 6,
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "getSeedingThresholds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getSeedsCount": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getState": {
       "ret:index": 1
@@ -1547,16 +1444,14 @@
       "ret:keys": 1
     },
     "getStructureCompleteness": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getStructureData": {
       "param:index": 1,
       "ret:keys": 2
     },
     "getStructureInconsistencies": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getStructureReports": {
       "param:keys": 1,
@@ -1573,28 +1468,26 @@
     "getTimeItem": {
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 4
+      "ret:keys": 3
     },
     "getTournament": {
       "ret:index": 1
     },
     "getTournamentActionableMatchUps": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getTournamentCalendarEntry": {
       "ret:keys": 1
     },
     "getTournamentCompleteness": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getTournamentIds": {
       "param:keys": 1
     },
     "getTournamentInconsistencies": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "getTournamentInfo": {
       "param:keys": 1,
@@ -1618,29 +1511,26 @@
     },
     "getTournamentTimeItem": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "getTournamentVisibleFrom": {
       "param:keys": 1
     },
     "getValidGroupSizes": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "getVenuesAndCourts": {
       "param:index": 1,
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "getVenuesReport": {
       "param:index": 1,
       "ret:index": 3,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "getVenueTransits": {
       "param:index": 1,
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "groupByMatch": {
       "param:index": 1,
@@ -1658,12 +1548,10 @@
     },
     "importMethods": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "initializeCompetitionState": {
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "initializeDraft": {
       "ret:index": 1,
@@ -1688,13 +1576,11 @@
       "param:index": 1
     },
     "isScheduleLocked": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "issueChallenge": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "isTournamentPublished": {
       "param:index": 1
@@ -1722,27 +1608,23 @@
     },
     "linkTournaments": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "luckyDrawAdvancement": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "luckyLoserDrawPositionAssignment": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "matchUpActions": {
       "param:index": 3,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "matchUpScheduleChange": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "matchUpScheduleLocked": {
       "param:keys": 1
@@ -1764,12 +1646,10 @@
       "param:keys": 2
     },
     "migrateTournamentRecord": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "mintCollectionIds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "minutesToHhmm": {
       "fallback": 1
@@ -1779,47 +1659,41 @@
     },
     "modifyCollectionDefinition": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "modifyCourt": {
       "param:index": 3,
       "param:keys": 1,
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "modifyCourtAvailability": {
       "param:index": 2
     },
     "modifyDrawDefinition": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyDrawName": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyEntriesStatus": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "modifyEvaluation": {
       "ret:keys": 1
     },
     "modifyEvent": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyEventEntries": {
       "ret:any": 1
     },
     "modifyEventMatchUpFormatTiming": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyIndividualParticipantIds": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyMatchUpFormatTiming": {
       "param:index": 1
@@ -1834,13 +1708,11 @@
     },
     "modifyParticipantName": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyParticipantOtherName": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyParticipantsPaymentStatus": {
       "param:keys": 1,
@@ -1849,21 +1721,19 @@
     "modifyParticipantsSignInStatus": {
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "modifyPenalty": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyPersonRequests": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "modifyTieFormat": {
       "ret:index": 1,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "modifyTournamentRecord": {
       "param:index": 1,
@@ -1872,18 +1742,16 @@
     "modifyVenue": {
       "param:index": 1,
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "newTournamentRecord": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "orderCollectionDefinitions": {
       "param:keys": 1,
       "ret:index": 8,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "outcomePipeline": {
       "fallback": 1
@@ -1905,49 +1773,44 @@
     },
     "participantScaleItem": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "participantScheduledMatchUps": {
       "param:index": 2
     },
     "planNextPeriod": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "positionActions": {
       "param:index": 2,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "proAutoSchedule": {
       "param:index": 4,
       "ret:index": 10,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "processCompetitionMatchUp": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "processCompetitionRound": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "proColumnResolve": {
       "param:index": 3,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "proConflicts": {
       "param:index": 3,
       "ret:index": 1
     },
     "promoteAlternate": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "promoteAlternates": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "pruneDrawDefinition": {
       "param:keys": 3,
@@ -1967,12 +1830,11 @@
       "param:index": 1,
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "publishEventSeeding": {
       "param:keys": 4,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "publishOrderOfPlay": {
       "param:index": 1,
@@ -1986,12 +1848,10 @@
     },
     "qualifierDrawPositionAssignment": {
       "param:keys": 5,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "qualifierProgression": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "queryOfficialRecord": {
       "ret:keys": 1
@@ -2011,21 +1871,18 @@
     },
     "refreshEventDrawOrder": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "refreshLadderRatings": {
       "param:index": 1,
       "param:keys": 4,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "regenerateParticipantNames": {
       "param:index": 1
     },
     "remapDrawDefinitionMatchUpIds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeCertification": {
       "ret:any": 1
@@ -2035,19 +1892,17 @@
       "ret:keys": 1
     },
     "removeCollectionGroup": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeCompetitionProfile": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeConflictDeclaration": {
       "ret:any": 1
     },
     "removeCourtGridBooking": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "removeDrawDefinitionExtension": {
       "param:index": 1,
@@ -2058,8 +1913,7 @@
     },
     "removeDrawPositionAssignment": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeEvaluation": {
       "ret:any": 1
@@ -2080,13 +1934,11 @@
       "ret:keys": 1
     },
     "removeIndividualParticipantIds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeLadderParticipant": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeMatchUpCourtAssignment": {
       "param:index": 1,
@@ -2096,14 +1948,13 @@
     "removeMatchUpOutcome": {
       "param:keys": 5,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "removeMatchUpScorekeeper": {
       "param:index": 1
     },
     "removeMatchUpSideParticipant": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeMatchUpTimekeeper": {
       "param:index": 1
@@ -2115,13 +1966,11 @@
       "ret:any": 1
     },
     "removeOnlineResource": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeParticipantExtension": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removePenalty": {
       "param:index": 1
@@ -2134,45 +1983,37 @@
       "param:index": 1
     },
     "removePracticeRegistration": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeRatings": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeRoundMatchUps": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeScaleValues": {
       "param:keys": 7,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeScheduleScenario": {
       "param:index": 1,
       "ret:keys": 1
     },
     "removeSeededParticipant": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeSeeding": {
       "param:keys": 7,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeStructure": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeSuspension": {
       "ret:any": 1
     },
     "removeTieMatchUpParticipantId": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "removeTournamentExtension": {
       "param:index": 1,
@@ -2180,52 +2021,42 @@
     },
     "removeVenueTransit": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "renameStructures": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "reorderUpcomingMatchUps": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "repairMalformedLink": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "repairMalformedLinks": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "replaceTieMatchUpParticipantId": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "resetAdHocMatchUps": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "resetCompetitionState": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "resetDrawDefinition": {
       "param:keys": 5
     },
     "resetScorecard": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "resetStructure": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "resetTieFormat": {
       "ret:index": 4,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "resetVoluntaryConsolationStructure": {
       "param:keys": 4
@@ -2262,25 +2093,22 @@
     "scheduleMatchUps": {
       "param:index": 1,
       "ret:index": 3,
-      "ret:keys": 6
+      "ret:keys": 5
     },
     "scheduleProfileGrid": {
       "param:index": 2,
       "ret:index": 4,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "scheduleProfileRounds": {
       "param:index": 2,
-      "ret:index": 18,
-      "ret:keys": 1
+      "ret:index": 17
     },
     "seedWithdrawalCascade": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setCompetitionProfile": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setDelegatedOutcome": {
       "param:index": 1,
@@ -2297,57 +2125,44 @@
     "setEntryPosition": {
       "param:keys": 6,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "setEntryPositions": {
       "param:keys": 4,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "setEntryQualifyingPath": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setEventDates": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setEventDisplay": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setEventEndDate": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setEventStartDate": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setMatchUpCalledAt": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setMatchUpDailyLimits": {
       "param:index": 1,
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
-    },
-    "setMatchUpFormat": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setMatchUpHomeParticipantId": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setMatchUpScheduleLock": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setMatchUpState": {
       "param:index": 3,
@@ -2358,12 +2173,11 @@
       "param:index": 1,
       "param:keys": 2,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "setOrderOfFinish": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setParticipantCheckInState": {
       "param:index": 1,
@@ -2382,21 +2196,17 @@
       "ret:any": 1
     },
     "setPracticeDefaultCapacity": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setRegistrationProfile": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setRotatingPartnerScoring": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setSanctionConstraints": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setSchedulingProfile": {
       "param:index": 1,
@@ -2408,80 +2218,66 @@
     },
     "setStructureOrder": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setSubOrder": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "settleRotatingPartnerResult": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentCategories": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentDates": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentEndDate": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentLocalTimeZone": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentName": {
       "param:keys": 4,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentNotes": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentOtherIds": {
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "setTournamentRecord": {
       "param:index": 1
     },
     "setTournamentStartDate": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setTournamentStatus": {
       "param:keys": 2
     },
     "setTournamentTier": {
       "param:keys": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setVenueTransit": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "setVenueTransits": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "shiftAdHocRounds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "snapIsoToGranularity": {
       "fallback": 1
@@ -2506,17 +2302,14 @@
     },
     "submitResult": {
       "param:keys": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "substituteParticipant": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "swapAdHocRounds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "swapDrawPositionAssignments": {
       "param:index": 1,
@@ -2526,11 +2319,10 @@
       "param:index": 3,
       "param:keys": 1,
       "ret:index": 1,
-      "ret:keys": 3
+      "ret:keys": 2
     },
     "tieFormatGenderValidityCheck": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "timeInsideBlock": {
       "fallback": 1
@@ -2559,23 +2351,20 @@
     },
     "unlinkTournament": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "unlinkTournaments": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "unPublishEvent": {
       "param:keys": 2,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "unPublishEventSeeding": {
       "param:keys": 5,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "unPublishOrderOfPlay": {
       "param:index": 1
@@ -2590,12 +2379,10 @@
       "param:keys": 3
     },
     "updateParticipantResults": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "updatePracticeRegistration": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "updateScheduleScenario": {
       "param:index": 1,
@@ -2613,8 +2400,7 @@
       "ret:keys": 1
     },
     "validateCollectionDefinition": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "validateDateAvailability": {
       "fallback": 1
@@ -2629,8 +2415,7 @@
       "param:index": 1
     },
     "validatePlayoffGroups": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "validatePresenceAttribution": {
       "param:keys": 5
@@ -2648,12 +2433,10 @@
       "fallback": 1
     },
     "validateScore": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "validateSeason": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "validateSegments": {
       "fallback": 1
@@ -2666,8 +2449,7 @@
     },
     "validateTieFormat": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "validMatchUp": {
       "param:index": 1
@@ -2683,8 +2465,7 @@
     },
     "withdrawParticipantAtDrawPosition": {
       "param:index": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     }
   },
   "tools": {
@@ -2800,20 +2581,17 @@
       "ret:any": 1
     },
     "draws.getSeedingThresholds": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "draws.getTally": {
       "param:keys": 1,
       "ret:keys": 1
     },
     "draws.getValidGroupSizes": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "draws.validatePlayoffGroups": {
-      "ret:index": 2,
-      "ret:keys": 1
+      "ret:index": 2
     },
     "entries.categoryCanContain": {
       "ret:any": 1
@@ -2848,8 +2626,7 @@
       "param:any": 1
     },
     "formats.calculateWinCriteria": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "formats.compareTieFormats": {
       "param:keys": 1,
@@ -2868,13 +2645,11 @@
       "param:any": 1
     },
     "formats.tieFormatGenderValidityCheck": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "formats.validateTieFormat": {
       "param:keys": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "generateDateRange": {
       "param:any": 1
@@ -2927,7 +2702,7 @@
     "matchUps.analyzeMatchUp": {
       "param:any": 1,
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "matchUps.courtGridRows": {
       "param:keys": 3,
@@ -2940,8 +2715,7 @@
     },
     "matchUps.getCheckedInParticipantIds": {
       "param:index": 2,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "matchUps.getDualIssues": {
       "param:index": 2
@@ -2950,14 +2724,13 @@
       "param:index": 1,
       "param:keys": 1,
       "ret:index": 2,
-      "ret:keys": 6
+      "ret:keys": 5
     },
     "matchUps.getMatchUpCheckInState": {
       "param:index": 2
     },
     "matchUps.getMatchUpType": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "matchUps.getMatchUpUpset": {
       "param:index": 2
@@ -3092,8 +2865,7 @@
     },
     "positionTargets": {
       "param:index": 2,
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "publishing.getRoundVisibilityState": {
       "param:index": 1,
@@ -3137,12 +2909,11 @@
     },
     "rankings.getScaleValues": {
       "param:any": 1,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "rankings.participantScaleItem": {
       "ret:index": 1,
-      "ret:keys": 2
+      "ret:keys": 1
     },
     "reduceRecordToFootprint": {
       "ret:index": 7,
@@ -3195,34 +2966,28 @@
       "param:index": 1
     },
     "scoring.validateScore": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "scoring.validateSetScore": {
       "param:any": 1
     },
     "seasons.getSeasonAdvancement": {
       "param:index": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "seasons.getSeasonMovement": {
       "param:index": 3,
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "seasons.getSeasonStandings": {
       "param:index": 6,
-      "ret:index": 3,
-      "ret:keys": 1
+      "ret:index": 3
     },
     "seasons.planNextPeriod": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "seasons.validateSeason": {
-      "ret:index": 1,
-      "ret:keys": 1
+      "ret:index": 1
     },
     "shuffleArray": {
       "param:any": 1,
@@ -3440,7 +3205,6 @@
       "type:index": 1
     },
     "ResultType": {
-      "type:any": 1,
       "type:index": 1
     },
     "RoundNamingPolicy": {

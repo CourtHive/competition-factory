@@ -37,7 +37,7 @@ type ApplyMatchUpFormatArgs = {
 export function applyMatchUpFormat(params: ApplyMatchUpFormatArgs): {
   success?: boolean;
   error?: ErrorType;
-  info?: string;
+  info?: unknown;
 } {
   let structureIds = params.structureIds;
   const { tournamentRecord, drawDefinition, matchUpFormat, structureId, matchUpId, event } = params;
@@ -116,7 +116,7 @@ export function checkMatchUpFormatApplication(params: {
   matchUpFormat: string;
   matchUpId: string;
   event?: Event;
-}): { matchUp?: any; error?: ErrorType; info?: string } {
+}): { matchUp?: any; error?: ErrorType; info?: unknown } {
   const { drawDefinition, matchUpFormat, matchUpId, event } = params;
 
   if (!isWellFormedMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };

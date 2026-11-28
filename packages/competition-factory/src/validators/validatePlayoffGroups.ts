@@ -120,7 +120,7 @@ export function validatePlayoffGroups({
 }: ValidatePlayoffGroupsArgs): ResultType & {
   valid?: boolean;
   consumptionMap?: { [finishingPosition: number]: number };
-  info?: string;
+  info?: unknown;
 } {
   if (!Array.isArray(playoffGroups) || !playoffGroups.length) {
     return { error: INVALID_VALUES, valid: false, info: 'playoffGroups must be a non-empty array' };

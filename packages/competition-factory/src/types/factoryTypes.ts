@@ -927,14 +927,16 @@ export type EntriesNotPlacedWarning = ResultWarning & {
 };
 
 export type ResultType = {
-  context?: { [key: string]: any };
+  /** what the method knew when it refused or warned; read a key only after checking it holds what you expect */
+  context?: Record<string, unknown>;
   warnings?: ResultWarning[];
   stack?: string | string[];
   errors?: string[];
   error?: ErrorType;
   success?: boolean;
   valid?: boolean;
-  info?: any;
+  /** a human-readable or structured note on the result; its shape is the method's own */
+  info?: unknown;
 };
 
 export type MappedMatchUps = {

@@ -64,7 +64,7 @@ export type Refusal = {
   /** the declared constant, so a client comparing `result.error` to it by value still matches */
   error: ErrorType;
   row: number;
-  info?: string;
+  info?: unknown;
   context?: Record<string, unknown>;
   /** fields v1's result carries beside `error`, outside `context` (row 9's `activeDownstream`): returned as v1 returns them */
   extra?: Record<string, unknown>;
@@ -126,7 +126,7 @@ export type OutcomeView = {
    * a WINNER/LOSER link with no source roundNumber, met reading this matchUp's targets or what depends on
    * it (§ 2 row 21: a malformed round link is an error)
    */
-  unreadableLink?: { error: ErrorType; info?: string; context?: Record<string, unknown> };
+  unreadableLink?: { error: ErrorType; info?: unknown; context?: Record<string, unknown> };
   participants: {
     required: boolean;
     count: number;
