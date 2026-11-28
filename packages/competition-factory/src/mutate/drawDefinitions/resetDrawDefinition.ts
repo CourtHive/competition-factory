@@ -15,7 +15,7 @@ import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { TimeItem, DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { TimeItem } from '@Types/tournamentTypes';
 import {
   ASSIGN_COURT,
   ASSIGN_VENUE,
@@ -27,15 +27,7 @@ import {
   COURT_ORDER,
 } from '@Constants/timeItemConstants';
 
-type ResetDrawDefinitionArgs = {
-  tournamentRecord?: Tournament;
-  removeScheduling?: boolean;
-  removeAssignments?: boolean;
-  drawDefinition: DrawDefinition;
-  event?: Event;
-};
-// prettier-ignore
-export function resetDrawDefinition({ tournamentRecord, removeScheduling, removeAssignments, drawDefinition, event }: ResetDrawDefinitionArgs) {
+export function resetDrawDefinition({ tournamentRecord, removeScheduling, removeAssignments, drawDefinition, event }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const isLuckyDraw = isLuckyBasedDraw(drawDefinition.drawType);
@@ -76,7 +68,7 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
     }
   }
 
-  drawDefinition.extensions = drawDefinition.extensions!.filter(
+  drawDefinition.extensions = drawDefinition.extensions.filter(
     (extension) => extension.name !== POSITION_ACTIONS && extension.name !== DRAFT_STATE,
   );
   // CODES: also wipe the first-class draftState if present

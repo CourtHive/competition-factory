@@ -18,13 +18,13 @@ import {
   STRUCTURE_NOT_FOUND,
   EXISTING_MATCHUP_ID,
 } from '@Constants/errorConditionConstants';
-import type { DrawDefinition, Event, ItemStructure, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
+import type { Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 
 type AddAdHocMatchUpsParams = {
   suppressNotifications?: boolean; // internal - avoid duplicate notifications from mocksEngine
   tournamentRecord: Tournament;
   structureId?: string;
-  drawDefinition: DrawDefinition;
+  drawDefinition: any;
   matchUps: MatchUp[];
   event: Event;
 };
@@ -41,12 +41,11 @@ export function addAdHocMatchUps(params: AddAdHocMatchUpsParams): ResultType {
 
   if (!validMatchUps(matchUps)) return { error: INVALID_VALUES, info: mustBeAnArray('matchUps') };
 
-  const structure = drawDefinition.structures?.find((structure) => structure.structureId === structureId) as
-    (ItemStructure & { structures?: Structure[] }) | undefined;
+  const structure = drawDefinition.structures?.find((structure) => structure.structureId === structureId);
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
   const existingMatchUps = structure?.matchUps;
-  const structureHasRoundPositions = existingMatchUps!.find((matchUp) => !!matchUp.roundPosition);
+  const structureHasRoundPositions = existingMatchUps.find((matchUp) => !!matchUp.roundPosition);
 
   if (structure.structures || structureHasRoundPositions || structure.finishingPosition === ROUND_OUTCOME) {
     return { error: INVALID_STRUCTURE };
@@ -72,7 +71,7 @@ export function addAdHocMatchUps(params: AddAdHocMatchUpsParams): ResultType {
     };
   }
 
-  structure.matchUps!.push(...matchUps);
+  structure.matchUps.push(...matchUps);
 
   const tieMatchUps = matchUps
     .map(({ tieMatchUps }) => tieMatchUps)

@@ -15,7 +15,7 @@ import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorCondition
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ANY_OF, ARRAY, OF_TYPE } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament, ScheduleProfileRound } from '@Types/tournamentTypes';
+import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type GetScheduledRoundsDetailsArgs = {
@@ -25,9 +25,9 @@ type GetScheduledRoundsDetailsArgs = {
   matchUps?: HydratedMatchUp[]; // optional to support calling method outside of scheduleProfileRounds
   tournamentRecord?: Tournament;
   periodLength?: number;
-  rounds: ScheduleProfileRound[];
+  rounds: any[];
 };
-type RoundError = { error: ErrorType; round: ScheduleProfileRound };
+type RoundError = { error: ErrorType; round: { [key: string]: unknown } };
 type RoundsDetailsResult = {
   greatestAverageMinutes?: number;
   scheduledRoundsDetails?: any[];
@@ -86,18 +86,18 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
   const scheduledRoundsDetails = rounds.flatMap((round) => {
     const roundPeriodLength = round.periodLength || periodLength;
     const structureIds: string[] = [];
-    if (containedStructureIds?.[round.structureId!]) {
-      structureIds.push(...containedStructureIds[round.structureId!]);
+    if (containedStructureIds?.[round.structureId]) {
+      structureIds.push(...containedStructureIds[round.structureId]);
     } else {
-      structureIds.push(round.structureId!);
+      structureIds.push(round.structureId);
     }
     let roundMatchUps = matchUps
       ? filterMatchUps({
-          tournamentIds: [round.tournamentId!],
-          roundNumbers: [round.roundNumber!],
+          tournamentIds: [round.tournamentId],
+          roundNumbers: [round.roundNumber],
           matchUpIds: round.matchUpIds,
-          eventIds: [round.eventId!],
-          drawIds: [round.drawId!],
+          eventIds: [round.eventId],
+          drawIds: [round.drawId],
           processContext: true,
           structureIds,
           matchUps,
@@ -111,17 +111,17 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
       isConvertableInteger(segmentNumber) &&
       isPowerOf2(roundMatchUps?.length) &&
       isPowerOf2(segmentsCount) &&
-      segmentNumber! > 0 &&
-      segmentNumber! <= segmentsCount! &&
-      segmentsCount! < roundMatchUps?.length &&
+      segmentNumber > 0 &&
+      segmentNumber <= segmentsCount &&
+      segmentsCount < roundMatchUps?.length &&
       !round.matchUpIds?.length
     ) {
-      const segmentSize = roundMatchUps.length / segmentsCount!;
-      const firstSegmentIndex = segmentSize * (segmentNumber! - 1);
+      const segmentSize = roundMatchUps.length / segmentsCount;
+      const firstSegmentIndex = segmentSize * (segmentNumber - 1);
       roundMatchUps = roundMatchUps.slice(firstSegmentIndex, firstSegmentIndex + segmentSize);
     }
 
-    const tournamentRecord = tournamentRecords[round.tournamentId!];
+    const tournamentRecord = tournamentRecords[round.tournamentId];
     const event = findEvent({
       drawId: round.drawId,
       tournamentRecord,
@@ -144,7 +144,7 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
       const { typeChangeRecoveryMinutes, recoveryMinutes, averageMinutes, error } = findMatchUpFormatTiming({
         categoryName: timingCategoryName(event),
         categoryType: timingCategoryType(category),
-        tournamentId: round.tournamentId!,
+        tournamentId: round.tournamentId,
         eventId: round.eventId,
         drawId: round.drawId,
         tournamentRecords,

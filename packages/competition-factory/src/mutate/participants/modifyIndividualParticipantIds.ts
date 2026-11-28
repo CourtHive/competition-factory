@@ -44,7 +44,7 @@ export function modifyIndividualParticipantIds({ individualParticipantIds, group
   });
   if (!groupingParticipant) return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND }, stack });
 
-  if (![TEAM, GROUP].includes(groupingParticipant.participantType!)) {
+  if (!([TEAM, GROUP] as (string | undefined)[]).includes(groupingParticipant.participantType)) {
     return decorateResult({
       result: { error: INVALID_PARTICIPANT_TYPE },
       context: {
