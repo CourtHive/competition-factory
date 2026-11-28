@@ -20,7 +20,7 @@ export { participantRoles } from './participantRoles';
 export { penaltyConstants } from './penaltyConstants';
 export { policyConstants } from './policyConstants';
 export { pointsAuthorityConstants } from './pointsAuthorityConstants';
-export type { PointsAuthority } from './pointsAuthorityConstants';
+export type { KnownPointsAuthority, PointsAuthority } from './pointsAuthorityConstants';
 export { positionActionConstants } from './positionActionConstants';
 export { ladderConstants } from './ladderConstants';
 export type {
