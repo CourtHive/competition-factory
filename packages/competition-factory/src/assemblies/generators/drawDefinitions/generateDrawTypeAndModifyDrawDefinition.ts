@@ -7,7 +7,7 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
+import { nonTeamTieFormatRefusal, storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -76,6 +76,9 @@ export function generateDrawTypeAndModifyDrawDefinition(params: GenerateDrawType
       stack,
     });
 
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return decorateResult({ result: storedRefusal, stack });
   const drawDefinition = modifyOriginal ? params.drawDefinition : makeDeepCopy(params.drawDefinition, false, true);
 
   let { tieFormat, matchUpType } = params;

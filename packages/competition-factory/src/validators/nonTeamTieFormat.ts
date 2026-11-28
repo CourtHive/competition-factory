@@ -143,3 +143,72 @@ export function nonTeamTieFormatTargetRefusal({
   if (!eventHoldsTieFormat(event) && !drawHoldsTieFormat(drawDefinition)) return undefined;
   return { error: INVALID_TIE_FORMAT, info: NOT_TEAM_INFO, context: typesContext(eventType, matchUpType) };
 }
+
+type StaleLocation = {
+  location: 'event' | 'drawDefinition' | 'structure';
+  eventId?: string;
+  drawId?: string;
+  structureId?: string;
+  tieFormatId?: string;
+};
+
+function staleStructure(structures?: Structure[]): Structure | undefined {
+  for (const structure of structures ?? []) {
+    if (structure.tieFormat || structure.tieFormatId) return structure;
+    const nested = staleStructure(structuresOf(structure));
+    if (nested) return nested;
+  }
+  return undefined;
+}
+
+/**
+ * Where a record written before 8.0.0 stores a tieFormat on a non-TEAM event or draw: the event, the draw definition or
+ * a structure (nested included), with the ids that find it. Undefined when the event and draw are TEAM, or hold none.
+ */
+export function storedNonTeamTieFormat({
+  drawDefinition,
+  event,
+}: {
+  drawDefinition?: DrawDefinition;
+  event?: Event;
+}): StaleLocation | undefined {
+  const eventNonTeam = isNonTeam(event?.eventType);
+  if (!eventNonTeam && !isNonTeam(drawDefinition?.matchUpType)) return undefined;
+  const eventId = event?.eventId;
+  if (eventNonTeam && (event?.tieFormat || event?.tieFormatId))
+    return withId({ location: 'event', eventId }, event?.tieFormatId);
+  if (!drawDefinition) return undefined;
+  const drawId = drawDefinition.drawId;
+  if (drawDefinition.tieFormat || drawDefinition.tieFormatId)
+    return withId({ location: 'drawDefinition', eventId, drawId }, drawDefinition.tieFormatId);
+  const structure = staleStructure(drawDefinition.structures);
+  if (structure)
+    return withId(
+      { location: 'structure', eventId, drawId, structureId: structure.structureId },
+      structure.tieFormatId,
+    );
+  return undefined;
+}
+
+function withId(location: StaleLocation, tieFormatId?: string): StaleLocation {
+  const defined = Object.fromEntries(Object.entries(location).filter(([, value]) => value !== undefined));
+  return (tieFormatId ? { ...defined, tieFormatId } : defined) as StaleLocation;
+}
+
+/**
+ * The refusal for a generator that meets a tieFormat a record written before 8.0.0 stored on a non-TEAM event or draw.
+ * It is refused before anything is generated or written, never used and never silently ignored; the context names
+ * where it is stored. `tools.removeNonTeamTieFormats` removes such tieFormats from a record.
+ */
+export function storedNonTeamTieFormatRefusal(params: {
+  drawDefinition?: DrawDefinition;
+  event?: Event;
+}): TieFormatRefusal | undefined {
+  const stored = storedNonTeamTieFormat(params);
+  if (!stored) return undefined;
+  return {
+    error: INVALID_TIE_FORMAT,
+    info: 'a tieFormat is stored on a non-TEAM event or draw; remove it with tools.removeNonTeamTieFormats',
+    context: stored,
+  };
+}

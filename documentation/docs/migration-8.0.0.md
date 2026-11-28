@@ -61,9 +61,27 @@ generators that take a `tieFormat` (`generateDrawTypeAndModifyDrawDefinition`, `
 TEAM while the event holds a tieFormat. The tieFormat governor's edits return `INVALID_TIE_FORMAT` for a non-TEAM event
 or draw that holds one, which only a record written by 7.x can.
 
-A draw form that sent a scorecard name or object with every event relied on it being ignored outside TEAM events. Send
-`tieFormat` only when the event and the draw are TEAM, and `matchUpFormat` otherwise. Stored records read unchanged; a
-tieFormat that 7.x stored on a non-TEAM event cannot be edited, so remove it from the record.
+**A client that sends a `tieFormat` or `tieFormatName` with every event must stop sending it for events that are not
+TEAM.** 8.0.0 refuses the call: send `tieFormat` only when the event and the draw are TEAM, and `matchUpFormat`
+otherwise.
+
+**Records written by 7.x.** A record can hold a tieFormat on a non-TEAM event, draw definition or structure. It reads
+unchanged, but every draw and tie generator (`generateDrawDefinition`, AD_HOC rounds included, playoff, qualifying and
+consolation structures) refuses to generate over it with `INVALID_TIE_FORMAT`, before writing anything;
+`context.location` is `event`, `drawDefinition` or `structure`, with the `eventId`, `drawId` and `structureId` that find
+it. The tieFormat governor's edits refuse it too. Clean such a record once, before loading it or before generating on
+it:
+
+```js
+import { tools } from 'competition-factory';
+
+const { tournamentRecord: cleaned, removed } = tools.removeNonTeamTieFormats({ tournamentRecord });
+engine.setState(cleaned);
+```
+
+The helper removes `tieFormat` and `tieFormatId` from every non-TEAM event, draw definition and structure, leaves TEAM
+events and their tie formats as they are, and returns a copy: the record passed in is not changed. `removed` lists where
+each tieFormat was.
 
 ## Governor and engine route removals
 

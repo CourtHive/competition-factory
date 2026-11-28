@@ -1,4 +1,5 @@
 // Query
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
@@ -88,6 +89,9 @@ export type DrawMaticRoundResult = {
 };
 
 export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): ResultType & DrawMaticRoundResult {
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
   const {
     encounterValue = ENCOUNTER_VALUE,
     sameTeamValue = SAME_TEAM_VALUE,

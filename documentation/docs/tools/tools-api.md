@@ -895,6 +895,22 @@ It is idempotent, and a record that is already in stored shape is returned uncha
 
 `tools.buildFromSources` applies it to every record it builds.
 
+### removeNonTeamTieFormats
+
+Return a copy of a tournament record without the tieFormats a 7.x write left on its non-TEAM events, draw definitions
+and structures. 8.0.0 refuses to generate over such a tieFormat (`INVALID_TIE_FORMAT`, with `context.location`
+naming the event, draw definition or structure that holds it), so clean a stored record once before generating on it.
+
+```js
+const { tournamentRecord: cleaned, removed } = tools.removeNonTeamTieFormats({ tournamentRecord });
+// removed: [{ eventId }, { eventId, drawId }, { eventId, drawId, structureId }, ...]
+```
+
+- It removes `tieFormat` and `tieFormatId` from every event whose `eventType` is not TEAM, from its draw definitions and
+  from their structures (nested included), and from a draw whose `matchUpType` is not TEAM.
+- TEAM events, their draws and their tie formats are left as they are.
+- It returns a copy and never changes the record passed in; `removed` lists where each tieFormat was.
+
 ### firstClassOrExtension
 
 Read an attribute that 5.0.0 promoted from an extension to a first-class field, whatever mode the record was written

@@ -1,3 +1,4 @@
+import { storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { generateQualifyingStructure } from '@Generators/drawDefinitions/drawTypes/generateQualifyingStructure';
 import { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualifyingStructure';
 
@@ -29,6 +30,9 @@ export function addQualifyingStructure(params: AddQualifyingstructureArgs) {
   const tournamentRecord = params.tournamentRecord;
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
   const result = addQualifying(params);
   if (result.error) return result;
 

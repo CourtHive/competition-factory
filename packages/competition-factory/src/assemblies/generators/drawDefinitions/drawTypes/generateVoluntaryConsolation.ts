@@ -5,7 +5,7 @@ import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
-import { nonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
+import { nonTeamTieFormatRefusal, storedNonTeamTieFormatRefusal } from '@Validators/nonTeamTieFormat';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -121,6 +121,9 @@ function generateVoluntaryConsolationDraft(params: GenerateVoluntaryConsolationA
   )
     return { error: INVALID_DRAW_SIZE };
 
+  // a tieFormat a 7.x record stored on a non-TEAM event or draw is refused, never used or silently ignored
+  const storedRefusal = storedNonTeamTieFormatRefusal(params);
+  if (storedRefusal) return storedRefusal;
   let { tieFormat, matchUpType } = params;
   const typeRefusal = nonTeamTieFormatRefusal(
     { tieFormat },
