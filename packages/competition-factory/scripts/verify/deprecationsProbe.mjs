@@ -11,8 +11,9 @@
  *
  * The samples come from the same plan the count uses, so the manifest and guard list choose them: one route per
  * governor, nested (`x.query.y`) and `governors.x.y` paths, the governors subpath, engine methods of each category,
- * `utilities`, every alias, and controls that must NOT fire (the `tools` / `availability` homes of the same functions,
- * a retained route, a live engine method, a live constant).
+ * `utilities`, every alias, the untyped engines and `FactoryEngine`, and controls that must NOT fire (the `tools` /
+ * `availability` homes of the same functions, a retained route, a live engine method, a live constant, the typed
+ * engines and `FactoryEngineTyped`).
  */
 import { mkdtempSync, rmSync, symlinkSync, mkdirSync, readFileSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -78,6 +79,10 @@ export function samples(rootText, deprecations, retained) {
     },
     { group: 'alias', code: 'tournamentEngine.getTournamentInfo().eventInfo;', flag: 'eventInfo' },
     { group: 'alias', code: 'export type Fee = EntryFee;', flag: 'EntryFee' },
+    { group: 'untyped', code: 'tournamentEngineUntyped.getParticipants;', flag: 'tournamentEngineUntyped' },
+    { group: 'untyped', code: 'competitionEngineUntyped.getParticipants;', flag: 'competitionEngineUntyped' },
+    { group: 'untyped', code: 'factory.tournamentEngineUntyped;', flag: 'tournamentEngineUntyped' },
+    { group: 'untyped', code: 'export type Open = FactoryEngine;', flag: 'FactoryEngine' },
     // controls: none of these may be struck
     { group: 'control', code: 'tools.formats.parse;', flag: null },
     { group: 'control', code: 'tools.scoring.validateMatchUpScore;', flag: null },
@@ -86,6 +91,8 @@ export function samples(rootText, deprecations, retained) {
     { group: 'control', code: 'tournamentEngine.getParticipants;', flag: null },
     { group: 'control', code: 'matchUpActionConstants.SCORE_METHOD;', flag: null },
     { group: 'control', code: 'tools.unique;', flag: null },
+    { group: 'control', code: 'tournamentEngine; competitionEngine;', flag: null },
+    { group: 'control', code: 'export type Typed = FactoryEngineTyped;', flag: null },
   );
   for (const r of retained.slice(0, 3))
     out.push({ group: 'control', code: `${r.governors[0]}.${r.name}; tournamentEngine.${r.name};`, flag: null });
@@ -122,11 +129,13 @@ export function probe(packageDir, deprecations) {
     'matchUpActionConstants',
     'tournamentEngine',
     'competitionEngine',
+    'tournamentEngineUntyped',
+    'competitionEngineUntyped',
     'toStatObjects',
   ];
   const imports = [
     `import { ${named.join(', ')} } from 'tods-competition-factory';`,
-    "import type { EntryFee } from 'tods-competition-factory';",
+    "import type { EntryFee, FactoryEngine, FactoryEngineTyped } from 'tods-competition-factory';",
     ...HEADER.esm,
   ];
   const body = [...imports, ...list.map((s) => s.code), 'export {};', ''].join('\n');
