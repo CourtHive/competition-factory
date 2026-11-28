@@ -40,7 +40,6 @@ export type ActionsStructurePolicy = {
 export type MatchUpActionsPolicy = {
   participants?: { enforceCategory?: boolean; enforceGender?: boolean };
   enabledStructures?: ActionsStructurePolicy[];
-  disabledStructures?: ActionsStructurePolicy[];
   processCodes?: { substitution?: string[] };
   substituteAfterCompleted?: boolean;
   substituteWithoutScore?: boolean;
@@ -199,7 +198,8 @@ export type ScoringStagePolicies = {
 export type ScoringPolicy = {
   defaultMatchUpFormat?: string;
   matchUpFormats?: ScoringMatchUpFormatDefinition[];
-  matchUpStatusCodes?: { [matchUpStatus: string]: MatchUpStatusCodeDefinition[] };
+  /** Keyed by matchUpStatus, or by a label group such as `WITHDRAWN` that is not a matchUpStatus. */
+  matchUpStatusCodes?: { [statusGroup: string]: MatchUpStatusCodeDefinition[] };
   allowDeletionWithScoresPresent?: { drawDefinitions?: boolean; structures?: boolean };
   requireParticipantsForScoring?: boolean;
   requireAllPositionsAssigned?: boolean;

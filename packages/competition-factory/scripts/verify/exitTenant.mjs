@@ -45,7 +45,7 @@ const NEEDLE = 'matchUpStatusCodes';
 const ALLOWED = {
   // the scoring policy's own vocabulary key, a different field of the same name
   'fixtures/policies/POLICY_SCORING_DEFAULT.ts': 'POLICY',
-  'types/policyShapes.ts': 'POLICY — the scoring policy body type declares that key',
+  'types/policyShapes.ts': 'POLICY — the scoring policy body type declares the key; nothing reads it to decide',
 
   // the published field, deprecated, so a pre-8.0.0 record still types; the stored key list
   'types/tournamentTypes.ts': 'TYPE — the deprecated field and its element union',
