@@ -16,7 +16,6 @@ export { setMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpForma
 export { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';
 export { resetMatchUpLineUps } from '@Mutate/matchUps/lineUps/resetMatchUpLineUps';
 export { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
-export { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 export { bulkMatchUpStatusUpdate } from '@Mutate/events/bulkMatchUpStatusUpdate';
 export { setDelegatedOutcome } from '@Mutate/drawDefinitions/setDelegatedOutcome';
 export { resetAdHocMatchUps } from '@Mutate/structures/resetAdHocMatchUps';

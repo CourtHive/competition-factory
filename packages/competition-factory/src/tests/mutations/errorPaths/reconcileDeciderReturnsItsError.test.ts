@@ -1,4 +1,4 @@
-import { getOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -6,7 +6,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 // constants
 import { DEAD_RUBBER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 
 /**

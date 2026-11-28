@@ -1,13 +1,12 @@
 import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
 import { reconcileLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileLinkAdvancements';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -147,39 +146,5 @@ describe('reconcileLinkAdvancements refuses at its bound', () => {
     expect(result?.error).toEqual(SETTLE_BOUND_REACHED);
     // CONTROL: it asked once per pass and once more, a pass per matchUp and one over
     expect(planted.calls).toBeGreaterThan(allMatchUps().length);
-  });
-});
-
-describe.each([
-  ['reconcileMissedLinkAdvancements', 'missed'],
-  ['reconcileLinkAdvancements', 'linked'],
-] as const)('setMatchUpStatus refuses when %s reports', (_name, site) => {
-  const code = site === 'missed' ? 'ERR_PLANTED' : SETTLE_BOUND_REACHED.code;
-  const scoreAFirstRound = () => {
-    setSubscriptions({});
-    mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, drawId: DRAW_ID }],
-      nonRandom: 7001,
-      setState: true,
-    });
-    const first = allMatchUps().find((matchUp) => matchUp.structureName === 'Main' && matchUp.roundNumber === 1);
-    return () =>
-      tournamentEngine.setMatchUpStatus({ matchUpId: first.matchUpId, drawId: DRAW_ID, outcome: { winningSide: 1 } });
-  };
-
-  it('under v1, with the error', () => {
-    const enter = scoreAFirstRound();
-    setOutcomePipeline(OUTCOME_PIPELINE_V1);
-    planted[site] = true;
-    const result: any = enter();
-    expect(result.error?.code).toEqual(code);
-  });
-
-  it('under differential, as a divergence: v2 planned the success', () => {
-    const enter = scoreAFirstRound();
-    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
-    resetDifferentialTally();
-    planted[site] = true;
-    expect(enter).toThrow(new RegExp(`v1 ${code}, v2 ok`));
   });
 });

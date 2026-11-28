@@ -1,6 +1,7 @@
 import { expectPlayedParity, playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
@@ -14,7 +15,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 const { DOMINANT_DUO } = tieFormatConstants;
 

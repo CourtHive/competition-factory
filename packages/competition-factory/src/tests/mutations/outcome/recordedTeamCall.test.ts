@@ -1,4 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
@@ -12,7 +13,7 @@ import { createSeededRandom } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import type { MatchUp, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
@@ -38,7 +39,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 const { DOMINANT_DUO, LAVER_CUP, USTA_COLLEGE } = tieFormatConstants;
 

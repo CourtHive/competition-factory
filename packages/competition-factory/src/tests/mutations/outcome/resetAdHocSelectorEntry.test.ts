@@ -7,18 +7,13 @@ import { afterEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
-import {
-  deleteNotices,
-  getTournamentRecord,
-  setOutcomePipeline,
-  setSchemaWriteMode,
-  setSubscriptions,
-} from '@Global/state/globalState';
+import { deleteNotices, getTournamentRecord, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 import {
   MODIFY_DRAW_DEFINITION,
   MODIFY_MATCHUP,

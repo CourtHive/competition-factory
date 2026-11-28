@@ -1,6 +1,6 @@
 import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import { drawTypes, setupTimedPlayoff } from './timedTeamPlayoff';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { tieFormats } from '@courthive/competition-catalogue';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';

@@ -318,7 +318,6 @@ import type { getTournamentPointAwards } from '@Query/scales/getTournamentPointA
 import type { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import type { bulkMatchUpStatusUpdate } from '@Mutate/events/bulkMatchUpStatusUpdate';
 import type { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
-import type { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import type { scaledTeamAssignment } from '@Mutate/participants/scaledTeamAssignment';
 import type { getEntriesAndSeedsCount } from '@Query/entries/getEntriesAndSeedsCount';
 import type { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
@@ -1455,8 +1454,6 @@ export interface MethodSignatures {
   setMatchUpFormat: EngineMethod<typeof setMatchUpFormat>;
   setMatchUpHomeParticipantId: EngineMethod<typeof setMatchUpHomeParticipantId>;
   setMatchUpScheduleLock: EngineMethod<typeof setMatchUpScheduleLock>;
-  /** @deprecated Removed from the governors and engines in 8.0.0; use `matchUpGovernor.setMatchUpStatus` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#governor-and-engine-route-removals) */
-  setMatchUpState: EngineMethod<typeof setMatchUpState>;
   setMatchUpStatus: EngineMethod<typeof setMatchUpStatus>;
   setOrderOfFinish: EngineMethod<typeof setOrderOfFinish>;
   setParticipantCheckInState: EngineMethod<typeof setParticipantCheckInState>;

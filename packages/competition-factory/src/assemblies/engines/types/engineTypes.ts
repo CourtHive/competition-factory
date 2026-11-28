@@ -1,3 +1,4 @@
+import type { MethodRemovedResult } from '@Global/state/methodRemoved';
 import type { FactoryEngineMethod } from '@Types/factoryEngineMethods';
 import type { MethodSignatures } from './methodSignatures';
 import type { Directives } from '@Types/factoryTypes';
@@ -83,8 +84,21 @@ type FacadeMethodNames = 'q' | 'on' | 'once' | 'off' | 'waitFor' | 'inspect' | '
  *   import { tournamentEngine, FactoryEngineTyped } from 'tods-competition-factory';
  *   const engine = tournamentEngine as FactoryEngineTyped;
  */
+/** engine methods removed in 8.0.0 that stay on the engine to say so: each returns METHOD_REMOVED */
+type RemovedEngineMethodNames = 'outcomePipeline' | 'getOutcomePipeline' | 'setMatchUpState';
+
 export type FactoryEngineTyped = MethodSignatures &
-  Record<Exclude<FactoryEngineMethod, keyof MethodSignatures | FacadeMethodNames>, (...args: any[]) => any> & {
+  Record<
+    Exclude<FactoryEngineMethod, keyof MethodSignatures | FacadeMethodNames | RemovedEngineMethodNames>,
+    (...args: any[]) => any
+  > & {
+    /** @deprecated removed in 8.0.0: returns `METHOD_REMOVED`; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed */
+    outcomePipeline(...removed: unknown[]): MethodRemovedResult;
+    /** @deprecated removed in 8.0.0: returns `METHOD_REMOVED`; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed */
+    getOutcomePipeline(...removed: unknown[]): MethodRemovedResult;
+    /** @deprecated removed in 8.0.0: returns `METHOD_REMOVED`; use `setMatchUpStatus` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#engine-and-governor-routes) */
+    setMatchUpState(...removed: unknown[]): MethodRemovedResult;
+
     /**
      * Developer-JOY unwrap query facade — see `src/forge/q.ts`.
      *

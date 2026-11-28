@@ -10,41 +10,18 @@
  * this module are dead code there and no shipped bundle contains either. Vitest defines it `true` only under
  * NOTICE_PAYLOAD_WRITE_CHECK=1, and `pnpm build:notice-diagnostics` builds a standalone audit engine with it `true`.
  * With the constant compiled in, the detector is active while the suite's test mode is on (the
- * NOTICE_PAYLOAD_WRITE_CHECK setup file) or after `setOutcomePipeline('differential', { checkNoticePayloadWrites:
- * true })`.
+ * NOTICE_PAYLOAD_WRITE_CHECK setup file, or `noticePayloadTestMode` set by the audit build's own driver).
  *
  * The proxy views are from factory #6614.
  */
-import { OUTCOME_PIPELINE_DIFFERENTIAL, outcomePipelineModes } from '@Constants/outcomePipelineConstants';
-
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import type { ErrorType } from '@Constants/errorConditionConstants';
-
 // Set by the suite's setup file; neither the globalState barrel nor an engine exposes it.
 export const noticePayloadTestMode = { enabled: false };
 
-let differentialCheck = false;
 // Each attempted write, kept even when the throw is caught or becomes an unobserved rejection.
 const violations: string[] = [];
 
-export type NoticeAuditOptions = { checkNoticePayloadWrites?: boolean };
-/** The audit build's `setOutcomePipeline`; the published declaration keeps the one-argument form. */
-export type AuditedOutcomePipelineSelector = (
-  mode?: OutcomePipelineMode,
-  options?: NoticeAuditOptions,
-) => { success?: boolean; error?: ErrorType };
-
-/** False refuses the selection: the write check is offered in the differential only. */
-export function selectNoticeAudit(mode?: OutcomePipelineMode, options?: NoticeAuditOptions): boolean {
-  const check = options?.checkNoticePayloadWrites === true;
-  if (check && mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return false;
-  // the selector's own refusal of an unknown mode leaves the check as it was
-  if (mode === undefined || outcomePipelineModes.includes(mode)) differentialCheck = check;
-  return true;
-}
-
 export function noticeAuditActive(): boolean {
-  return differentialCheck || noticePayloadTestMode.enabled;
+  return noticePayloadTestMode.enabled;
 }
 
 /** The attempted writes since the last call, which clears them. */

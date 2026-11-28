@@ -7,7 +7,8 @@ import {
   median,
 } from '@Tests/testHarness/exitPropagation/pipelineCost';
 import { deepCorrectionScenario, runPath } from '@Tests/testHarness/exitPropagation/correctionDivergence';
-import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import type { CallRecord, Selector, Site } from '@Tests/testHarness/exitPropagation/pipelineCost';
 import type { DivergenceConfig } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
@@ -30,7 +31,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -201,16 +202,7 @@ it('the recorder sees the pipeline: every setMatchUpStatus is bracketed and ever
       candidate.propagateExitStatus,
   );
   expect(cell).toBeDefined();
-  // the functions counted are v1's pipeline: under v2, which owns this cell's every call (the double exit's WALKOVER
-  // awarded in the final, S7), v1 reads none of them, so the wrappers are checked against v1 whatever the arm
-  const mode = getOutcomePipeline();
-  setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  let records: CallRecord[];
-  try {
-    records = playCell('control', cell!);
-  } finally {
-    setOutcomePipeline(mode);
-  }
+  const records: CallRecord[] = playCell('control', cell!);
 
   // seven participants in a draw of eight: three first-round matchUps, two semifinals of which a
   // double exit takes at least one out of play — at least four results are entered
@@ -223,10 +215,10 @@ it('the recorder sees the pipeline: every setMatchUpStatus is bracketed and ever
     for (const key of record.sites.keys()) expect(key).not.toContain('(no engine frame)');
   }
 
-  // every counted function is reached by something — a wrapper nothing calls is a wrapper on the
-  // wrong module, and would read as a function the pipeline never uses
+  // what is reached is among the counted functions: with one pipeline, v2 owns this cell's calls and reads fewer of
+  // them than v1 did, so the control no longer asks that every wrapper is reached
   const reached = new Set(siteRows(records).map((row) => row.fn));
-  expect([...reached].sort((a, b) => a.localeCompare(b))).toEqual([
+  const counted = [
     'findDrawMatchUp',
     'getAllDrawMatchUps',
     'getAllStructureMatchUps',
@@ -234,7 +226,9 @@ it('the recorder sees the pipeline: every setMatchUpStatus is bracketed and ever
     'getPositionAssignments',
     'positionTargets',
     'structureAssignedDrawPositions',
-  ]);
+  ];
+  expect([...reached].filter((fn) => !counted.includes(fn))).toEqual([]);
+  expect(reached.has('getMatchUpsMap')).toEqual(true);
 
   // nothing outside a setMatchUpStatus is recorded: the harness's own reads leave no record behind
   expect(takeRecords()).toEqual([]);

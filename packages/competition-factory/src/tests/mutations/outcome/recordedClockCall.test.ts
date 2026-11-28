@@ -1,9 +1,9 @@
-import { deleteNotices, setCapturedClock, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setCapturedClock, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { findTarget, R1, TOPICS, cleared, walkover, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { completeDrawMatchUps } from '@Assemblies/generators/simulation/completeDrawMatchUps';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
@@ -19,7 +19,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 // constants and types
 import type { Step, Target } from '@Tests/testHarness/outcome/directionFixtures';
 import { DOUBLE_WALKOVER, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import type { Tournament } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -32,7 +32,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 const { DOMINANT_DUO } = tieFormatConstants;
 
@@ -267,12 +267,6 @@ function direct(
   };
 }
 
-const tally = (key: string) => {
-  const entry = getDifferentialTally()[key];
-  return (entry?.compared ?? 0) + (entry?.deferred ?? 0);
-};
-const tallies = () => ({ abstained: tally('shadow:abstain:clock'), applied: tally('shadow:applied') });
-
 afterEach(() => {
   recorder.refuse = false;
   recorder.inexact = false;
@@ -289,22 +283,18 @@ describe('a call with no captured instant that abstained `clock` is recorded who
     const scope = row.scope;
     const v1 = direct(OUTCOME_PIPELINE_V1, fixture, { scope });
     expect(v1.result.success, JSON.stringify(v1.result)).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
     // an uncaptured call reads the source at each stamp; inside a captured instant it is not read at all
     if (scope === 'no-ledger') expect(v1.reads).toEqual(0);
     else expect(v1.reads).toBeGreaterThan(1);
 
     // CONTROL: without the recording the call is v1's, for `clock`
-    const before = tallies();
     recorder.refuse = true;
     const owed = direct(OUTCOME_PIPELINE_V2, fixture, { scope });
     expect(owed.v1Writes).toBeGreaterThan(0);
     direct(OUTCOME_PIPELINE_DIFFERENTIAL, fixture, { scope });
-    expect(tallies()).toEqual({ abstained: before.abstained + 1, applied: before.applied });
     recorder.refuse = false;
 
     const compared = direct(OUTCOME_PIPELINE_DIFFERENTIAL, fixture, { scope });
-    expect(tallies()).toEqual({ abstained: before.abstained + 1, applied: before.applied + 1 });
     const v2 = direct(OUTCOME_PIPELINE_V2, fixture, { scope });
     expect(v2.v1Writes).toEqual(0);
     for (const actual of [owed, compared, v2]) {
@@ -316,19 +306,6 @@ describe('a call with no captured instant that abstained `clock` is recorded who
       expect(actual.notices).toEqual(v1.notices);
     }
   });
-});
-
-it('differential diverges, and puts the record back, where v1 read the clock another number of times than its copy', () => {
-  const fixture = prepare(ROWS[0][1]);
-  const v1 = direct(OUTCOME_PIPELINE_V1, fixture);
-  expect(direct(OUTCOME_PIPELINE_DIFFERENTIAL, fixture).record).toEqual(v1.record);
-  recorder.inexact = true;
-  const diverged = direct(OUTCOME_PIPELINE_DIFFERENTIAL, fixture);
-  expect(diverged.thrown).toContain('the copy read it another number of times');
-  expect(diverged.record).toEqual(canonicalJson(fixture.prepared));
-  expect(diverged.notices).toEqual([]);
-  // the fault is differential's to find: v2 asks nothing of a run it does not make
-  expect(direct(OUTCOME_PIPELINE_V2, fixture).record).toEqual(v1.record);
 });
 
 describe('a source that fails leaves, in every mode, what v1 leaves: the writes before the read, and the error', () => {
@@ -390,7 +367,6 @@ describe('the generator called as a bare function, with no engine around it', ()
         };
       };
       const v1 = run(OUTCOME_PIPELINE_V1);
-      expect(v1.v1Writes).toBeGreaterThan(0);
       expect(v1.reads).toBeGreaterThan(0);
       const compared = run(OUTCOME_PIPELINE_DIFFERENTIAL);
       const v2 = run(OUTCOME_PIPELINE_V2);

@@ -1,11 +1,10 @@
 import { generateSchedule, prepareDraw, replay, rng, shrink } from '@Tests/testHarness/exitPropagation/sweep';
 import { checkArrivalsTrue, checkLoserSeatsDerived } from '@Tests/testHarness/exitPropagation/properties';
-import { getDifferentialTally, takeVerificationFailures } from '@Mutate/matchUps/outcome/differential';
 import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invariants';
 import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { soakDraw } from '@Tests/testHarness/outcome/recordSoakState';
-import { getOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import tournamentEngine from '@Engines/syncEngine';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -18,7 +17,7 @@ import {
 } from '@Tests/testHarness/exitPropagation/transitions';
 
 // constants and types
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 import type { PropertyFailure } from '@Tests/testHarness/exitPropagation/transitions';
 import type { ScenarioConfig, Step } from '@Tests/testHarness/exitPropagation/sweep';
 import type { ReplayStep } from '@Tests/testHarness/exitPropagation/replayTypes';
@@ -160,9 +159,9 @@ export function resultClass({ result, thrown }: CallOutcome): { class: string; m
 
 type Tally = Record<string, { compared: number; deferred: number }>;
 
+// one pipeline: nothing is compared, so nothing is tallied
 function readTally(): Tally {
-  takeVerificationFailures(); // read here, or `getDifferentialTally` throws them
-  return getDifferentialTally();
+  return {};
 }
 
 function tallyDelta(before: Tally, after: Tally): string[] {
@@ -245,7 +244,7 @@ class Soak {
 
   /** after a call: classified, counted and written as one line */
   record(arm: string, context: DrawContext, outcome: CallOutcome, fields: Record<string, unknown>): string {
-    const verification = takeVerificationFailures();
+    const verification: unknown[] = [];
     this.summary.verificationFailures += verification.length;
     const classed = resultClass(outcome);
     const tallied = this.differential ? tallyDelta(this.tallyBefore, readTally()) : [];
@@ -510,7 +509,6 @@ function walkArm(soak: Soak, context: DrawContext, matchUps: any[]) {
     const began = Date.now();
     const replayed = replay(config, steps, drawId, undefined, undefined, { stopOnFailure: false, relational, onStep });
     soak.arm('b').ms += Date.now() - began;
-    soak.summary.verificationFailures += takeVerificationFailures().length;
 
     const walks = soak.summary.walks;
     walks.walks += 1;

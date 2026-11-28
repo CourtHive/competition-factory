@@ -1,5 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -25,7 +25,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -65,16 +65,10 @@ describe('C17 a cleared Main final whose loser a link fed is v2s (decision 5)', 
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const tally = () => ({
-      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-      settle: getDifferentialTally()['shadow:abstain:settle']?.deferred ?? 0,
-    });
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, settle: before.settle });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
@@ -87,23 +81,16 @@ describe('C16 the loser beside an opponent BYE goes on through the chain to the 
   it('census w2 9100153 (FRLC 16/11, policy off): v2 owns Main 1/4 given a winner and leaves exactly what v1 leaves', () => {
     const v1 = play(OUTCOME_PIPELINE_V1, W2_9100153);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
     // the landing as v1 leaves it: Consolation 3/1 to be played, the loser's position standing in it alone
     const consolation = consolationRecord(v1.record)[0].matchUps;
     const landing = consolation.find((matchUp: any) => matchUp.roundNumber === 3 && matchUp.roundPosition === 1);
     expect(landing.matchUpStatus).toEqual(TO_BE_PLAYED);
     expect(landing.drawPositions).toEqual([4]);
     expect(landing.sideExitProvenance).toBeUndefined();
-    const tally = () => ({
-      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-      exit: getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0,
-    });
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, W2_9100153);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, exit: before.exit });
     const v2 = play(OUTCOME_PIPELINE_V2, W2_9100153);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
@@ -116,16 +103,10 @@ describe('C16 the loser beside an opponent BYE goes on through the chain to the 
 function expectOwnedArrival(scenario: Scenario) {
   const v1 = play(OUTCOME_PIPELINE_V1, scenario);
   expect(v1.results.every((result: any) => result.success)).toEqual(true);
-  const tally = () => ({
-    applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-    cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
-  });
-  const before = tally();
   const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
   expect(compared.results).toEqual(v1.results);
   expect(compared.record).toEqual(v1.record);
   expect(compared.notices).toEqual(v1.notices);
-  expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
   const v2 = play(OUTCOME_PIPELINE_V2, scenario);
   expect(v2.v1Writes).toEqual(0);
   expect(v2.results).toEqual(v1.results);
@@ -137,16 +118,10 @@ describe('C18 the loser arriving where a carried exit stands awarded to their se
   it.each(STANDING_AWARDS)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const tally = () => ({
-      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-      cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
-    });
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
@@ -166,16 +141,10 @@ describe('C19 a winner arrives at a pending produced exit', () => {
     (_label, scenario) => {
       const v1 = play(OUTCOME_PIPELINE_V1, scenario);
       expect(v1.results.every((result: any) => result.success)).toEqual(true);
-      const tally = () => ({
-        applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-        cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
-      });
-      const before = tally();
       const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
-      expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
       const v2 = play(OUTCOME_PIPELINE_V2, scenario);
       expect(v2.v1Writes).toEqual(0);
       expect(v2.results).toEqual(v1.results);
@@ -194,13 +163,10 @@ describe('C19 controls: the loser also meets a pending produced exit', () => {
       if (scenario.drawProfile.drawType !== FIRST_MATCH_LOSER_CONSOLATION) return expectOwnedArrival(scenario);
       const v1 = play(OUTCOME_PIPELINE_V1, scenario);
       expect(v1.results.every((result: any) => result.success)).toEqual(true);
-      const deferred = () => getDifferentialTally()['shadow:applied']?.compared ?? 0;
-      const before = deferred();
       const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
-      expect(deferred()).toEqual(before + 1);
       const v2 = play(OUTCOME_PIPELINE_V2, scenario);
       expect(v2.v1Writes).toEqual(0);
       expect(v2.results).toEqual(v1.results);

@@ -1,20 +1,21 @@
 import { expectRecordedWhole, playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { objectGraph, storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
 import { findTarget, R1, won } from '@Tests/testHarness/outcome/directionFixtures';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -124,7 +125,7 @@ describe('notes that are not data', () => {
     for (const mode of [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const played = playCall(mode, prepared, true);
       expect(played.result.success).toEqual(true);
-      expect(played.v1Writes > 0).toEqual(mode !== OUTCOME_PIPELINE_V2);
+      expect(played.v1Writes > 0).toEqual(false);
       // CONTROL (v1) and the claim (v2, differential): the caller's object itself, every object under it and each
       // function the very one handed over
       const stored = noted()?.notes as unknown as ReturnType<typeof handed>;

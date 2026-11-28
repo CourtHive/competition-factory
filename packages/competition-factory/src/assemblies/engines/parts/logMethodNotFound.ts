@@ -1,3 +1,4 @@
+import { methodRemoved, REMOVED_METHOD_MIGRATIONS } from '@Global/state/methodRemoved';
 import { engineLogging } from '@Global/state/engineLogging';
 
 // constants and types
@@ -11,7 +12,10 @@ type LogMethodNotFoundArgs = {
 };
 
 export function logMethodNotFound({ methodName, params, start }: LogMethodNotFoundArgs): ResultType {
-  const result = { error: METHOD_NOT_FOUND, methodName };
+  const migration = REMOVED_METHOD_MIGRATIONS.get(methodName);
+  const result = migration
+    ? { ...methodRemoved(methodName, undefined, migration), methodName }
+    : { error: METHOD_NOT_FOUND, methodName };
   const elapsed = start ? Date.now() - start : 0;
   engineLogging({
     result,

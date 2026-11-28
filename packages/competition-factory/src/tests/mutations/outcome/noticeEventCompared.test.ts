@@ -1,5 +1,6 @@
 import { deleteNotices, getNotices, setSubscriptions } from '@Global/state/globalState';
-import { compareNotices, plannedNotices } from '@Mutate/matchUps/outcome/shadow';
+import { plannedNotices } from '@Tests/testHarness/outcome/plannedNotices';
+import { compareNotices } from '@Tests/testHarness/outcome/compareNotices';
 import { applyOwnedPlan } from '@Mutate/matchUps/outcome/apply';
 import { describe, expect, it } from 'vitest';
 

@@ -1,10 +1,11 @@
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
-import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Tests/testHarness/outcomeModes';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 

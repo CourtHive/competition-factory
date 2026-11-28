@@ -246,10 +246,6 @@ That is the director's decision (`setMatchUpStatus` with a `winningSide` on the 
 7.10.0 the driver takes it once nothing else is playable instead of abandoning the draw — the
 promotion to `error` is what exposed that the arm had been auditing abandoned draws.
 
-`OUTCOME_PIPELINE=differential` is a second gate for the same code (see
-[the outcome pipeline § 7.1](/docs/concepts/outcome-pipeline#71-two-implementations-s2)): it runs in
-CI only for pull requests into `master`, so run it locally before a checkpoint.
-
 ## Traps worth knowing before you extend this
 
 Each of these cost real time and produced confident, wholly incorrect results.

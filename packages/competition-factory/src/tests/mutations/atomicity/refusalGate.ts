@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSchemaWriteMode } from '@Global/state/globalState';
+import { setSchemaWriteMode } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { captureNotices } from '../notifications/noticeConformance/harness';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';

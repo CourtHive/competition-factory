@@ -1,5 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { OutcomePipelineDivergence } from '@Mutate/matchUps/outcome/differential';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,12 +8,12 @@ import { setClock } from '@Tools/clock';
 
 // constants
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 import {
   DOUBLE_ELIMINATION,
   FEED_IN_CHAMPIONSHIP,
@@ -285,46 +285,42 @@ function play(mode: OutcomePipelineMode, row: Row) {
   setOutcomePipeline(mode);
   const results: any[] = [];
   const undescribedAfter: string[][] = [];
-  let divergence: string | undefined;
-  try {
-    row.steps.forEach((step, i) => {
-      setClock(`2026-11-26T00:0${i + 1}:00.000Z`);
-      const matchUps = drawMatchUps();
-      let result: any;
-      if ('at' in step) {
-        const target = matchUps.find((m) => m.key === step.at);
-        result = tournamentEngine.setMatchUpStatus({
-          allowChangePropagation: row.allowChangePropagation,
-          propagateExitStatus: row.propagateExitStatus,
-          matchUpId: target?.matchUpId,
-          outcome: step.outcome,
-          drawId: 'd',
-        });
-      } else if ('removeWithBye' in step) {
-        const [structureName, drawPosition] = step.removeWithBye;
-        const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
-        const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
-        result = tournamentEngine.removeDrawPositionAssignment({
-          replaceWithBye: true,
-          drawId: 'd',
-          drawPosition,
-          structureId,
-        });
-      } else if ('swap' in step) {
-        const [structureName, ...drawPositions] = step.swap;
-        const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
-        const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
-        result = tournamentEngine.swapDrawPositionAssignments({ drawId: 'd', drawPositions, structureId });
-      } else result = tournamentEngine.resetDrawDefinition({ drawId: 'd' });
-      results.push(result);
-      undescribedAfter.push(
-        drawMatchUps().flatMap(({ key, stored }) => undescribed(stored).map((stale) => `${key}: ${stale}`)),
-      );
-    });
-  } catch (error) {
-    if (!(error instanceof OutcomePipelineDivergence)) throw error;
-    divergence = error.message;
-  }
+  // one pipeline: nothing to diverge from
+  const divergence: string | undefined = undefined;
+  row.steps.forEach((step, i) => {
+    setClock(`2026-11-26T00:0${i + 1}:00.000Z`);
+    const matchUps = drawMatchUps();
+    let result: any;
+    if ('at' in step) {
+      const target = matchUps.find((m) => m.key === step.at);
+      result = tournamentEngine.setMatchUpStatus({
+        allowChangePropagation: row.allowChangePropagation,
+        propagateExitStatus: row.propagateExitStatus,
+        matchUpId: target?.matchUpId,
+        outcome: step.outcome,
+        drawId: 'd',
+      });
+    } else if ('removeWithBye' in step) {
+      const [structureName, drawPosition] = step.removeWithBye;
+      const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
+      const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
+      result = tournamentEngine.removeDrawPositionAssignment({
+        replaceWithBye: true,
+        drawId: 'd',
+        drawPosition,
+        structureId,
+      });
+    } else if ('swap' in step) {
+      const [structureName, ...drawPositions] = step.swap;
+      const { structures } = tournamentEngine.getEvent({ drawId: 'd' }).drawDefinition;
+      const { structureId } = structures.find((structure: any) => structure.structureName === structureName);
+      result = tournamentEngine.swapDrawPositionAssignments({ drawId: 'd', drawPositions, structureId });
+    } else result = tournamentEngine.resetDrawDefinition({ drawId: 'd' });
+    results.push(result);
+    undescribedAfter.push(
+      drawMatchUps().flatMap(({ key, stored }) => undescribed(stored).map((stale) => `${key}: ${stale}`)),
+    );
+  });
   const last = drawMatchUps().find((m) => m.key === row.then[0])?.stored;
   return {
     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),

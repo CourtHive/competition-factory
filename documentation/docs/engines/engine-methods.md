@@ -924,25 +924,24 @@ engine.setCompetitionClock(); // competition time follows setClock again
 
 ## outcomePipeline
 
-Chooses which implementation of the outcome pipeline (`setMatchUpStatus`) decides. `'v2'`, the clean-room re-implementation written from the [outcome pipeline spec](/docs/concepts/outcome-pipeline#71-two-implementations-s2), is the default. `'v1'` is the original pipeline, kept as a fallback through 7.x. `'differential'` runs both: v2 decides first, v1 runs, and a disagreement throws before anything is written.
-
-No argument restores `'v2'`. Any other value is refused with `INVALID_VALUES`. Process-wide, like `schemaWriteMode`: a run configuration, not request state. Added in 7.5.0; v2 the default since the flip.
-
-**Deprecated.** The selector is deprecated in 7.x and removed in 8.0.0. Once the `v1` and `differential` modes are removed (still in 7.x), it accepts only `'v2'`.
+**Removed in 8.0.0.** 8.0.0 has one outcome pipeline, so there is nothing to choose: the method stays on the engine
+only to say so. A call returns an error result, `METHOD_REMOVED` (code `ERR_METHOD_REMOVED`), whose context names the
+method and links the [migration guide](/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed); it selects
+nothing and never throws. Remove the call. In 7.x it chose between `'v2'` (the default), `'v1'` and `'differential'`.
 
 ```js
-engine.outcomePipeline('v1'); // the fallback
-engine.outcomePipeline(); // back to 'v2'
+const { error, context } = engine.outcomePipeline('v2'); // METHOD_REMOVED, context.method 'outcomePipeline'
 ```
 
 ---
 
 ## getOutcomePipeline
 
-Returns the current outcome pipeline mode: `'v1'`, `'v2'` or `'differential'`. Added in 7.5.0. Deprecated in 7.x and removed in 8.0.0, with [`outcomePipeline`](#outcomepipeline).
+**Removed in 8.0.0**, with [`outcomePipeline`](#outcomepipeline): a call returns `METHOD_REMOVED`. In 7.x it returned the
+current mode.
 
 ```js
-const mode = engine.getOutcomePipeline(); // 'v2'
+const { error } = engine.getOutcomePipeline(); // METHOD_REMOVED
 ```
 
 ---
@@ -961,7 +960,7 @@ tournament in parts needs in order to write one draw row for it. A state provide
 topics (the optional `cycleModifiedTopics`) stamps the tournament too, as under `'tournament'`.
 
 No argument restores `'tournament'`; any other value is refused with `INVALID_VALUES`. Process-wide, like
-`outcomePipeline`.
+`schemaWriteMode`.
 
 ```js
 engine.stampScope('modified');
@@ -994,7 +993,7 @@ against (bulk outcomes across linked tournaments) is refused if any of them lack
 array with `INVALID_VALUES`.
 
 ```js
-const footprint = tools.getMutationFootprint({ methods, outcomePipeline: engine.getOutcomePipeline() });
+const footprint = tools.getMutationFootprint({ methods });
 engine.setState(partialRecord); // the shell, the footprint's draws and participants
 engine.loadedFootprint(footprint);
 engine.executionQueue(methods); // refused with FOOTPRINT_NOT_LOADED if any method needs more

@@ -4,7 +4,8 @@ import {
   prepareCall,
   type RecordedCall,
 } from '@Tests/testHarness/outcome/recordedCallHarness';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';

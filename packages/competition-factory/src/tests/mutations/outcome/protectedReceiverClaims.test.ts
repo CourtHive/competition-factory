@@ -1,5 +1,6 @@
 import { heldClaimInput } from '@Tests/testHarness/outcome/heldByeClaimControls';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { planWinnerArrivals } from '@Mutate/matchUps/outcome/plan/directionOps';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { planWrite } from '@Mutate/matchUps/outcome/write';

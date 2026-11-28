@@ -40,7 +40,7 @@ function read(matchUpId: string) {
 }
 
 writeModeMatrix(() => {
-  for (const entry of ['setMatchUpStatus', 'setMatchUpState'] as const) {
+  for (const entry of ['setMatchUpStatus'] as const) {
     describe(entry, () => {
       function write(
         target: { drawId: string; matchUpId: string },

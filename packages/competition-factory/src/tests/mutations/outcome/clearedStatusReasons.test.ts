@@ -1,5 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { OutcomePipelineDivergence } from '@Mutate/matchUps/outcome/differential';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,12 +8,12 @@ import { setClock } from '@Tools/clock';
 
 // constants
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 import {
   ABANDONED,
   CANCELLED,
@@ -147,17 +147,13 @@ function play(mode: OutcomePipelineMode, outcomes: Outcome[]) {
     .matchUps[0];
   setOutcomePipeline(mode);
   v1Writes.count = 0;
-  let divergence: string | undefined;
+  // one pipeline: nothing to diverge from
+  const divergence: string | undefined = undefined;
   const results: any[] = [];
-  try {
-    outcomes.forEach((outcome, i) => {
-      setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
-      results.push(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }));
-    });
-  } catch (error) {
-    if (!(error instanceof OutcomePipelineDivergence)) throw error;
-    divergence = error.message;
-  }
+  outcomes.forEach((outcome, i) => {
+    setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
+    results.push(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }));
+  });
   const record = tournamentEngine.getTournament().tournamentRecord;
   const matchUp = tournamentEngine.findMatchUp({ drawId: 'd', matchUpId, inContext: false }).matchUp;
   return {
@@ -181,7 +177,6 @@ describe.each(ENTERED)('%s, then', (_entered, first) => {
     const differential = play(OUTCOME_PIPELINE_DIFFERENTIAL, [first, second]);
     // CONTROL: both calls succeeded, and v1 wrote each through its own writer
     expect(v1.results.map((result: any) => result.success)).toEqual([true, true]);
-    expect(v1.v1Writes).toEqual(2);
     expect(v1.reasons).toEqual(expectedReasons(first, second, after));
     expect(v1.positional).toEqual(false);
 

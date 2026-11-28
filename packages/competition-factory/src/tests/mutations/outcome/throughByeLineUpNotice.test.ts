@@ -1,4 +1,5 @@
-import { deleteNotices, getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { prepareCall, type RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { objectGraph, storedGraph } from '@Tests/testHarness/outcome/objectGraph';

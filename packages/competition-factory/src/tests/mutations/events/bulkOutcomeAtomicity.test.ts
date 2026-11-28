@@ -1,6 +1,7 @@
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { getOutcomePipeline, setStateProvider, setSubscriptions } from '@Global/state/globalState';
+import { setStateProvider, setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { takeUnitTally } from '@Mutate/matchUps/outcome/plan/recordedUnit';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import syncGlobalState from '@Global/state/syncGlobalState';

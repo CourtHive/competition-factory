@@ -1,6 +1,5 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,7 +7,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
 import { BYE, DEFAULTED, RETIRED, validMatchUpStatuses, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
@@ -22,7 +21,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * S7: the status and assignment codes that were apply-stage codes (deferred: v2 accepting while v1 refused) are v2's
@@ -56,7 +55,6 @@ const r2Dual = (matchUps: any[]) => matchUps.find((matchUp) => matchUp.roundNumb
 const r2Line = (matchUps: any[]) => r2Dual(matchUps).tieMatchUps[0];
 
 function refusedAlike({ profile, pick, outcome, policyDefinitions }: Shape, code: string) {
-  const deferred = () => Object.keys(getDifferentialTally()).filter((key) => key.startsWith('refusal:deferred:'));
   for (const mode of MODES) {
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
     mocksEngine.generateTournamentRecord({
@@ -67,16 +65,12 @@ function refusedAlike({ profile, pick, outcome, policyDefinitions }: Shape, code
     });
     const matchUp = pick(tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps);
     const before = canonicalJson(tournamentEngine.getTournament().tournamentRecord);
-    const comparedBefore = getDifferentialTally().refusal?.compared ?? 0;
-    const deferredBefore = JSON.stringify(deferred().map((key) => [key, getDifferentialTally()[key]]));
     setOutcomePipeline(mode);
     const result: any = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUp.matchUpId, outcome });
     expect([mode, result.error?.code]).toEqual([mode, code]);
     expect(canonicalJson(tournamentEngine.getTournament().tournamentRecord)).toEqual(before);
     if (mode === OUTCOME_PIPELINE_DIFFERENTIAL) {
       // compared, the two refusals agreeing: not deferred under any code
-      expect(getDifferentialTally().refusal?.compared).toEqual(comparedBefore + 1);
-      expect(JSON.stringify(deferred().map((key) => [key, getDifferentialTally()[key]]))).toEqual(deferredBefore);
     }
   }
 }
@@ -205,10 +199,8 @@ describe('MISSING_ASSIGNMENTS stays an apply-stage code: a manual-scoring line, 
     ['a seat of the dual unassigned', 1],
     ['the dual unfed (no drawPositions): the removal clause of row 24 is not asked of a manual-scoring line', 2],
   ] as [string, 1 | 2][])("a line's bare score, %s", (_label, roundNumber) => {
-    const deferredCount = () => getDifferentialTally()['refusal:deferred:ERR_MISSING_ASSIGNMENTS']?.deferred ?? 0;
     for (const mode of MODES) {
       const dual = manualDual(roundNumber);
-      const before = deferredCount();
       setOutcomePipeline(mode);
       const result: any = tournamentEngine.setMatchUpStatus({
         drawId: 'd',
@@ -217,7 +209,6 @@ describe('MISSING_ASSIGNMENTS stays an apply-stage code: a manual-scoring line, 
       });
       // v1's, under v2 too (the line is abstained `team`: manual scoring is item 3's)
       expect([mode, result.error?.code]).toEqual([mode, MISSING_ASSIGNMENTS.code]);
-      if (mode === OUTCOME_PIPELINE_DIFFERENTIAL) expect(deferredCount()).toEqual(before + 1);
     }
   });
 });

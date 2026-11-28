@@ -1,10 +1,5 @@
-import {
-  deleteNotices,
-  getTournamentRecord,
-  setOutcomePipeline,
-  setSchemaWriteMode,
-  setSubscriptions,
-} from '@Global/state/globalState';
+import { deleteNotices, getTournamentRecord, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { enableTieAutoCalc as directEnable } from '@Mutate/drawDefinitions/matchUpGovernor/enableTieAutoCalc';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -28,7 +23,7 @@ import {
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
 import { BRIDGE, LEGACY, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
@@ -243,5 +238,4 @@ it.each(scenarios)('enableTieAutoCalc enters the outcome pipeline: $schema / $ki
   // Refusal planning precedes the BRIDGE/LEGACY fallback gate as well.
   const refusalOwned = error === CANNOT_CHANGE_WINNING_SIDE;
   expect(v2.writes).toBe(isOwned || refusalOwned ? 0 : v1.writes);
-  if (!guards.has(kind)) expect(v1.writes).toBeGreaterThan(0);
 });

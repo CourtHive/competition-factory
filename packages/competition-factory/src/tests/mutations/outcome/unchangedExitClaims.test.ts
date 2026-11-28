@@ -1,7 +1,8 @@
 import { playCall, prepareCall, type RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';

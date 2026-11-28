@@ -3,6 +3,7 @@ import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { engineBoundaryObservers } from './boundaryObservers';
 import { checkLoadedFootprint } from './loadedFootprintGuard';
+import { internalParamsRefusal } from './internalParams';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
@@ -74,6 +75,9 @@ export function executeFunction(
 export { resolve as resolveEngineMethod };
 
 function resolve({ method, params, methodName, tournamentRecords, tournamentId }) {
+  // a public call takes ids, not the state or checks the factory's own callers hand a method (internalParams.ts)
+  const internal = internalParamsRefusal(methodName, params);
+  if (internal) return internal;
   const footprintError = checkLoadedFootprint({ methodName, params, tournamentRecords, tournamentId });
   if (footprintError) return footprintError;
 

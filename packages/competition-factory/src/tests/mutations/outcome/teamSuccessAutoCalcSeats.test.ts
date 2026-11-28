@@ -1,4 +1,5 @@
-import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { getTournamentRecords } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { resolveTieFormat } from '@courthive/competition-catalogue';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { MatchUp } from '@Types/tournamentTypes';

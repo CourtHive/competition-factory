@@ -4,6 +4,7 @@ import { setClock, setCompetitionClock, type CompetitionTimeProvider } from '@To
 import { getLoadedFootprint, markLoadedFootprint } from '@Global/state/loadedFootprint';
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
+import { ENGINE_ROUTE_REMOVED, methodRemoved } from '@Global/state/methodRemoved';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { setRandomSource } from '@Tools/prng';
 import {
@@ -19,8 +20,6 @@ import {
   getDevContext,
   setSchemaWriteMode,
   getSchemaWriteMode,
-  setOutcomePipeline,
-  getOutcomePipeline,
   setStampScope,
   getStampScope,
   setSaveDrawDeletions,
@@ -65,11 +64,21 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     return processResult(engine, result);
   };
   engine.getSchemaWriteMode = () => getSchemaWriteMode();
-  engine.outcomePipeline = (mode) => {
-    const result = setOutcomePipeline(mode);
-    return processResult(engine, result);
+  // removed in 8.0.0: the names stay, so a remaining call is told so (METHOD_REMOVED) rather than broken
+  const removed = (method: string, migration?: string) => {
+    const result = methodRemoved(method, undefined, migration);
+    processResult(engine, result);
+    return result;
   };
-  engine.getOutcomePipeline = () => getOutcomePipeline();
+  engine.outcomePipeline = () => {
+    return removed('outcomePipeline');
+  };
+  engine.getOutcomePipeline = () => {
+    return removed('getOutcomePipeline');
+  };
+  engine.setMatchUpState = () => {
+    return removed('setMatchUpState', ENGINE_ROUTE_REMOVED);
+  };
   engine.stampScope = (scope?: StampScope) => {
     const result = setStampScope(scope);
     return processResult(engine, result);

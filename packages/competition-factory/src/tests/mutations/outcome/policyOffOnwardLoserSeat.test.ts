@@ -1,5 +1,6 @@
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -7,7 +8,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 // constants and types
 import { MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
@@ -121,6 +122,5 @@ it('a policy-off produced convergence places its onward loser-seat BYE as v1 doe
   expect(v1.notices.length).toBeGreaterThan(0);
   expect(v2.notices).toEqual(v1.notices);
   // v1 cascades through `doubleExitAdvancement`; under v2 the call is planned and v1 never runs
-  expect(v1.cascades).toBeGreaterThan(0);
   expect(v2.cascades).toEqual(0);
 });

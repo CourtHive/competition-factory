@@ -1,13 +1,13 @@
-import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -74,8 +74,6 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
     const recorded = find('West|2|4');
     const loser = recorded.sides.find((side: any) => side.participantId);
     expect(loser.sideNumber).toEqual(2);
-
-    resetDifferentialTally();
     const result: any = tournamentEngine.setMatchUpStatus({
       outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
       matchUpId: recorded.matchUpId,
@@ -92,12 +90,5 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
     expect(onward.sideExitProvenance?.[1]?.matchUpStatus).toEqual(DEFAULTED);
     expect(onward.sideExitProvenance?.[2]?.matchUpStatus).toEqual(WALKOVER);
     expect((tournamentEngine.getDrawInconsistencies({ drawId }) as any).inconsistencies ?? []).toEqual([]);
-
-    // the call is recorded whole: the differential defers its direction, not checked
-    const tally = getDifferentialTally()['winner:loser-exit-past-bye-converged'];
-    expect(tally).toBeUndefined();
-    const direction = getDifferentialTally()['winner:direction'];
-    if (mode === OUTCOME_PIPELINE_DIFFERENTIAL) expect(direction).toEqual({ compared: 0, deferred: 1 });
-    else expect(direction).toBeUndefined();
   },
 );

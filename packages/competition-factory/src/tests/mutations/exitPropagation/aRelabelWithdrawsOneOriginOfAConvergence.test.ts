@@ -1,6 +1,6 @@
-import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -8,7 +8,7 @@ import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Tests/testHarness/outcomeModes';
 import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -52,7 +52,6 @@ afterEach(() => setOutcomePipeline());
 function setup() {
   setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
   setSubscriptions({});
-  resetDifferentialTally();
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId: DRAW_ID, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
     setState: true,
@@ -102,8 +101,6 @@ it('re-derives the convergence to the kept exit, which the relabelled loser wins
   expect(occupants(next)).toEqual([relabelled]);
   expect(errors()).toEqual([]);
   // the call is recorded whole: its direction is deferred, not checked
-  expect(getDifferentialTally()['winner:loser-withdrawn-converged']).toBeUndefined();
-  expect(getDifferentialTally()['winner:direction']).toEqual({ compared: 2, deferred: 1 });
 });
 
 it('the reverse label follows on a convergence: DOUBLE_DEFAULT becomes a DOUBLE_WALKOVER, and so does its product', () => {

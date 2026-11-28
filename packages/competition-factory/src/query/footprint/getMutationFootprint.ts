@@ -1,3 +1,4 @@
+import { methodRemoved, type MethodRemovedResult } from '@Global/state/methodRemoved';
 import { FootprintContext, getMethodFootprint } from './mutationFootprints';
 import type { RecordFootprint } from './collectFootprints';
 import { collectFootprints } from './collectFootprints';
@@ -21,14 +22,22 @@ type GetMutationFootprintArgs = FootprintContext & {
  * another tournament (`params.tournamentId`, else `activeTournamentId`) needs only this one's shell, and
  * `bulkMatchUpStatusUpdate` needs the draws of this tournament's outcomes. Without `tournamentId` the answer is the
  * queue's whole reach, and outcomes across tournaments need the whole record.
+ *
+ * The `outcomePipeline` option is removed in 8.0.0 (one outcome pipeline): given a value, it returns `METHOD_REMOVED`.
  */
-export function getMutationFootprint({
-  activeTournamentId,
-  outcomePipeline,
-  tournamentId,
-  methods,
-}: GetMutationFootprintArgs): MutationFootprint {
+export function getMutationFootprint(args: GetMutationFootprintArgs): MutationFootprint;
+/** @deprecated the `outcomePipeline` option is removed in 8.0.0 and returns `METHOD_REMOVED` */
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function getMutationFootprint(
+  args: GetMutationFootprintArgs & { outcomePipeline: unknown },
+): MethodRemovedResult;
+// eslint-disable-next-line no-redeclare -- overload implementation
+export function getMutationFootprint(
+  args: GetMutationFootprintArgs & { outcomePipeline?: unknown },
+): MutationFootprint | MethodRemovedResult {
+  if (args.outcomePipeline !== undefined) return methodRemoved('getMutationFootprint', 'outcomePipeline');
+  const { activeTournamentId, tournamentId, methods } = args;
   return collectFootprints(methods, (method, params) =>
-    getMethodFootprint(method, params, { outcomePipeline, tournamentId, activeTournamentId }),
+    getMethodFootprint(method, params, { tournamentId, activeTournamentId }),
   );
 }

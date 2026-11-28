@@ -1,13 +1,13 @@
 import { findByCoord, generateDraw, playForward } from '@Tests/testHarness/exitPropagation/routeComparison';
 import { getDrawDefinition, hash } from '@Tests/testHarness/exitPropagation/transitions';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { DRAW_POSITION_ACTIVE } from '@Constants/errorConditionConstants';
 
 /**
@@ -59,7 +59,6 @@ describe('a swap meeting a FIRST_MATCHUP-fed seat that has played on is refused 
     // CONTROL: v1 refuses, over an untouched draw, through its own writer
     expect(v1.result.error).toEqual(DRAW_POSITION_ACTIVE);
     expect(v1.unchanged).toEqual(true);
-    expect(v1.v1Writes).toEqual(1);
 
     const v2 = flipped(OUTCOME_PIPELINE_V2, `swap-active-v2-${roundPosition}`, roundPosition);
     expect(v2.result.error).toEqual(DRAW_POSITION_ACTIVE);

@@ -1,6 +1,7 @@
 import { playCall, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { findTarget, HELD_BYE_REMOVALS } from '@Tests/testHarness/outcome/directionFixtures';
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -9,14 +10,14 @@ import { setClock } from '@Tools/clock';
 // constants and types
 import { BYE, COMPLETED, DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP } from '@Constants/topicConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -189,7 +190,6 @@ describe('the call itself is v2s, and leaves what v1 leaves', () => {
     const call = prepareCall(build);
     const v1 = playCall(OUTCOME_PIPELINE_V1, call);
     expect(v1.result.success, JSON.stringify(v1.result)).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
     const compared = playCall(OUTCOME_PIPELINE_DIFFERENTIAL, call);
     const v2 = playCall(OUTCOME_PIPELINE_V2, call);
     expect(v2.v1Writes).toEqual(0);

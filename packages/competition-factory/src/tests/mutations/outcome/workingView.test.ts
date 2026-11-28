@@ -1,6 +1,6 @@
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { createWorkingView } from '@Mutate/matchUps/outcome/overlay';
-import { compareIndex } from '@Mutate/matchUps/outcome/indexOracle';
+import { compareIndex } from '@Tests/testHarness/outcome/compareIndex';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { setSubscriptions } from '@Global/state/globalState';

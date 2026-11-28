@@ -10,7 +10,6 @@ import { expect, it, describe } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
@@ -103,15 +102,13 @@ const drawsOf = (record: any) =>
 const participantsOf = (record: any) =>
   Object.fromEntries((record.participants ?? []).map((p: any) => [p.participantId, p]));
 
-function run(record: any, method: string, params: any, outcomePipeline: string) {
+function run(record: any, method: string, params: any) {
   setClock(CLOCK);
   setRandomSource(7);
   tournamentEngine.reset();
-  tournamentEngine.outcomePipeline(outcomePipeline);
   tournamentEngine.setState(structuredClone(record));
   const result: any = tournamentEngine[method](params);
   const after = tournamentEngine.getTournament().tournamentRecord;
-  tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V1);
   setRandomSource();
   setClock();
   return { result, after };
@@ -121,7 +118,6 @@ type Scenario = {
   name: string;
   method: string;
   params: (record: any) => any;
-  pipelines?: string[];
   expectSuccess?: boolean;
 };
 
@@ -206,31 +202,26 @@ const SCENARIOS: Scenario[] = [
     name: 'singles score',
     method: 'setMatchUpStatus',
     params: (r) => ({ drawId: 'D1', matchUpId: findMatchUp(r, 'D1').matchUpId, outcome }),
-    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
   },
   {
     name: 'doubles score',
     method: 'setMatchUpStatus',
     params: (r) => ({ drawId: 'D3', matchUpId: findMatchUp(r, 'D3').matchUpId, outcome }),
-    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
   },
   {
     name: 'TEAM collection line score',
     method: 'setMatchUpStatus',
     params: (r) => ({ drawId: 'D4', matchUpId: collectionLine(r).matchUpId, outcome }),
-    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
   },
   {
     name: 'bulk scores, two draws of one event',
     method: 'bulkMatchUpStatusUpdate',
     params: (r) => ({ outcomes: [bulkOutcome(r, 'E1', 'D1'), bulkOutcome(r, 'E1', 'D2')] }),
-    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
   },
   {
     name: 'bulk scores, draws of two events',
     method: 'bulkMatchUpStatusUpdate',
     params: (r) => ({ outcomes: [bulkOutcome(r, 'E1', 'D1'), bulkOutcome(r, 'E2', 'D3')] }),
-    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
   },
   {
     name: 'assign an official',
@@ -361,25 +352,18 @@ describe('mutation footprints', () => {
     for (const method of Object.keys(mutationFootprints)) expect([method, kinds[method]]).toEqual([method, 'mutation']);
   });
 
-  const cases = SCENARIOS.flatMap((scenario) =>
-    (scenario.pipelines ?? [OUTCOME_PIPELINE_V1]).map(
-      (pipeline) => [`${scenario.name} (${pipeline})`, scenario, pipeline] as const,
-    ),
-  );
+  const cases = SCENARIOS.map((scenario) => [scenario.name, scenario] as const);
 
-  it.each(cases)('%s: same answer on its footprint, no write outside it', (_name, scenario, pipeline) => {
+  it.each(cases)('%s: same answer on its footprint, no write outside it', (_name, scenario) => {
     const params = scenario.params(record);
-    const footprint = getMutationFootprint({
-      methods: [{ method: scenario.method, params }],
-      outcomePipeline: pipeline as any,
-    });
+    const footprint = getMutationFootprint({ methods: [{ method: scenario.method, params }] });
     expect(footprint.tournament).toEqual(false);
 
-    const whole = run(record, scenario.method, params, pipeline);
+    const whole = run(record, scenario.method, params);
     expect(whole.result.error).toBeUndefined();
 
     const partialRecord = reduceRecordToFootprint({ tournamentRecord: record, footprint });
-    const partial = run(partialRecord, scenario.method, params, pipeline);
+    const partial = run(partialRecord, scenario.method, params);
 
     // the same answer
     expect(strip(partial.result.error)).toEqual(strip(whole.result.error));

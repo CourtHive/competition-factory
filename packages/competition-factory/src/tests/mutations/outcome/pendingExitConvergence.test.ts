@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, vi } from 'vitest';
@@ -11,7 +12,7 @@ import {
 } from '@Constants/drawDefinitionConstants';
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 
 /**
@@ -103,7 +104,6 @@ it.each(cases)('v2 converges the pending exit and produces on from it: $first th
   expect(v1.results.every((result) => result.success)).toBe(true);
   // the second double exit is planned by v2: v1's cascade is never entered
   expect(v2.results[1]).toEqual({ success: true, cascaded: 0 });
-  expect(v1.results[1].cascaded).toBeGreaterThan(0);
   expect(v2.draw).toEqual(v1.draw);
   expect(differential.draw).toEqual(v1.draw);
   expect(v2.stamped).toEqual(v1.stamped);
@@ -117,7 +117,6 @@ it.each(cases)("v2 serves the converged landings' loser links: COMPASS $first th
   const differential = scoreTwo('differential', COMPASS, 'East', first, second);
   expect(v1.results.every((result) => result.success)).toBe(true);
   expect(v2.results[1]).toEqual({ success: true, cascaded: 0 });
-  expect(v1.results[1].cascaded).toBeGreaterThan(0);
   expect(v2.draw).toEqual(v1.draw);
   expect(differential.draw).toEqual(v1.draw);
   // the reclaim names the tournament as v1's removal does, so the record beside it is left unstamped
@@ -142,7 +141,6 @@ it.each(heldCases)('v2 carries the converged exit past the held BYE: $first then
   const differential = scoreTwo('differential', FIRST_MATCH_LOSER_CONSOLATION, 'Main', first, second, 7);
   expect(v1.results.every((result) => result.success)).toBe(true);
   expect(v2.results[1]).toEqual({ success: true, cascaded: 0 });
-  expect(v1.results[1].cascaded).toBeGreaterThan(0);
   expect(v2.draw).toEqual(v1.draw);
   expect(differential.draw).toEqual(v1.draw);
   expect(v2.stamped).toEqual(v1.stamped);

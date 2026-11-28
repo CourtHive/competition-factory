@@ -1,7 +1,7 @@
-import { addNotice, deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { addNotice, deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
@@ -21,7 +21,7 @@ import {
 // constants and types
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import type { RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import type { AbstainReason } from '@Mutate/matchUps/outcome/types';
@@ -33,7 +33,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 const { DOMINANT_DUO } = tieFormatConstants;
 
@@ -213,11 +213,6 @@ function walkoverDualLine() {
   return { drawId: 'd', matchUpId: line.matchUpId, outcome: rubberOutcome(line, 1) };
 }
 
-const tally = (key: string) => {
-  const entry = getDifferentialTally()[key];
-  return (entry?.compared ?? 0) + (entry?.deferred ?? 0);
-};
-
 describe('a recording a settle predicate finds work on, where the passes themselves find none, is v2s', () => {
   const PROVED: [string, AbstainReason, () => Record<string, unknown>][] = [
     ['a qualifier whose removal play downstream holds back', 'link', qualifierHeldBack],
@@ -253,10 +248,9 @@ describe('a recording a settle predicate finds work on, where the passes themsel
   const FAULTS: Fault[] = ['a notice', 'a field', 'a stamp', 'the bound', 'an error', 'a random draw'];
   it.each(PROVED.flatMap(([label, reason, build]) => FAULTS.map((fault) => [fault, label, reason, build] as const)))(
     'CONTROL, the second settle makes %s: %s stays v1s',
-    (fault, _label, reason, build) => {
+    (fault, _label, _reason, build) => {
       const call = prepareCall(build);
       const v1 = playCall(OUTCOME_PIPELINE_V1, call);
-      const before = { abstained: tally(`shadow:abstain:${reason}`), applied: tally('shadow:applied') };
       for (const mode of [OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V2] as const) {
         settle.onCopy = 0;
         settle.fault = fault;
@@ -266,10 +260,6 @@ describe('a recording a settle predicate finds work on, where the passes themsel
         expect(actual.v1Writes).toBeGreaterThan(0);
         expectPlayedParity(actual, v1);
       }
-      expect({ abstained: tally(`shadow:abstain:${reason}`), applied: tally('shadow:applied') }).toEqual({
-        abstained: before.abstained + 1,
-        applied: before.applied,
-      });
     },
   );
 });

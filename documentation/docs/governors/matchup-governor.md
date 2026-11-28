@@ -1056,20 +1056,9 @@ engine.setMatchUpFormat({
 
 ## setMatchUpState
 
-**Deprecated on the engine surface since 7.5.0; removed at the next major.** This is the internal
-state writer behind [`setMatchUpStatus`](#setmatchupstatus). Called directly it skips the scoring
-policy's say over the propagation flags, score-string derivation, format validation and the
-exit-propagation cascade, so the draw may not agree with the result. Use `setMatchUpStatus`.
-
-```js
-engine.setMatchUpState({
-  matchUpId, // required
-  drawId, // required
-  matchUpStatus, // optional
-  score, // optional
-  winningSide, // optional
-});
-```
+**Removed in 8.0.0.** This was the internal state writer behind [`setMatchUpStatus`](#setmatchupstatus), and called
+directly it could refuse a result after writing part of it. It is no longer on `matchUpGovernor`, and a call through
+an engine returns `METHOD_REMOVED`. Use `setMatchUpStatus`.
 
 ---
 

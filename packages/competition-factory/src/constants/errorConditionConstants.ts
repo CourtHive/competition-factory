@@ -1017,6 +1017,12 @@ export const METHOD_NOT_FOUND = {
   code: 'ERR_NOT_FOUND_METHOD' as const,
 } satisfies ErrorType;
 
+// a method or option removed in 8.0.0: the context names it, and the guide says what replaces it
+export const METHOD_REMOVED = {
+  message: 'Method removed in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0',
+  code: 'ERR_METHOD_REMOVED' as const,
+} satisfies ErrorType;
+
 // An operation asked for rollback and its snapshot of the state is not one it could restore. Refused
 // BEFORE anything runs: a rollback found impossible after the writes would leave them in place.
 export const ROLLBACK_UNAVAILABLE = {
@@ -1196,6 +1202,7 @@ export const errorConditionConstants = {
   MATCHUP_HAS_SCHEDULING,
   MATCHUP_NOT_FOUND,
   METHOD_NOT_FOUND,
+  METHOD_REMOVED,
   ROLLBACK_UNAVAILABLE,
   UNREGISTERED_PREVIEW_METHOD,
   MUTATION_LOCKED,

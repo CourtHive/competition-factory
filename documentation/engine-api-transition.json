@@ -3468,7 +3468,7 @@
         "line": 176
       },
       "governors": ["matchUpGovernor"],
-      "engineDisposition": "scheduled-for-removal",
+      "engineDisposition": "removed",
       "standaloneDisposition": "review-required",
       "externalConfirmation": "confirmed",
       "replacement": "matchUpGovernor.setMatchUpStatus",
@@ -3477,7 +3477,7 @@
       "documentationMentions": ["governors/matchup-governor.md"],
       "testHarnessReach": "not product usage; does not retain a production route",
       "consumerMentions": [],
-      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26",
+      "consumerReview": "removal or rename recorded in the 8.0.0 migration guide; added to the manifest 2026-11-26; removed 2026-11-27, a public route that could refuse after writing (it returns METHOD_REMOVED)",
       "engineEffects": {
         "writes": "yes",
         "notices": "not-assessed",

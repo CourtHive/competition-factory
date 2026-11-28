@@ -1,6 +1,7 @@
 import { assertRefusalsUnchanged } from '@Tests/testHarness/corpus/refusalInvariant';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
-import { setOutcomePipeline, setStateProvider } from '@Global/state/globalState';
+import { setStateProvider } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';

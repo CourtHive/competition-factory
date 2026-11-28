@@ -1,5 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { CARRIED, exited, MAIN, play, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -12,7 +12,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * C20: A STANDING AWARD THE ARRIVING WINNER TAKES, the winner's twin of C18. `Main|1|1`'s winner waits alone in
@@ -93,21 +93,14 @@ const OWNED: [string, Scenario][] = [
   CARRIED_INTO_CONSOLATION,
 ];
 
-const tally = () => ({
-  applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-  cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
-});
-
 describe('C20 the winner arriving where a carried exit stands awarded to their seat takes it and goes on', () => {
   it.each(OWNED)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);

@@ -2,9 +2,8 @@ import {
   cannotPartlyCommit,
   PARTIAL_COMMIT_METHODS,
   queueCannotPartlyCommit,
-  WRITES_BEFORE_REFUSING,
 } from '@Assemblies/engines/parts/rollbackSnapshot';
-import { addNotice, getNoticeBuffer, getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { addNotice, getNoticeBuffer, getTournamentRecords } from '@Global/state/globalState';
 import { setStateProvider } from '@Global/state/globalState';
 import { deleteNotices, readMutationStatus, setSubscriptions } from '@Global/state/globalState';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
@@ -22,11 +21,6 @@ import { join, relative } from 'node:path';
 // constants
 import { COURT_NOT_FOUND, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MODIFY_MATCHUP, MODIFY_VENUE } from '@Constants/topicConstants';
-import {
-  OUTCOME_PIPELINE_DIFFERENTIAL,
-  OUTCOME_PIPELINE_V1,
-  OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
 
 /**
  * WHEN A ROLLBACK NEEDS A SNAPSHOT (engines/parts/rollbackSnapshot.ts). A call or queue that is one directive of a
@@ -99,41 +93,26 @@ describe('which calls take a snapshot', () => {
   const builtin = (name: string) => (governors as any).matchUpGovernor[name];
 
   it('one factory method that cannot partly commit takes none', () => {
-    setOutcomePipeline(OUTCOME_PIPELINE_V2);
-    expect(cannotPartlyCommit('setMatchUpStatus', builtin('setMatchUpStatus'), {})).toBe(true);
-    const assignDrawPosition = (governors as any).drawsGovernor.assignDrawPosition;
-    expect(cannotPartlyCommit('assignDrawPosition', assignDrawPosition, { participantId: 'p' })).toBe(true);
-    expect(cannotPartlyCommit('modifyVenue', (governors as any).venueGovernor.modifyVenue, {})).toBe(true);
-  });
-
-  it('a bulk method, a BYE placement, or a custom method keeps the snapshot', () => {
-    expect(cannotPartlyCommit('bulkMatchUpStatusUpdate', builtin('bulkMatchUpStatusUpdate'), {})).toBe(false);
-    expect(cannotPartlyCommit('resetAdHocMatchUps', builtin('resetAdHocMatchUps'), {})).toBe(false);
-    expect(cannotPartlyCommit('deleteCourts', (governors as any).venueGovernor.deleteCourts, {})).toBe(false);
+    expect(cannotPartlyCommit('setMatchUpStatus', builtin('setMatchUpStatus'))).toBe(true);
     const { assignDrawPosition, assignDrawPositionBye } = (governors as any).drawsGovernor;
-    expect(cannotPartlyCommit('assignDrawPositionBye', assignDrawPositionBye, {})).toBe(false);
-    expect(cannotPartlyCommit('assignDrawPosition', assignDrawPosition, { bye: true })).toBe(false);
-    expect(cannotPartlyCommit('customRefusal', customRefusal, {})).toBe(false);
-    // a custom method registered under a factory name is still custom
-    expect(cannotPartlyCommit('setMatchUpStatus', customRefusal, {})).toBe(false);
+    expect(cannotPartlyCommit('assignDrawPosition', assignDrawPosition)).toBe(true);
+    // a BYE placement validates before it mutates, and refuses the writer's own params (internalParams.ts)
+    expect(cannotPartlyCommit('assignDrawPositionBye', assignDrawPositionBye)).toBe(true);
+    expect(cannotPartlyCommit('modifyVenue', (governors as any).venueGovernor.modifyVenue)).toBe(true);
+    const methods = { setMatchUpStatus: builtin('setMatchUpStatus') };
+    expect(queueCannotPartlyCommit([{ method: 'setMatchUpStatus', params: {} }], methods)).toBe(true);
   });
 
-  it('setMatchUpStatus keeps the snapshot under any outcome pipeline but v2', () => {
-    // v1, which the differential also runs on the stored record, can refuse after writing
-    for (const [pipeline, snapshot] of [
-      [OUTCOME_PIPELINE_V1, true],
-      [OUTCOME_PIPELINE_DIFFERENTIAL, true],
-      [OUTCOME_PIPELINE_V2, false],
-    ] as const) {
-      setOutcomePipeline(pipeline);
-      expect(cannotPartlyCommit('setMatchUpStatus', builtin('setMatchUpStatus'), {})).toBe(!snapshot);
-      const methods = { setMatchUpStatus: builtin('setMatchUpStatus') };
-      expect(queueCannotPartlyCommit([{ method: 'setMatchUpStatus', params: {} }], methods)).toBe(!snapshot);
-    }
+  it('a bulk method or a custom method keeps the snapshot', () => {
+    expect(cannotPartlyCommit('bulkMatchUpStatusUpdate', builtin('bulkMatchUpStatusUpdate'))).toBe(false);
+    expect(cannotPartlyCommit('resetAdHocMatchUps', builtin('resetAdHocMatchUps'))).toBe(false);
+    expect(cannotPartlyCommit('deleteCourts', (governors as any).venueGovernor.deleteCourts)).toBe(false);
+    expect(cannotPartlyCommit('customRefusal', customRefusal)).toBe(false);
+    // a custom method registered under a factory name is still custom
+    expect(cannotPartlyCommit('setMatchUpStatus', customRefusal)).toBe(false);
   });
 
   it('a queue of more than one directive keeps the snapshot', () => {
-    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     const methods = { setMatchUpStatus: builtin('setMatchUpStatus') };
     const directive = { method: 'setMatchUpStatus', params: {} };
     expect(queueCannotPartlyCommit([directive], methods)).toBe(true);
@@ -161,11 +140,10 @@ describe('which calls take a snapshot', () => {
     expect(importers.sort()).toEqual(Object.keys(writers).sort());
     expect([...PARTIAL_COMMIT_METHODS].sort()).toEqual(Object.values(writers).sort());
 
-    // and no governor exposes one of them, or a BYE placement, under a name the lists do not hold
+    // and no governor exposes one of them under a name the list does not hold
     const watched = new Map<unknown, string>();
     for (const governor of Object.values(governors) as any[])
-      for (const name of [...PARTIAL_COMMIT_METHODS, ...Object.keys(WRITES_BEFORE_REFUSING)])
-        if (governor[name]) watched.set(governor[name], name);
+      for (const name of PARTIAL_COMMIT_METHODS) if (governor[name]) watched.set(governor[name], name);
     for (const governor of Object.values(governors) as any[])
       for (const [name, method] of Object.entries(governor))
         if (watched.has(method)) expect(name).toEqual(watched.get(method));
@@ -174,7 +152,6 @@ describe('which calls take a snapshot', () => {
 
 describe('sync engine', () => {
   it('a refused single directive takes no snapshot and returns what the snapshot path returns', () => {
-    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     const { drawId, outcome } = setup();
     const params = { drawId, matchUpId: 'unknown', outcome };
     const before = stored();
@@ -221,7 +198,7 @@ describe('sync engine', () => {
     expect(delivered.length).toBeGreaterThan(0);
   });
 
-  it('a BYE placement keeps the snapshot', () => {
+  it('a BYE placement takes no snapshot: it validates before it writes', () => {
     const {
       tournamentRecord,
       drawIds: [drawId],
@@ -233,8 +210,8 @@ describe('sync engine', () => {
     // refused for an unknown structure: the placement itself is not what is under test
     const params = { drawId, structureId: 'unknown', drawPosition: 1 };
     const placements: [string, object, boolean][] = [
-      ['assignDrawPositionBye', params, true],
-      ['assignDrawPosition', { ...params, bye: true }, true],
+      ['assignDrawPositionBye', params, false],
+      ['assignDrawPosition', { ...params, bye: true }, false],
       ['assignDrawPosition', { ...params, participantId: tournamentRecord.participants[0].participantId }, false],
     ];
     for (const [method, placement, snapshot] of placements) {
@@ -350,7 +327,6 @@ describe('async engine', () => {
   const name = async () => (await asyncEngine.getTournament()).tournamentRecord?.tournamentName;
 
   it('a refused single directive takes no snapshot; a queue of two does; both return the same refusal', async () => {
-    setOutcomePipeline(OUTCOME_PIPELINE_V2);
     const outcomes = await request(async ({ drawId, matchUps, outcome }) => {
       const params = { drawId, matchUpId: 'unknown', outcome };
       const record = held();

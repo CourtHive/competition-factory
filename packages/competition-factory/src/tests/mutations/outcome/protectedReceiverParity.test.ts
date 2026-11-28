@@ -1,4 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { objectGraph, storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
@@ -24,7 +25,7 @@ import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from 
 import { TIEBREAK_POINTS_NOT_RECORDED } from '@Constants/scoreWarningConstants';
 import type { Tournament } from '@Types/tournamentTypes';
 import type { RecordedCall } from '@Tests/testHarness/outcome/recordedCallHarness';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 
 afterEach(() => {
   vi.restoreAllMocks();

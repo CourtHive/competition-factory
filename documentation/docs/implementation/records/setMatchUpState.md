@@ -6,7 +6,7 @@ title: setMatchUpState
 
 :::warning 8.0.0 engine API transition
 
-This method is **scheduled for removal from `matchUpGovernor` at 8.0.0**. Its 7.x route still works. It leaves the engines with it. The removal or rename is recorded in the [8.0.0 migration guide](/docs/migration-8.0.0#by-governor). The standalone package-export decision is made per method; see the [transition index](/docs/implementation/engine-api-transition-8).
+This method is **removed from `matchUpGovernor` and the engines in 8.0.0**. A call through an engine returns `METHOD_REMOVED` (it could refuse after writing). Its 7.x route still works. The removal or rename is recorded in the [8.0.0 migration guide](/docs/migration-8.0.0#by-governor). The standalone package-export decision is made per method; see the [transition index](/docs/implementation/engine-api-transition-8).
 
 :::
 

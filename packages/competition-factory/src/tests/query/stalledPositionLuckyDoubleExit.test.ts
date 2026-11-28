@@ -1,6 +1,6 @@
 import { playStalledChain, STALLED_CHAIN } from '@Tests/testHarness/exitPropagation/stalledChain';
 import { STALLED_POSITION } from '@Query/drawDefinition/getStructureInconsistencies';
-import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -12,7 +12,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * A SEAT LEFT OPEN BEHIND A LUCKY DRAW'S DOUBLE EXIT IS NOT A STALL.

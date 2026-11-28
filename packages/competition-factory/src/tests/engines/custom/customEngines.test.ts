@@ -45,7 +45,6 @@ describe('Custom Engines Documentation Examples', () => {
       // Import exactly as shown in documentation
       askEngine.importMethods({
         setMatchUpStatus: governors.matchUpGovernor.setMatchUpStatus,
-        setMatchUpState: governors.matchUpGovernor.setMatchUpState,
         allTournamentMatchUps: governors.queryGovernor.allTournamentMatchUps,
       });
 

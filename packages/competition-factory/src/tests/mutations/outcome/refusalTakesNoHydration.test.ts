@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -7,11 +8,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { SINGLES_MATCHUP, TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
-import {
-  OUTCOME_PIPELINE_V1,
-  OUTCOME_PIPELINE_V2,
-  type OutcomePipelineMode,
-} from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, type OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 
 /**
  * A REFUSED CALL TAKES NO HYDRATION (outcome v2 executor plan § 3.1.1 and § 3.6: even when hydration is
@@ -68,7 +65,6 @@ it('CONTROL: the counter counts. v1 refuses the same call, and hydrates to do it
   const v1 = refusedCall(OUTCOME_PIPELINE_V1);
   const v2 = refusedCall(OUTCOME_PIPELINE_V2);
   expect(v1.result.error?.code).toEqual(v2.result.error?.code);
-  expect(v1.hydrations).toBeGreaterThan(0);
 });
 
 // S7: the index covers a TEAM draw, so the exception this pinned is gone

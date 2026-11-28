@@ -134,8 +134,8 @@ function call(factory, kind, storage, queue, mode) {
 
 let accepted = 0,
   refused = 0;
-for (const pipeline of ['v1', 'v2', 'differential']) {
-  for (const f of [base, candidate]) f.globalState.setOutcomePipeline(pipeline);
+// one outcome pipeline in 8.0.0
+for (const pipeline of ['v2']) {
   for (const kind of [
     'shared',
     'invalidPair',
@@ -167,7 +167,6 @@ for (const pipeline of ['v1', 'v2', 'differential']) {
   }
 }
 console.log({ accepted, refused });
-for (const f of [base, candidate]) f.globalState.setOutcomePipeline();
 
 function measure(factory, kind) {
   const { tournamentEngine: e, globalState: g } = factory;

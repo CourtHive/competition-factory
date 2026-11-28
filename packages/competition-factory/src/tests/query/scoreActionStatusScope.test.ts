@@ -1,7 +1,8 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { getDisabledMatchUpStatuses } from '@Query/matchUps/getDisabledMatchUpStatuses';
 import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -10,7 +11,7 @@ import tournamentEngine from '@Engines/syncEngine';
 // constants and types
 import { CHALLENGED, DEAD_RUBBER, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MATCHUP_STATUS_OUT_OF_SCOPE } from '@Constants/errorConditionConstants';
-import { outcomePipelineModes } from '@Constants/outcomePipelineConstants';
+import { outcomePipelineModes } from '@Tests/testHarness/outcomeModes';
 import { matchUpStatusScopes } from '@Constants/matchUpStatusScopes';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES, TEAM } from '@Constants/matchUpTypes';

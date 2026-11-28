@@ -1,13 +1,12 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import {
   INVALID_END_TIME,
@@ -20,7 +19,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * S7, § 2 row 29: a schedule refused by its own write (a stop, resume or end time out of order, a venue not found, a
@@ -76,7 +75,6 @@ describe('a schedule its own write refuses is refused before the outcome, alike 
         .allDrawMatchUps({ drawId: 'd' })
         .matchUps.find((matchUp: any) => matchUp.roundNumber === 1);
       const before = canonicalJson(tournamentEngine.getTournament().tournamentRecord);
-      const compared = getDifferentialTally().refusal?.compared ?? 0;
       setOutcomePipeline(mode);
       const result: any = tournamentEngine.setMatchUpStatus({
         drawId: 'd',
@@ -86,8 +84,6 @@ describe('a schedule its own write refuses is refused before the outcome, alike 
       });
       expect([mode, result.error?.code]).toEqual([mode, code]);
       expect(canonicalJson(tournamentEngine.getTournament().tournamentRecord)).toEqual(before);
-      if (mode === OUTCOME_PIPELINE_DIFFERENTIAL)
-        expect(getDifferentialTally().refusal?.compared).toEqual(compared + 1);
     }
   });
 

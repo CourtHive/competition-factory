@@ -1,5 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -20,7 +20,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -49,17 +49,11 @@ describe('C20 a plain loser goes on through a BYE chain or a last-round BYE', ()
   it.each(PLAIN_BYE_ARRIVALS)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const tally = () => ({
-      applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-      cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
-    });
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
     // the linked-winner control is recorded whole (batch 3), a TEAM one too (batch 4b)
-    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);

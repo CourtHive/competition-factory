@@ -1,6 +1,5 @@
 import { drawMatchUps, drawStructures, readBefore, recordedOps, stampCopies, withNoticeMarks } from './recordedDiff';
 import { withoutSettleTelemetry } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
-import { getOutcomePipeline } from '@Global/state/globalState';
 import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { replayedInstants } from '@Tools/replayedInstants';
@@ -12,7 +11,6 @@ import { Recording } from '../recording';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { ResultType } from '@Types/factoryTypes';
 import type { OutcomeOp } from '../ops';
 
@@ -132,12 +130,11 @@ export function applyUnit(planned: Exclude<PlannedUnit, { refused: ResultType }>
 export type DirectUnit = (bound: { unowned: ResultType }) => ResultType;
 
 /**
- * ONE UNIT, AT THE COST OF ONE CALL WHERE v2 DECIDES IT. Under `v2` a unit that is one outcome call is first made as that
- * call on the stored record, with `bound`: v2 refuses before its first write (its refusals are planned against the
+ * ONE UNIT, AT THE COST OF ONE CALL WHERE v2 DECIDES IT. A unit that is one outcome call is first made as that call on
+ * the stored record, with `bound`: v2 refuses before its first write (its refusals are planned against the
  * read-only view) or writes a plan it owns (native ops, or a whole-call recording read off a copy), exactly as a single
  * `setMatchUpStatus` does. Only a call v2 would leave to v1 is handed back unwritten, and the unit is then planned whole
- * on a copy (`planUnit`). Under `v1` and `differential` every unit is planned on a copy, so v1's own writers never write
- * the stored record from a unit.
+ * on a copy (`planUnit`), so v1's own writers never write the stored record from a unit.
  */
 export function decideUnit({
   records,
@@ -150,7 +147,7 @@ export function decideUnit({
   direct?: DirectUnit;
   run: UnitRun;
 }): ResultType {
-  if (direct && getOutcomePipeline() === OUTCOME_PIPELINE_V2) {
+  if (direct) {
     const bound = { unowned: {} as ResultType };
     const result = direct(bound);
     if (result !== bound.unowned) {

@@ -171,13 +171,15 @@ setTournamentId(tournamentId);
 
 ## setOutcomePipeline
 
-Sets which outcome pipeline implementation decides, process-wide: `'v2'` (the default), `'v1'` (the fallback, kept through 7.x) or `'differential'`. No argument restores `'v2'`; any other value is refused with `INVALID_VALUES`. Engines expose the same setting as [`engine.outcomePipeline`](/docs/engines/engine-methods#outcomepipeline), which is the usual way to reach it; `getOutcomePipeline()` returns the current mode. Added in 7.5.0. Deprecated in 7.x and removed in 8.0.0, with `getOutcomePipeline`.
+**Removed in 8.0.0**, with `getOutcomePipeline`: there is one outcome pipeline. Both names stay exported, and a call
+returns an error result, `METHOD_REMOVED`, naming the function and linking the
+[migration guide](/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed). Neither selects nor reads anything,
+and neither throws. Remove the calls.
 
 ```js
 import { globalState } from 'tods-competition-factory';
 
-globalState.setOutcomePipeline('v1');
-globalState.setOutcomePipeline(); // back to 'v2'
+globalState.setOutcomePipeline('v2').error; // METHOD_REMOVED
 ```
 
 ---

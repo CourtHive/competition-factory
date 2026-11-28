@@ -56,9 +56,7 @@ export async function asyncEngineInvoke(engine: { [key: string]: any }, args: an
   // one instant for the whole call, captured before anything is written; see tools/clock.ts
   return withCapturedClockAsync(async (timeStamp) => {
     // a call that cannot partly commit takes no snapshot of the records (rollbackSnapshot.ts)
-    const capture = params.rollbackOnError
-      ? captureRollback(cannotPartlyCommit(methodName, method, params))
-      : undefined;
+    const capture = params.rollbackOnError ? captureRollback(cannotPartlyCommit(methodName, method)) : undefined;
     if (capture?.error) return { error: capture.error };
     const captured = capture?.captured;
     const snapshot = captured && !captured.atomic ? captured : undefined;

@@ -1,6 +1,6 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { replayFailure } from '@Tests/testHarness/exitPropagation/sweep';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
@@ -33,7 +33,7 @@ import {
 // constants and types
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { Step, Scenario } from '@Tests/testHarness/outcome/directionFixtures';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import {
   COMPASS,
@@ -50,7 +50,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 // Fixtures
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
@@ -112,7 +112,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       expect(v2.v1Writes).toEqual(0);
       expect(v2.results).toEqual(v1.results);
       expect(v2.record).toEqual(v2.recordBefore);
-      expect(v1.record).not.toEqual(v1.recordBefore);
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
@@ -135,7 +134,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       expect(v2.v1Writes).toEqual(0);
       expect(v2.results).toEqual(v1.results);
       expect(v2.record).toEqual(v2.recordBefore);
-      expect(v1.record).not.toEqual(v1.recordBefore);
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
@@ -621,13 +619,8 @@ describe('under v2, notes on a double exit are recorded (batch 5: v1 forwards th
       steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: NOTED }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const applied = () => getDifferentialTally()['shadow:applied']?.compared ?? 0;
-    const deferred = () => getDifferentialTally()['shadow:abstain:notes']?.deferred ?? 0;
-    const before = { applied: applied(), deferred: deferred() };
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
-    expect({ applied: applied(), deferred: deferred() }).toEqual({ ...before, applied: before.applied + 1 });
-    expect(v1.v1Writes).toBeGreaterThan(0);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
@@ -658,13 +651,10 @@ describe('the convergence beyond a relayed copy that feeds on is v1s (the geomet
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const deferred = () => getDifferentialTally()['shadow:applied']?.compared ?? 0;
-    const before = deferred();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(deferred()).toEqual(before + 1);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);

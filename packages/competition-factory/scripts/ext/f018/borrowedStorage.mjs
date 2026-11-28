@@ -11,7 +11,6 @@ const {
   tools,
 } = createRequire(import.meta.url)(resolve(process.argv[2]));
 tools.setClock('2030-01-01T00:00:00.000Z');
-globalState.setOutcomePipeline(process.env.OUTCOME_PIPELINE);
 const schema = new mongoose.Schema(
   {
     participantId: String,

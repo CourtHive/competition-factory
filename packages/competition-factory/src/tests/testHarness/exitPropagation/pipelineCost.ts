@@ -1,5 +1,4 @@
 import { inDraftWrites } from '@Global/state/withDraftWrites';
-import { inPrecheckOracle } from '@Mutate/matchUps/matchUpStatus/precheckOracleMark';
 import { performance } from 'node:perf_hooks';
 
 /**
@@ -132,7 +131,6 @@ const FRAME = /^\s*at (?:async )?(?:(.+?) \()?(?:file:\/\/)?([^()]+?):\d+:\d+\)?
 export const RECORDED_CASCADE_SITE = 'recorded@recordedCascade';
 
 function siteCaller(): string {
-  if (inPrecheckOracle()) return 'precheckOracle@indexPrecheck';
   if (inDraftWrites()) return RECORDED_CASCADE_SITE;
   return callerOf(new Error('site').stack);
 }

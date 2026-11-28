@@ -1,4 +1,3 @@
-import { OUTCOME_PIPELINE_V2, OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { ALTERNATE, WITHDRAWN } from '@Constants/entryStatusConstants';
 import type { FootprintShard } from '@Types/footprintTypes';
 
@@ -13,9 +12,6 @@ export type MethodFootprint = {
 };
 
 export type FootprintContext = {
-  // which outcome pipeline will run: v1 hydrates a TEAM collection line's sides against every participant before
-  // scoring, v2 against those the draw references
-  outcomePipeline?: OutcomePipelineMode;
   // the tournament whose footprint is asked for, when several are loaded; without it, the footprint is the method's
   // whole reach, and a method spanning tournaments needs every record whole
   tournamentId?: string;
@@ -44,12 +40,9 @@ const scheduleRule: FootprintRule = (params, context) =>
 const scoreRule: FootprintRule = (params, context) => {
   // a score that also schedules is checked as a schedule
   if (params?.schedule && params?.proConflictDetection) return TOURNAMENT;
-  // v1 (and `differential`, which runs v1 too) resolves a TEAM collection line's sides against the tournament's
-  // participants, more than the draw's own slice. v2 decides from the draw and the participants it references: a line
-  // given a winner is asked whether its own sides hold a participant (`teamReason`, `lineValidToScore`)
-  const extra: FootprintShard[] =
-    context.outcomePipeline === OUTCOME_PIPELINE_V2 ? ['drawParticipants'] : ['participants'];
-  return drawScoped(extra)(params, context);
+  // decided from the draw and the participants it references: a TEAM line given a winner is asked whether its own sides
+  // hold a participant (`teamReason`, `lineValidToScore`)
+  return drawScoped(['drawParticipants'])(params, context);
 };
 
 // each outcome is a score entry in the draw it names, in the tournament it names, which the method refuses to look for
@@ -63,9 +56,7 @@ const bulkStatusRule: FootprintRule = (params, context) => {
   const tournamentIds = new Set(outcomes.map((outcome) => outcome?.tournamentId));
   const drawIds = outcomes.map((outcome) => outcome?.drawId).filter((drawId): drawId is string => !!drawId);
   if (!outcomes.length || tournamentIds.size > 1 || drawIds.length < outcomes.length) return TOURNAMENT;
-  const extra: FootprintShard[] =
-    context.outcomePipeline === OUTCOME_PIPELINE_V2 ? ['drawParticipants'] : ['participants'];
-  return { shards: ['shell', 'draw', ...extra], drawIds: [...new Set(drawIds)] };
+  return { shards: ['shell', 'draw', 'drawParticipants'], drawIds: [...new Set(drawIds)] };
 };
 
 // a TEAM matchUp's lineUps: one player, one team, per event (the rosters among the participants, the lineUps of every

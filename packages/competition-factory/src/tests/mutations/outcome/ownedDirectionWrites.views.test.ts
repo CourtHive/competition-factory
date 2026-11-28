@@ -1,5 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -17,7 +17,7 @@ import {
 // constants and types
 import { DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { Scenario } from '@Tests/testHarness/outcome/directionFixtures';
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -101,9 +101,7 @@ describe('C26V assignment changes refresh unchanged duals and every tie line', (
     };
     // the planners abstain `team` (the withdrawal is not planned for a dual); the recording answers it (batch 4b), and
     // the abstention tally counts only what is still v1's
-    const before = getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0;
     expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
-    expect((getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0) - before).toEqual(0);
   });
 });
 
@@ -129,9 +127,7 @@ describe('C26N a named BYE advance retains event identity through a later quiet 
         ],
       };
       // DOUBLES 8/5 has a different occupied loser seat: its carried program is recorded off the double-exit module
-      const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
       expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
-      expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(0);
     },
   );
 
@@ -161,9 +157,7 @@ describe('C26N a named BYE advance retains event identity through a later quiet 
         },
       ],
     };
-    const before = getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0;
     // policy off, the seat's cascade is recorded off the double-exit module; a TEAM draw's off v1's whole write
     expect(compareUndirectedWinner(scenario, true, prepared).v1.results[0].success).toEqual(true);
-    expect((getDifferentialTally()['shadow:abstain:exit']?.deferred ?? 0) - before).toEqual(0);
   });
 });

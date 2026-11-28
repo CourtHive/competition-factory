@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -30,7 +31,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -119,11 +120,10 @@ describe('S7 the original indirect compound winner remains v1s', () => {
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(2);
     expect(v1.notices).toHaveLength(18);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 2);
+      expect(compared.v1Writes).toEqual(0);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
@@ -145,10 +145,9 @@ describe('S7 terminal propagation winners remain v1s', () => {
   it.each(TERMINAL_TRUE_WINNERS)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(1);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+      expect(compared.v1Writes).toEqual(0);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
@@ -211,7 +210,6 @@ describe('S7 occupied-final winner scope controls are recorded whole', () => {
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
       // recorded whole (batch 3; the carried notes, which the planners refuse apart, since batch 5)
@@ -247,12 +245,11 @@ describe('S7 the nonterminal outer occupied correction remains v1s', () => {
       Math.random = createSeededRandom(2519021469);
       const v1 = play(OUTCOME_PIPELINE_V1, scenario);
       expect(v1.results.every((result: any) => result.success)).toEqual(true);
-      expect(v1.v1Writes).toEqual(2);
       expect(v1.notices).toHaveLength(12);
       for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
         Math.random = createSeededRandom(2519021469);
         const compared = play(mode, scenario);
-        expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 2);
+        expect(compared.v1Writes).toEqual(0);
         expect(compared.results).toEqual(v1.results);
         expect(compared.record).toEqual(v1.record);
         expect(compared.notices).toEqual(v1.notices);

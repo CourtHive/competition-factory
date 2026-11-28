@@ -7,7 +7,7 @@ import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 
 // constants
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 import { STAMP_SCOPE_MODIFIED, STAMP_SCOPE_TOURNAMENT } from '@Constants/stampScopeConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 

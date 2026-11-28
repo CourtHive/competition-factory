@@ -1,4 +1,5 @@
-import { getTournamentRecords, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { getTournamentRecords, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
@@ -6,7 +7,7 @@ import { afterEach, expect, it } from 'vitest';
 // constants
 import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 
 /**
  * `rollbackOnError` on a `setMatchUpStatus` that v1 refuses only after writing. Swapping two decided first-round
@@ -15,9 +16,8 @@ import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipe
  * time, and the call is refused with `ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT` after the result and the
  * winner's advance are written.
  *
- * v1 writes before that refusal, so the call takes the rollback snapshot and a refusal restores it (the differential,
- * which also runs v1 on the stored record, takes it too: rollbackSnapshot.test.ts). v2 meets the refusal on a copy before any write and takes no snapshot:
- * the record the engine holds afterwards is the same object.
+ * v2 meets the refusal on a copy before any write and takes no snapshot: the record the engine holds afterwards is
+ * the same object.
  */
 
 const TOURNAMENT_ID = 'rollback-outcome-pipeline';
@@ -78,27 +78,6 @@ function setUp() {
 
 const recordNow = () => structuredClone(tournamentEngine.getTournament().tournamentRecord);
 const held = () => getTournamentRecords()[TOURNAMENT_ID];
-
-it('under v1, a refusal with rollbackOnError restores the record from a snapshot', () => {
-  setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  const refused = setUp();
-  const before = recordNow();
-  const record = held();
-
-  const direct: any = tournamentEngine.setMatchUpStatus({ ...refused, rollbackOnError: true });
-
-  expect(direct.error?.code).toEqual(EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT.code);
-  expect(direct.rolledBack).toEqual(true);
-  expect(direct.committed).toBeUndefined();
-  expect(held()).not.toBe(record);
-  expect(recordNow()).toEqual(before);
-
-  // the same call as a one-directive queue
-  const queued: any = tournamentEngine.executionQueue([{ method: 'setMatchUpStatus', params: refused }], true);
-  expect(queued.error?.code).toEqual(EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT.code);
-  expect(queued.rolledBack).toEqual(true);
-  expect(recordNow()).toEqual(before);
-});
 
 it('under v2, the same refusal takes no snapshot and leaves the record as it was', () => {
   setOutcomePipeline(OUTCOME_PIPELINE_V2);

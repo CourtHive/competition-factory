@@ -1,6 +1,6 @@
 import { drawTypes, setupTimedPlayoff, timedScore } from './timedTeamPlayoff';
 import { resolveTieFormat } from '@courthive/competition-catalogue';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';

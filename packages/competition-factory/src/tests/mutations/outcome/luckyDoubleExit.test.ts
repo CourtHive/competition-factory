@@ -1,4 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { captureReturn, expectReturnParity } from '@Tests/testHarness/outcome/returnParity';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
@@ -13,7 +14,7 @@ import { createSeededRandom } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { LUCKY_DRAW } from '@Constants/drawDefinitionConstants';
 import type { MatchUp } from '@Types/tournamentTypes';
 import {
@@ -28,7 +29,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * A LUCKY DRAW'S DOUBLE EXIT ADVANCES NOBODY. It is written on its own matchUp and produces nothing
@@ -101,7 +102,6 @@ function play(mode: OutcomePipelineMode, prepared: any, { matchUpId, outcome, pa
 function alike(prepared: any, call: Call, context?: string, assertNative = false) {
   const writer = assertNative ? vi.spyOn(stateWriter, 'setMatchUpState') : undefined;
   const v1 = play(OUTCOME_PIPELINE_V1, prepared, call);
-  if (writer) expect(writer).toHaveBeenCalled();
   for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
     writer?.mockClear();
     const actual = play(mode, prepared, call);

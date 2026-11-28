@@ -13,13 +13,8 @@ import { inDraftWrites } from '@Global/state/withDraftWrites';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
-import {
-  getOutcomePipeline,
-  getProvider,
-  setOutcomePipeline,
-  setStateProvider,
-  setSubscriptions,
-} from '@Global/state/globalState';
+import { getProvider, setStateProvider, setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 
 import { CONSOLATION, DOUBLE_ELIMINATION, LOSER, MAIN } from '@Constants/drawDefinitionConstants';
 import type { Tournament } from '@Types/tournamentTypes';

@@ -1013,9 +1013,8 @@ What part of a record an executionQueue reads and may write: the union of its me
 ```js
 const footprint = tools.getMutationFootprint({
   methods: [{ method: 'setMatchUpStatus', params: { drawId, matchUpId, outcome } }],
-  outcomePipeline: 'v2', // optional, deprecated; which outcome pipeline will run
 });
-// { tournament: false, shards: ['shell', 'draw'], drawIds: [drawId], eventIds: [], wholeRecordMethods: [] }
+// { tournament: false, shards: ['shell', 'draw', 'drawParticipants'], drawIds: [drawId], eventIds: [], wholeRecordMethods: [] }
 ```
 
 The shards are:
@@ -1035,11 +1034,10 @@ names the methods responsible. A footprint depends on params as well as the meth
 `removeDrawPositionAssignment` widens it to the event's draws and every participant, and `proConflictDetection` on a
 schedule change widens it to the whole record.
 
-Score entry includes `participants` unless `outcomePipeline: 'v2'` is passed: the v1 pipeline resolves a TEAM
-collection line's sides against the tournament's participants. With `'v2'` it includes `drawParticipants` instead:
-v2 asks whether a line's own sides hold a participant before it gives the line a winner. Without the option the
-answer is the wider v1 footprint, a superset of what the default (v2) needs; pass `engine.getOutcomePipeline()` to
-load only what the running pipeline reads. The option is deprecated in 7.x and removed in 8.0.0.
+Score entry includes `drawParticipants`: before it gives a TEAM collection line a winner, the outcome pipeline asks
+whether the line's own sides hold a participant. The `outcomePipeline` option of 7.x is removed in 8.0.0: given a
+value, the call returns `METHOD_REMOVED` naming it. In 7.x a call without it answered with the wider v1 footprint
+(`participants`).
 
 `bulkMatchUpStatusUpdate` is score entry in every draw its outcomes name, however many draws and events that spans.
 An outcome without a `drawId` needs the whole record, and so do outcomes from more than one tournament, unless the
@@ -1051,7 +1049,7 @@ With several tournaments loaded, pass `tournamentId` to get that tournament's pa
 const footprints = Object.fromEntries(
   tournamentIds.map((tournamentId) => [
     tournamentId,
-    tools.getMutationFootprint({ methods, tournamentId, activeTournamentId, outcomePipeline }),
+    tools.getMutationFootprint({ methods, tournamentId, activeTournamentId }),
   ]),
 );
 ```

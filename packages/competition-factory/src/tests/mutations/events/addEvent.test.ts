@@ -58,11 +58,17 @@ it('can generate an event with a draw and attach it to a tournamentRecord', () =
   expect(drawDefinition.structures.length).toEqual(5);
   expect(drawDefinition.links.length).toEqual(4);
 
-  const event = { drawDefinitions: [drawDefinition] };
-  let result = tournamentEngine.addEvent({ event });
+  const event = { eventId: 'withDraw', drawDefinitions: [drawDefinition] };
+  let result: any = tournamentEngine.addEvent({ event });
   expect(result.error).toEqual(INVALID_VALUES);
-
+  // the factory's own flag for an event that arrives with its draws is not a public param
   result = tournamentEngine.addEvent({ event, internalUse: true });
+  expect(result.error).toEqual(INVALID_VALUES);
+  expect(result.context.params).toEqual(['internalUse']);
+
+  result = tournamentEngine.addEvent({ event: { eventId: event.eventId } });
+  expect(result.success).toEqual(true);
+  result = tournamentEngine.addDrawDefinition({ eventId: event.eventId, drawDefinition });
   expect(result.success).toEqual(true);
 
   const { matchUps } = tournamentEngine.allTournamentMatchUps();

@@ -1,5 +1,6 @@
 import { getDeciderSnapshot, getDeciderTriggers } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -9,7 +10,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import {
   COMPLETED,
@@ -131,7 +132,6 @@ for (const action of ['clear-unneeded', 'play-needed']) {
         : { matchUpStatus: COMPLETED, winningSide: 1, score };
     const reference = replay('v1', prepared.record, prepared.decider.matchUpId, outcome);
     expect(reference.result.success).toBe(true);
-    expect(reference.writes).toBeGreaterThan(0);
     expect(reference.notices.length).toBeGreaterThan(0);
     const owned = replay('v2', prepared.record, prepared.decider.matchUpId, outcome);
     expect(owned).toEqual({ ...reference, writes: 0 });
@@ -145,7 +145,6 @@ for (const action of ['enable-needed', 'disable-unneeded', 'destroy-played']) {
     const outcome = { winningSide: action === 'enable-needed' ? 2 : 1 };
     const reference = replay('v1', prepared.record, prepared.final.matchUpId, outcome);
     expect(reference.result.success).toBe(true);
-    expect(reference.writes).toBeGreaterThan(0);
     // recorded whole: v1's write is read on a copy, and the stored record is written by v2
     expect(replay('v2', prepared.record, prepared.final.matchUpId, outcome)).toEqual({ ...reference, writes: 0 });
     expect(replay('differential', prepared.record, prepared.final.matchUpId, outcome)).toEqual(reference);
@@ -248,7 +247,6 @@ for (const allowChangePropagation of [false, true]) {
     const options = { propagateExitStatus: true, allowChangePropagation };
     const reference = replay('v1', record, matchUpId, outcome, options);
     expect(reference.result.success).toBe(true);
-    expect(reference.writes).toBeGreaterThan(0);
     expect(reference.notices.length).toBeGreaterThan(0);
     const stored = JSON.parse(reference.record).events[0].drawDefinitions[0].structures.flatMap(
       (s: any) => s.matchUps ?? [],

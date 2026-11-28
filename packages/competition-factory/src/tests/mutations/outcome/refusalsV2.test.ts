@@ -1,5 +1,4 @@
-import { OutcomePipelineDivergence, compareDecisions } from '@Mutate/matchUps/outcome/differential';
-import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { authoredScenarios } from '../../testHarness/corpus/authoredSources';
 import { buildOutcomeView, refuseOutcome } from '@Mutate/matchUps/outcome';
 import tournamentEngine from '@Engines/syncEngine';
@@ -10,31 +9,20 @@ import { afterEach, expect, it } from 'vitest';
 import { INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { CANCELLED } from '@Constants/matchUpStatusConstants';
 import {
-  OUTCOME_PIPELINE_DEFAULT,
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * S2a: the v2 refusals against the v1 pipeline.
  *
- * Three claims. The mode is engine state with a named default and a refused value. The authored
+ * The authored
  * corpus, which asserts a result code on every step, answers identically under v1, v2 and
  * differential: v2 refuses exactly where v1 does, with the same code, and accepts the rest. And a
  * divergence is a thrown error naming the matchUp and both answers, not a silent fallback.
  */
 afterEach(() => setOutcomePipeline());
-
-it('the mode is engine state: the named default, settable, and a refused value is an error', () => {
-  setOutcomePipeline(); // the suite may run under OUTCOME_PIPELINE=…; the default is what is claimed here
-  expect(getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_DEFAULT);
-  expect(tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V2).success).toEqual(true);
-  expect(tournamentEngine.getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_V2);
-  expect(tournamentEngine.outcomePipeline('v3').error).toEqual(INVALID_VALUES);
-  expect(tournamentEngine.outcomePipeline().success).toEqual(true);
-  expect(getOutcomePipeline()).toEqual(OUTCOME_PIPELINE_DEFAULT);
-});
 
 it('rows 1 to 5 are decided on the request alone, before the draw is consulted', () => {
   const flags = { propagateRetirementAsExit: false };
@@ -69,30 +57,4 @@ it('every authored scenario answers the same under v1, v2 and differential', () 
   );
   expect(answers[OUTCOME_PIPELINE_V2]).toEqual(answers[OUTCOME_PIPELINE_V1]);
   expect(answers[OUTCOME_PIPELINE_DIFFERENTIAL]).toEqual(answers[OUTCOME_PIPELINE_V1]);
-});
-
-it('a disagreement is a thrown divergence naming the matchUp and both answers; an apply-stage code is deferred', () => {
-  const refusalX = { code: 'ERR_X', error: { code: 'ERR_X', message: 'x' }, row: 9 };
-  expect(compareDecisions(undefined, undefined)).toEqual({ agree: true, v1: 'ok', v2: 'ok' });
-  expect(compareDecisions(refusalX, 'ERR_X')).toMatchObject({ agree: true });
-  expect(compareDecisions(undefined, 'ERR_MISSING_ASSIGNMENTS')).toMatchObject({
-    agree: true,
-    deferred: 'ERR_MISSING_ASSIGNMENTS',
-  });
-  // a missing assignment is deferred only for a call v2 abstains from: one it has a complete plan for, it would write
-  expect(compareDecisions(undefined, 'ERR_MISSING_ASSIGNMENTS', true)).toMatchObject({ agree: false, v2: 'ok' });
-  expect(compareDecisions(undefined, 'ERR_FORCED', true)).toMatchObject({ agree: true, deferred: 'ERR_FORCED' });
-  // the status codes are v2's own rows since S7 (rows 6 and 28): no longer deferred
-  for (const code of [
-    'ERR_UNRECOGNIZED_MATCHUP_STATUS',
-    'ERR_INVALID_MATCHUP_STATUS',
-    'ERR_UNCHANGED_CANNOT_ASSIGN_BYE',
-  ])
-    expect(compareDecisions(undefined, code)).toMatchObject({ agree: false });
-  // a schedule's refusal is v2's own since S7 (rows 16, 25, 27): no longer deferred
-  expect(compareDecisions(undefined, 'ERR_INVALID_TIME')).toMatchObject({ agree: false });
-  expect(compareDecisions(refusalX, undefined)).toMatchObject({ agree: false, v1: 'ok', v2: 'ERR_X' });
-  const divergence = new OutcomePipelineDivergence({ matchUpId: 'm1', v1: 'ok', v2: 'ERR_X' });
-  expect(divergence.message).toContain('m1');
-  expect(divergence.message).toContain('v1 ok, v2 ERR_X');
 });

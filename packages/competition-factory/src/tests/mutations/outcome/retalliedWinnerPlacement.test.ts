@@ -1,5 +1,6 @@
 import { resolveTieFormat as namedTieFormat } from '@courthive/competition-catalogue';
-import { setOutcomePipeline, getTournamentRecords } from '@Global/state/globalState';
+import { getTournamentRecords } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import type { Tournament, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';

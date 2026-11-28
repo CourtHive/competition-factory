@@ -1,19 +1,11 @@
-import { MATRIX_EXTENSION_CELLS, runMatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
-import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
-import { BYE, COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
-import {
-  FIRST_MATCH_LOSER_CONSOLATION,
-  FEED_IN_CHAMPIONSHIP_TO_R16,
-  CONSOLATION,
-  MAIN,
-} from '@Constants/drawDefinitionConstants';
+import { BYE, COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, CONSOLATION, MAIN } from '@Constants/drawDefinitionConstants';
 
 /**
  * S2c: an exit that meets a BYE, carried (exit-propagation RULE 1) or produced by a double exit, planned by
@@ -36,15 +28,11 @@ const at = (stage: string, roundNumber: number, roundPosition: number): any =>
     );
 
 function setup() {
-  setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
-  resetDifferentialTally();
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId: DRAW_ID, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 }],
     setState: true,
   });
 }
-
-const tally = (key: string) => getDifferentialTally()[key] ?? { compared: 0, deferred: 0 };
 
 it('sends a carried exit on past a BYE: the holder stays a BYE and the next round holds the exit', () => {
   setup();
@@ -66,9 +54,6 @@ it('sends a carried exit on past a BYE: the holder stays a BYE and the next roun
   const loserSide = onward.sides.find((side: any) => side.participantId)?.sideNumber;
   expect(onward.matchUpStatus).toEqual(WALKOVER);
   expect(onward.winningSide).toEqual(3 - loserSide);
-
-  // and v2 planned it and compared it, rather than deferring
-  expect(tally('winner:loser-exit-past-bye').compared).toEqual(1);
 });
 
 it('a completed result relabelled as a WALKOVER carries the exit to the loser already directed', () => {
@@ -94,30 +79,4 @@ it('a completed result relabelled as a WALKOVER carries the exit to the loser al
   expect(at(MAIN, 1, 3).matchUpStatus).toEqual(WALKOVER);
   // the consolation matchUp the loser was already fed into now holds the exit they carry
   expect(at(CONSOLATION, 1, 2).matchUpStatus).toEqual(WALKOVER);
-  // and v2 planned the carry and compared it
-  expect(tally('winner:relabel-exit').compared).toEqual(1);
-  expect(tally('winner:loser-exit').compared).toBeGreaterThan(0);
-});
-
-it('sends an exit a double exit produced on past a BYE, and v2 compares it', () => {
-  // the extension matrix's FEED_IN_CHAMPIONSHIP_TO_R16 16/15 DOUBLE_WALKOVER cell, where a produced exit
-  // meets a BYE at Consolation 2/1; no small draw reaches this shape in its first two rounds
-  const cell = MATRIX_EXTENSION_CELLS.find(
-    (candidate) =>
-      candidate.drawType === FEED_IN_CHAMPIONSHIP_TO_R16 &&
-      candidate.participantsCount === 15 &&
-      candidate.exitStatus === DOUBLE_WALKOVER &&
-      candidate.propagateExitStatus,
-  );
-  expect(cell).toBeDefined();
-  setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
-  resetDifferentialTally();
-  expect(runMatrixCell(cell as any, 'produced-past-a-bye')).toBeDefined();
-
-  const tallied = getDifferentialTally();
-  const compared = Object.entries(tallied)
-    .filter(([key]) => key.includes(':produced-past-bye-'))
-    .reduce((sum, [, count]) => sum + count.compared, 0);
-  // since S7 v2 writes the plain shape itself (`byeHeldProduced`): its shadow apply is compared with v1's record
-  expect(compared + (tallied['shadow:applied']?.compared ?? 0)).toBeGreaterThan(0);
 });

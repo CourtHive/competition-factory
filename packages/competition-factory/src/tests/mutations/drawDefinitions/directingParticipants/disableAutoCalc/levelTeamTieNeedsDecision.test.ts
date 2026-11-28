@@ -290,19 +290,3 @@ describe('a level total its tally directives decide', () => {
     expect(readTie(tie).winningSide).toEqual(1);
   });
 });
-
-// setMatchUpState is public and runs v1 alone, without setMatchUpStatus's own check
-describe('setMatchUpState', () => {
-  it('refuses an unrecorded winner on a level tie', () => {
-    const tie = playTie(SINGLE_ELIMINATION, { level: true });
-    const result = tournamentEngine.setMatchUpState({
-      matchUpId: tie.matchUpId,
-      matchUpStatus: COMPLETED,
-      disableAutoCalc: true,
-      drawId: tie.drawId,
-      winningSide: 1,
-    });
-    expect(result.error).toEqual(INVALID_SCORE);
-    expectUnchanged(tie, SINGLE_ELIMINATION);
-  });
-});
