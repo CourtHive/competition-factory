@@ -11,7 +11,6 @@ import {
   IndoorOutdoorUnion,
   HydratedMatchUpSchedule,
   MatchUp,
-  MatchUpSchedule,
   Participant,
   Person,
   SeedingBasisUnion,
