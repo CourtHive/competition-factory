@@ -615,21 +615,42 @@ function arrivalSource({
  * whose result sent the seat's participant there. Undefined for a seat no result filled.
  */
 export function declineSource({
-  inContextDrawMatchUps,
   drawDefinition,
   drawPosition,
   structure,
 }: {
-  inContextDrawMatchUps: () => HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   drawPosition: number;
   structure: Structure;
 }): { matchUpId: string; participantId: string } | undefined {
-  const links = feedingLinks(drawDefinition, structure.structureId);
+  // read from stored data the removal already holds: the seat's occupant, and the stored loser edge into the seat's
+  // matchUp from a decided source matchUp whose loser that occupant is. No hydration, no walk of the draw
   const participantId = assignmentsOf(structure).find((a) => a.drawPosition === drawPosition)?.participantId;
-  if (!links.length || !participantId) return undefined;
-  const source = arrivalSource({ matchUps: inContextDrawMatchUps(), links, participantId });
-  return source ? { matchUpId: source.matchUpId, participantId } : undefined;
+  if (!participantId) return undefined;
+  const links = feedingLinks(drawDefinition, structure.structureId);
+  if (!links.length) return undefined;
+  const seatMatchUpIds = new Set(
+    storedMatchUpsOf(structure)
+      .filter((matchUp) => matchUp.drawPositions?.includes(drawPosition))
+      .map((matchUp) => matchUp.matchUpId),
+  );
+  for (const link of links) {
+    const source = findStructure({ drawDefinition, structureId: link.source.structureId }).structure;
+    const sourceAssignments = assignmentsOf(source);
+    for (const matchUp of storedMatchUpsOf(source)) {
+      if (matchUp.roundNumber !== link.source.roundNumber || !matchUp.winningSide) continue;
+      const edge = link.linkType === LOSER ? matchUp.loserMatchUpId : matchUp.winnerMatchUpId;
+      if (!edge || !seatMatchUpIds.has(edge)) continue;
+      const positions = [...(matchUp.drawPositions ?? [])]
+        .filter(Boolean)
+        .sort((x, y) => (x as number) - (y as number));
+      const lost = matchUp.winningSide === 1 ? 1 : 0;
+      const sent = positions[link.linkType === LOSER ? lost : 1 - lost];
+      if (sourceAssignments.find((a) => a.drawPosition === sent)?.participantId === participantId)
+        return { matchUpId: matchUp.matchUpId, participantId };
+    }
+  }
+  return undefined;
 }
 
 export type DeclinedSeat = {

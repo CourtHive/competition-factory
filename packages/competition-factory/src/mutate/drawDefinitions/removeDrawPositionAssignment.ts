@@ -75,12 +75,7 @@ export function removeDrawPositionAssignment(params): ResultType & { participant
   // decline lapses with that result (`resetDrawDefinition`)
   const decline =
     replaceWithBye && structure && drawPosition
-      ? declineSource({
-          inContextDrawMatchUps: () => getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? [],
-          drawDefinition,
-          drawPosition,
-          structure,
-        })
+      ? declineSource({ drawDefinition, drawPosition, structure })
       : undefined;
   const result = composeDrawMutation(params, removeAssignment);
   if (decline && !result.error) {
