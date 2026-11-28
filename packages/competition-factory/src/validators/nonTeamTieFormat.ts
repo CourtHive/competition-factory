@@ -18,14 +18,27 @@ type TieFormatInputs = {
   tieFormat?: unknown;
 };
 
-export type TieFormatRefusal = { error: ErrorType; info: string; context: { [key: string]: unknown } };
+/** What a refusal names: the types judged, the inputs supplied, or where a stored tieFormat is. */
+export type TieFormatRefusalContext = {
+  eventType?: unknown;
+  matchUpType?: unknown;
+  currentEventType?: unknown;
+  supplied?: string[];
+  location?: 'event' | 'drawDefinition' | 'structure';
+  eventId?: string;
+  drawId?: string;
+  structureId?: string;
+  tieFormatId?: string;
+};
+
+export type TieFormatRefusal = { error: ErrorType; info: string; context: TieFormatRefusalContext };
 
 const NOT_TEAM_INFO = 'a tieFormat applies only to a TEAM event';
 
 const isNonTeam = (type: unknown) => type !== undefined && type !== null && type !== TEAM;
 
-function typesContext(eventType: unknown, matchUpType: unknown): { [key: string]: unknown } {
-  const context: { [key: string]: unknown } = {};
+function typesContext(eventType: unknown, matchUpType: unknown): TieFormatRefusalContext {
+  const context: TieFormatRefusalContext = {};
   if (eventType !== undefined) context.eventType = eventType;
   if (matchUpType !== undefined) context.matchUpType = matchUpType;
   return context;

@@ -3,10 +3,9 @@ import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 
 // constants and types
 import type { DrawDefinition, Structure, Tournament } from '@Types/tournamentTypes';
-import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { type ErrorType, INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { TEAM } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import type { ResultType } from '@Types/factoryTypes';
 
 export type RemovedTieFormat = { eventId: string; drawId?: string; structureId?: string };
 
@@ -16,9 +15,11 @@ export type RemovedTieFormat = { eventId: string; drawId?: string; structureId?:
  * generate over it. TEAM events, their draws and their tie formats are left as they are, and the record passed in is
  * never changed.
  */
-export function removeNonTeamTieFormats({ tournamentRecord }: { tournamentRecord: Tournament }): ResultType & {
+export function removeNonTeamTieFormats({ tournamentRecord }: { tournamentRecord: Tournament }): {
   tournamentRecord?: Tournament;
   removed?: RemovedTieFormat[];
+  success?: boolean;
+  error?: ErrorType;
 } {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (typeof tournamentRecord !== 'object') return { error: INVALID_VALUES };
