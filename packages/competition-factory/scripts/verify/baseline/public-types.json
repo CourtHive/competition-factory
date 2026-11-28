@@ -445,9 +445,6 @@
       "ret:index": 1,
       "ret:keys": 1
     },
-    "auditAuthorityServer": {
-      "fallback": 1
-    },
     "automatedPlayoffPositioning": {
       "ret:index": 1
     },
@@ -659,7 +656,7 @@
       "param:index": 1
     },
     "devContext": {
-      "fallback": 1
+      "param:index": 1
     },
     "diffMinutes": {
       "fallback": 1
@@ -723,10 +720,12 @@
       "ret:keys": 1
     },
     "execute": {
-      "fallback": 1
+      "param:index": 1
     },
     "executionQueue": {
-      "fallback": 1
+      "param:index": 2,
+      "ret:index": 1,
+      "ret:keys": 1
     },
     "explain": {
       "ret:keys": 2
@@ -961,9 +960,6 @@
       "ret:index": 1,
       "ret:keys": 1
     },
-    "getAuditAuthorityServer": {
-      "fallback": 1
-    },
     "getAvailableMatchUpsCount": {
       "ret:index": 1,
       "ret:keys": 1
@@ -1052,7 +1048,8 @@
       "ret:keys": 1
     },
     "getDevContext": {
-      "fallback": 1
+      "param:index": 1,
+      "ret:index": 1
     },
     "getDraftState": {
       "ret:keys": 7
@@ -1201,9 +1198,6 @@
       "param:index": 1,
       "ret:index": 1,
       "ret:keys": 1
-    },
-    "getLoadedFootprint": {
-      "fallback": 1
     },
     "getMatchUpCheckInHistory": {
       "param:keys": 1
@@ -1481,9 +1475,6 @@
       "param:index": 1,
       "ret:index": 1
     },
-    "getSaveDrawDeletions": {
-      "fallback": 1
-    },
     "getScaledEntries": {
       "param:keys": 1,
       "ret:keys": 1
@@ -1527,9 +1518,6 @@
       "ret:index": 1,
       "ret:keys": 2
     },
-    "getSchemaWriteMode": {
-      "fallback": 1
-    },
     "getSeasonAdvancement": {
       "param:index": 3,
       "ret:index": 1,
@@ -1554,11 +1542,8 @@
       "ret:index": 1,
       "ret:keys": 1
     },
-    "getStampScope": {
-      "fallback": 1
-    },
     "getState": {
-      "fallback": 1
+      "ret:index": 1
     },
     "getStatusHistory": {
       "ret:keys": 1
@@ -1593,7 +1578,7 @@
       "ret:keys": 4
     },
     "getTournament": {
-      "fallback": 1
+      "ret:index": 1
     },
     "getTournamentActionableMatchUps": {
       "ret:index": 1,
@@ -1605,9 +1590,6 @@
     "getTournamentCompleteness": {
       "ret:index": 1,
       "ret:keys": 2
-    },
-    "getTournamentId": {
-      "fallback": 1
     },
     "getTournamentIds": {
       "param:keys": 1
@@ -1677,7 +1659,9 @@
       "ret:keys": 1
     },
     "importMethods": {
-      "fallback": 1
+      "param:index": 1,
+      "ret:index": 1,
+      "ret:keys": 1
     },
     "initializeCompetitionState": {
       "ret:index": 3,
@@ -1742,9 +1726,6 @@
       "param:index": 1,
       "ret:index": 1,
       "ret:keys": 1
-    },
-    "loadedFootprint": {
-      "fallback": 1
     },
     "luckyDrawAdvancement": {
       "ret:index": 1,
@@ -1897,7 +1878,9 @@
       "ret:keys": 1
     },
     "newTournamentRecord": {
-      "fallback": 1
+      "param:index": 1,
+      "ret:index": 1,
+      "ret:keys": 1
     },
     "orderCollectionDefinitions": {
       "param:keys": 1,
@@ -2197,12 +2180,6 @@
       "param:index": 1,
       "ret:keys": 1
     },
-    "removeTournamentRecord": {
-      "fallback": 1
-    },
-    "removeUnlinkedTournamentRecords": {
-      "fallback": 1
-    },
     "removeVenueTransit": {
       "param:index": 1,
       "ret:index": 1,
@@ -2228,9 +2205,6 @@
     "replaceTieMatchUpParticipantId": {
       "ret:index": 1,
       "ret:keys": 1
-    },
-    "reset": {
-      "fallback": 1
     },
     "resetAdHocMatchUps": {
       "ret:index": 1,
@@ -2283,9 +2257,6 @@
     "sampleCapacityCurve": {
       "fallback": 1
     },
-    "saveDrawDeletions": {
-      "fallback": 1
-    },
     "scaledTeamAssignment": {
       "param:keys": 2,
       "ret:keys": 3
@@ -2305,18 +2276,9 @@
       "ret:index": 18,
       "ret:keys": 1
     },
-    "schemaWriteMode": {
-      "fallback": 1
-    },
     "seedWithdrawalCascade": {
       "ret:index": 1,
       "ret:keys": 1
-    },
-    "setClock": {
-      "fallback": 1
-    },
-    "setCompetitionClock": {
-      "fallback": 1
     },
     "setCompetitionProfile": {
       "ret:index": 1,
@@ -2425,9 +2387,6 @@
       "ret:index": 1,
       "ret:keys": 1
     },
-    "setRandomSource": {
-      "fallback": 1
-    },
     "setRegistrationProfile": {
       "param:keys": 2,
       "ret:index": 1,
@@ -2447,7 +2406,7 @@
       "ret:any": 1
     },
     "setState": {
-      "fallback": 1
+      "param:index": 2
     },
     "setStructureOrder": {
       "param:index": 1,
@@ -2476,9 +2435,6 @@
       "ret:index": 1,
       "ret:keys": 1
     },
-    "setTournamentId": {
-      "fallback": 1
-    },
     "setTournamentLocalTimeZone": {
       "param:keys": 2,
       "ret:index": 1,
@@ -2500,7 +2456,7 @@
       "ret:keys": 2
     },
     "setTournamentRecord": {
-      "fallback": 1
+      "param:index": 1
     },
     "setTournamentStartDate": {
       "param:keys": 3,
@@ -2539,9 +2495,6 @@
       "fallback": 1
     },
     "sortEdges": {
-      "fallback": 1
-    },
-    "stampScope": {
       "fallback": 1
     },
     "stringify": {
