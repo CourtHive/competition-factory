@@ -45,8 +45,31 @@ const BASELINE = join(ROOT, 'scripts', 'verify', 'baseline', 'public-types.json'
 
 const isAny = (type) => !!(type.flags & ts.TypeFlags.Any);
 
+/**
+ * The shared result envelope's `context` (`ResultType.context`, an open `Record<string, unknown>`). It is ONE declaration,
+ * counted once on `types.ResultType`; counting it again on every method whose result is `ResultType & { … }` would make
+ * typing an `any` result look like a loosening. Only this property is skipped, and only when a method's signature is
+ * walked: an index or `any` declared on a method's own success shape still counts on that method.
+ */
+export function isSharedEnvelopeContext(property) {
+  if (property.name !== 'context') return false;
+  return (property.declarations ?? []).some((declaration) => {
+    for (let node = declaration.parent; node; node = node.parent) {
+      if (ts.isTypeAliasDeclaration(node) || ts.isInterfaceDeclaration(node)) return node.name.text === 'ResultType';
+    }
+    return false;
+  });
+}
+
 /** Counts of `any`-reaching keys and index signatures in `type`, walking `depth` levels of properties. */
-export function looseness(checker, type, depth, acc = { any: 0, index: 0, self: false }, seen = new Set(), top = true) {
+export function looseness(
+  checker,
+  type,
+  depth,
+  acc = { any: 0, index: 0, self: false, skipSharedEnvelope: false },
+  seen = new Set(),
+  top = true,
+) {
   if (!type) return acc;
   if (isAny(type)) {
     if (top) acc.self = true;
@@ -67,6 +90,7 @@ export function looseness(checker, type, depth, acc = { any: 0, index: 0, self: 
   acc.index += checker.getIndexInfosOfType(type).length;
   if (depth <= 0) return acc;
   for (const property of checker.getPropertiesOfType(type)) {
+    if (acc.skipSharedEnvelope && isSharedEnvelopeContext(property)) continue;
     looseness(checker, checker.getTypeOfSymbol(property), depth - 1, acc, seen, false);
   }
   return acc;
@@ -90,8 +114,9 @@ export function signatureCounts(checker, type) {
     counts.fallback = 1;
     return counts;
   }
-  const parameter = first ? looseness(checker, first, 1) : { any: 0, index: 0, self: false };
-  const returned = looseness(checker, result, 2);
+  const walk = () => ({ any: 0, index: 0, self: false, skipSharedEnvelope: true });
+  const parameter = first ? looseness(checker, first, 1, walk()) : { any: 0, index: 0, self: false };
+  const returned = looseness(checker, result, 2, walk());
   if (parameter.self || restAny) counts['param:any'] = 1;
   if (parameter.any) counts['param:keys'] = parameter.any;
   if (parameter.index) counts['param:index'] = parameter.index;
@@ -262,6 +287,7 @@ function selfTest() {
   const failures = [];
   // A planted program: a namespace of functions and a model type, each loose in exactly one known way.
   const planted = [
+    'type ResultType = { context?: Record<string, unknown>; error?: string };',
     'export const Tools = {',
     '  anyParam: (x: any): string => String(x),',
     '  anyResult: (x: string): any => x,',
@@ -269,6 +295,8 @@ function selfTest() {
     '  indexed: (p: { [k: string]: number }): { [k: string]: string } => ({}),',
     '  fallback: (...args: any[]): any => args,',
     '  tight: (p: { a: string }): { r: number } => ({ r: p.a.length }),',
+    '  enveloped: (): ResultType & { r: number } => ({ r: 1 }),',
+    '  ownIndex: (): ResultType & { byId: { [id: string]: number } } => ({ byId: {} }),',
     '};',
     'export type Types = never;',
   ].join('\n');
@@ -285,6 +313,10 @@ function selfTest() {
   expect('indexed', 'ret:index', 1);
   expect('fallback', 'fallback', 1);
   if (measured.tight) failures.push(`tight: expected no counts, got ${JSON.stringify(measured.tight)}`);
+  // the shared envelope's context is counted once, on types.ResultType, not on each method returning it ...
+  if (measured.enveloped) failures.push(`enveloped: expected no counts, got ${JSON.stringify(measured.enveloped)}`);
+  // ... while an index declared on the method's own success shape still counts on the method
+  expect('ownIndex', 'ret:index', 1);
   // the rule: a rise fires, a fall and an unchanged count do not, a new loose member fires
   const base = { tools: { a: { 'ret:any': 1 }, b: { 'ret:keys': 2 } } };
   if (rises({ tools: { a: { 'ret:any': 1 }, b: { 'ret:keys': 1 } } }, base).length)
