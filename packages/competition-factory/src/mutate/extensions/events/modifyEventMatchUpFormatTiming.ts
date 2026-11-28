@@ -8,7 +8,7 @@ import { findExtension } from '@Helpers/extensions/findExtension';
 import { nowIso } from '@Tools/clock';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { Event, Tournament } from '@Types/tournamentTypes';
+import { Event, Tournament, TournamentScheduleTiming } from '@Types/tournamentTypes';
 import { isNumeric } from '@Tools/math';
 
 import type {
@@ -63,7 +63,7 @@ function planEventTiming(
   const event = tournamentRecord.events?.find((item) => item.eventId === (eventId ?? params.event?.eventId));
   if (!event) return { error: EVENT_NOT_FOUND };
 
-  const { extension } = findExtension({ element: event, name: SCHEDULE_TIMING });
+  const { extension } = findExtension<TournamentScheduleTiming>({ element: event, name: SCHEDULE_TIMING });
   const { averageTimes = [], recoveryTimes = [] } = getModifiedMatchUpFormatTiming({
     tournamentRecord,
     matchUpFormat,

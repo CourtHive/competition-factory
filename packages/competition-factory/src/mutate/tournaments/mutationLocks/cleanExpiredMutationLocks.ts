@@ -26,7 +26,7 @@ export function cleanExpiredMutationLocks(params: CleanExpiredArgs): {
   let removedCount = 0;
 
   const cleanElement = (element: { extensions?: Extension[] }) => {
-    const { extension } = findExtension({ element, name: MUTATION_LOCKS });
+    const { extension } = findExtension<MutationLocksValue>({ element, name: MUTATION_LOCKS });
     if (!extension?.value?.locks?.length) return;
 
     const locksValue: MutationLocksValue = extension.value;

@@ -10,8 +10,10 @@ import { Extension } from '@Types/tournamentTypes';
  * Team presentation is read tolerantly (bad entries dropped) at hydration, so the public extension writers reject
  * it whole. Kept out of `addExtension` itself, which the bare syncEngine bundles for internal callers.
  */
+type DisplayValue = { teamPresentation?: unknown } | undefined;
+
 export function refuseInvalidTeamPresentation(extension?: Extension): { error?: ErrorType } | undefined {
-  const presentation = extension?.name === DISPLAY ? extension.value?.teamPresentation : undefined;
+  const presentation = extension?.name === DISPLAY ? (extension.value as DisplayValue)?.teamPresentation : undefined;
   if (presentation === undefined) return undefined;
   const issues: string[] = [];
   normalizeTeamPresentation(presentation, issues);

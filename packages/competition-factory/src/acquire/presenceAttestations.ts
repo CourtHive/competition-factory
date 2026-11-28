@@ -60,7 +60,7 @@ function fromTimeItems(timeItems: TimeItem[] | undefined, mappings: LegacyMappin
 
     // matchUp CHECK_IN carries the participantId as itemValue; participant SIGN_IN_STATUS carries the
     // state, and its subject is the participant the timeItem hangs on — supplied by the caller.
-    const participantId = mapping.itemType === SIGN_IN_STATUS ? '' : (timeItem.itemValue ?? '');
+    const participantId = mapping.itemType === SIGN_IN_STATUS ? '' : ((timeItem.itemValue as string | undefined) ?? '');
     const occurredAt = occurredAtOf(timeItem);
 
     attestations.push({

@@ -141,7 +141,7 @@ export function getMatchUpFormatReport({ tournamentRecord }: { tournamentRecord:
       (extension) => extension?.name === APPLIED_POLICIES,
     );
     const policies: PolicyDefinitions | undefined =
-      element?.appliedPolicies ?? element?.extensions?.[extensionIndex]?.value;
+      element?.appliedPolicies ?? (element?.extensions?.[extensionIndex]?.value as PolicyDefinitions | undefined);
     if (!policies) return;
     const policiesPath =
       element?.appliedPolicies === undefined
@@ -177,7 +177,11 @@ export function getMatchUpFormatReport({ tournamentRecord }: { tournamentRecord:
     const index = extensions.findIndex((extension) => extension?.name === SCHEDULE_TIMING);
     if (index < 0) return;
     const path = `${scope.path}.extensions[${index}].value`;
-    considerTiming(extensions[index].value, { path, ids: scope.ids }, FORMAT_LOCATION.SCHEDULE_TIMING);
+    considerTiming(
+      extensions[index].value as Record<string, unknown>,
+      { path, ids: scope.ids },
+      FORMAT_LOCATION.SCHEDULE_TIMING,
+    );
   };
 
   const considerMatchUp = (matchUp: MatchUp | undefined, scope: Scope) => {

@@ -20,5 +20,5 @@ export function getRecordLinkedTournamentIds(tournamentRecord: any): string[] {
     return tournamentRecord.linkedTournamentIds;
   }
   const { extension } = findExtension({ element: tournamentRecord, name: LINKED_TOURNAMENTS });
-  return extension?.value?.tournamentIds ?? [];
+  return (extension?.value as { tournamentIds?: string[] } | undefined)?.tournamentIds ?? [];
 }

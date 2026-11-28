@@ -15,16 +15,17 @@ type FindExtensionType = {
   name: string;
 };
 
-type ExtensionResult = ResultType & {
-  extension?: Extension;
+/** `V` is what the caller knows the named extension's value to be; it is `unknown` unless stated */
+type ExtensionResult<V> = ResultType & {
+  extension?: Extension & { value: V };
 };
 
-export function findExtension({
+export function findExtension<V = unknown>({
   discover, // boolean or array of keys to discover extensions on specified params
   element,
   name,
   ...params
-}: FindExtensionType): ExtensionResult {
+}: FindExtensionType): ExtensionResult<V> {
   if (!element || !name) {
     if (discover && params) {
       const attr = Object.keys(params)

@@ -42,7 +42,7 @@ function ratingOf({ participant, ratingType, dynamic, eventType }: RatingOfArgs)
         scaleAttributes: { eventType: eventType ?? SINGLES_EVENT, scaleType: RATING_SCALE, scaleName },
         participant,
       });
-    const scaleValue = result?.scaleItem?.scaleValue;
+    const scaleValue = result?.scaleItem?.scaleValue as Record<string, any>;
     return parameters?.accessor && isObject(scaleValue) ? scaleValue[parameters.accessor] : scaleValue;
   };
   return (dynamic ? read(`${ratingType}.${DYNAMIC}`) : undefined) ?? read(ratingType);

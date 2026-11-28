@@ -8,7 +8,7 @@ import { findExtension } from '@Helpers/extensions/findExtension';
 import { INVALID, MATCHUP_FORMAT, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
 import { UNRECOGNIZED_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
-import { Event, Tournament } from '@Types/tournamentTypes';
+import { Event, Tournament, TournamentScheduleTiming } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 type GetModifiedMatchUpFormatTimingArgs = {
@@ -34,7 +34,7 @@ export function getModifiedMatchUpFormatTiming(params: GetModifiedMatchUpFormatT
 
   const { tournamentRecord, matchUpFormat, event } = params;
 
-  const { extension: eventExtension } = findExtension({
+  const { extension: eventExtension } = findExtension<TournamentScheduleTiming>({
     name: SCHEDULE_TIMING,
     element: event,
   });

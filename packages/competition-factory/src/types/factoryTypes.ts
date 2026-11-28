@@ -193,7 +193,7 @@ export type ScaleItem = {
   eventType?: EventTypeUnion;
   scaleName: string;
   scaleType: string;
-  scaleValue: any;
+  scaleValue: unknown;
 };
 
 export type Flight = {

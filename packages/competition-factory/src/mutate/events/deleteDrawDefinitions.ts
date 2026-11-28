@@ -311,7 +311,7 @@ function dispatchDrawDeletionAudit({
 
   if (subscribed) {
     const result = getTimeItem({ element: event, itemType: DRAW_DELETIONS });
-    const itemValue = (result?.timeItem?.itemValue || 0) + 1;
+    const itemValue = ((result?.timeItem?.itemValue as number | undefined) || 0) + 1;
     addTimeItem({ element: event, timeItem: { itemType: DRAW_DELETIONS, itemValue }, removePriorValues: true });
   } else {
     addDrawDeletionTelemetry({ appliedPolicies, event, deletedDrawsDetail, auditData });

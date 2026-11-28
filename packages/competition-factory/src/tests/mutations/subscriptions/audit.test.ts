@@ -9,6 +9,8 @@ import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { DRAW_DELETIONS } from '@Constants/extensionConstants';
 import { AUDIT } from '@Constants/topicConstants';
 
+type DrawDeletion = { deletedDrawsDetail: { positionAssignments?: unknown }[] };
+
 it('when no audit topic is found will add draw deletions extension', () => {
   const drawProfiles = [
     {
@@ -31,7 +33,7 @@ it('when no audit topic is found will add draw deletions extension', () => {
   expect(result.success).toEqual(true);
 
   const { event } = tournamentEngine.getEvent({ drawId });
-  const { extension } = findExtension({
+  const { extension } = findExtension<DrawDeletion[]>({
     name: DRAW_DELETIONS,
     element: event,
   });
@@ -112,7 +114,7 @@ it('subscriptions can be removed by providing a non-function value', () => {
   expect(result.success).toEqual(true);
 
   const { event } = tournamentEngine.getEvent({ drawId });
-  const { extension } = findExtension({
+  const { extension } = findExtension<DrawDeletion[]>({
     name: DRAW_DELETIONS,
     element: event,
   });

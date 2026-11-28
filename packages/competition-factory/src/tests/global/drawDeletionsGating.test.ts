@@ -11,6 +11,8 @@ import { APPLIED_POLICIES, DRAW_DELETIONS } from '@Constants/extensionConstants'
 import { DELETE_DRAW_DEFINITIONS } from '@Constants/auditConstants';
 import { AUDIT } from '@Constants/topicConstants';
 
+type DrawDeletion = { deletedDrawsDetail: { positionAssignments?: unknown }[] };
+
 const DRAW_PROFILES = [{ participantsCount: 30, drawSize: 32 }];
 
 function seedTournament() {
@@ -145,7 +147,7 @@ describe('Phase 6 drawDeletions gating', () => {
     expect(result.success).toEqual(true);
 
     const { event } = tournamentEngine.getEvent({ drawId });
-    const { extension } = findExtension({ name: DRAW_DELETIONS, element: event });
+    const { extension } = findExtension<DrawDeletion[]>({ name: DRAW_DELETIONS, element: event });
     expect(extension?.value?.length).toEqual(1);
     expect(extension?.value[0].deletedDrawsDetail[0].positionAssignments).not.toBeUndefined();
   });

@@ -63,12 +63,12 @@ export function addMutationLock(params: AddMutationLockArgs): {
   }
 
   // Read existing locks on this element
-  const { extension } = findExtension({ element, name: MUTATION_LOCKS });
+  const { extension } = findExtension<MutationLocksValue>({ element, name: MUTATION_LOCKS });
   const before = JSON.stringify(extension?.value);
   // a tournament-scope lock, and the feature gate any lock enables, are root extensions
   const rootBefore = rootExtensionsFingerprint(tournamentRecord);
   const notice = () => {
-    const after = findExtension({ element, name: MUTATION_LOCKS }).extension?.value;
+    const after = findExtension<MutationLocksValue>({ element, name: MUTATION_LOCKS }).extension?.value;
     if (JSON.stringify(after) !== before) mutationLockNotice({ tournamentRecord, drawDefinition, event, venue });
     rootExtensionsNotice({ tournamentRecord, before: rootBefore });
   };
@@ -144,7 +144,7 @@ export function addMutationLock(params: AddMutationLockArgs): {
 function ensureFeatureGate(tournamentRecord: Tournament, element?: { extensions?: Extension[] }) {
   if (element === tournamentRecord) {
     // Lock was added to tournament record — set enabled on its own value
-    const { extension } = findExtension({ element: tournamentRecord, name: MUTATION_LOCKS });
+    const { extension } = findExtension<MutationLocksValue>({ element: tournamentRecord, name: MUTATION_LOCKS });
     if (extension?.value && !extension.value.enabled) {
       extension.value.enabled = true;
       addExtension({
@@ -157,7 +157,7 @@ function ensureFeatureGate(tournamentRecord: Tournament, element?: { extensions?
   }
 
   // Lock was added to a child element — ensure tournament-level extension exists with enabled
-  const { extension } = findExtension({ element: tournamentRecord, name: MUTATION_LOCKS });
+  const { extension } = findExtension<MutationLocksValue>({ element: tournamentRecord, name: MUTATION_LOCKS });
   if (extension?.value) {
     if (!extension.value.enabled) {
       extension.value.enabled = true;

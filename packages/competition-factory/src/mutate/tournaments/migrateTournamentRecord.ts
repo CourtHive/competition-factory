@@ -167,7 +167,7 @@ function promoteSanctionConstraints(record: Tournament, clearLegacy: boolean, wa
       warnings.push({ code: SANCTION_CONSTRAINTS_NOT_PROMOTED, info });
       return 0;
     }
-    const legacyEvents = extensions[index]?.value?.events;
+    const legacyEvents = (extensions[index]?.value as { events?: unknown } | undefined)?.events;
     const organisationName = sanction.authority?.organisationName;
     sanction.constraints = {
       definedBy: { providerId, ...(organisationName ? { organisationName } : {}) },

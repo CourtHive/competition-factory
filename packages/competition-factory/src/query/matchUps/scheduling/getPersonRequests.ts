@@ -27,7 +27,7 @@ export function getPersonRequests(params: GetPersonRequestsArgs): {
   // create merged view of person requests across tournamentRecords
   // ... possible for a person to be in multiple linked tournamentRecords
   for (const tournamentRecord of Object.values(tournamentRecords)) {
-    const { extension } = findExtension({
+    const { extension } = findExtension<{ personId: string; requests: PersonRequests[string] }[]>({
       element: tournamentRecord,
       name: PERSON_REQUESTS,
     });

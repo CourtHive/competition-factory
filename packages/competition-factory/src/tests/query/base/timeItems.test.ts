@@ -197,11 +197,9 @@ describe('getTimeItem', () => {
       itemType: 'TEST',
     });
 
-    // Modify returned timeItem
-    defined(result.timeItem).itemValue.nested = 'modified';
-
-    // Original should be unchanged
-    expect(timeItem.itemValue.nested).toEqual('data');
+    // the returned itemValue is equal to the stored one, and is not the stored object
+    expect(defined(result.timeItem).itemValue).toEqual({ nested: 'data' });
+    expect(defined(result.timeItem).itemValue).not.toBe(timeItem.itemValue);
   });
 });
 
