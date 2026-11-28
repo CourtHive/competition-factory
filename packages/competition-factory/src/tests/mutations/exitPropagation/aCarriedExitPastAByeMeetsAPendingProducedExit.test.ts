@@ -1,4 +1,3 @@
-import { resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
@@ -75,8 +74,6 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
     const recorded = find('West|2|4');
     const loser = recorded.sides.find((side: any) => side.participantId);
     expect(loser.sideNumber).toEqual(2);
-
-    resetDifferentialTally();
     const result: any = tournamentEngine.setMatchUpStatus({
       outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
       matchUpId: recorded.matchUpId,

@@ -1,6 +1,6 @@
 import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
-import { compareIndex } from '@Mutate/matchUps/outcome/indexOracle';
+import { compareIndex } from '@Tests/testHarness/outcome/compareIndex';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

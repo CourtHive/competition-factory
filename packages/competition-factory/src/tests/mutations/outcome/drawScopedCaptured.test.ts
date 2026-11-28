@@ -1,6 +1,4 @@
-import { resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
-import { captureShadow, compareShadow } from '@Mutate/matchUps/outcome/shadow';
 import { notifySubscribers } from '@Global/state/notifySubscribers';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { setClock, withCapturedClock } from '@Tools/clock';
@@ -151,7 +149,6 @@ function play(mode: OutcomePipelineMode, scope: Scope, complete = true, captured
   setOutcomePipeline(mode);
   observed.v1 = 0;
   observed.plans = [];
-  resetDifferentialTally();
   const run = () => {
     let result: any = setMatchUpStatus({ ...args, outcome: outcome(complete) });
     notifySubscribers();
@@ -215,18 +212,6 @@ it('a captured partial score is owned with identical delivered notices', () => {
   expect(v2.roots).toEqual(v1.roots);
   expect(v2.notices).toEqual(v1.notices);
 });
-
-it.each(['drawDefinition', 'event', 'tournamentRecord'] as const)(
-  'the shadow compares the supplied %s, even when the event is detached from a record holding the draw',
-  (root) => {
-    const { args } = fixture('held-draw-detached-event');
-    const before = captureShadow(args);
-    (args[root] as any).unexpectedWrite = true;
-    const result = compareShadow({ before, current: args, ops: [] });
-    expect(result.equal).toEqual(false);
-    if (!result.equal) expect(result.path).toContain('unexpectedWrite');
-  },
-);
 
 function throwPrefix(mode: OutcomePipelineMode, throwAt: number) {
   const { args } = fixture('draw-only');

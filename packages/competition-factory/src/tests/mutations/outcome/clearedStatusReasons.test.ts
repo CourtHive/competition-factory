@@ -1,6 +1,5 @@
 import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
 import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
-import { OutcomePipelineDivergence } from '@Mutate/matchUps/outcome/differential';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -148,17 +147,13 @@ function play(mode: OutcomePipelineMode, outcomes: Outcome[]) {
     .matchUps[0];
   setOutcomePipeline(mode);
   v1Writes.count = 0;
-  let divergence: string | undefined;
+  // one pipeline: nothing to diverge from
+  const divergence: string | undefined = undefined;
   const results: any[] = [];
-  try {
-    outcomes.forEach((outcome, i) => {
-      setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
-      results.push(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }));
-    });
-  } catch (error) {
-    if (!(error instanceof OutcomePipelineDivergence)) throw error;
-    divergence = error.message;
-  }
+  outcomes.forEach((outcome, i) => {
+    setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
+    results.push(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }));
+  });
   const record = tournamentEngine.getTournament().tournamentRecord;
   const matchUp = tournamentEngine.findMatchUp({ drawId: 'd', matchUpId, inContext: false }).matchUp;
   return {

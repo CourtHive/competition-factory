@@ -118,7 +118,6 @@ export default defineConfig({
       './src/tests/testHarness/noticeCoverage.ts',
       './src/tests/testHarness/setOutcomePipeline.ts',
       './src/tests/testHarness/setFactoryBackend.ts',
-      './src/tests/testHarness/differentialTally.ts',
       './src/tests/testHarness/schedulingProperties.ts',
       './src/tests/testHarness/schedulingViewRoundTrip.ts',
       './src/tests/testHarness/rethrowCaughtErrors.ts',

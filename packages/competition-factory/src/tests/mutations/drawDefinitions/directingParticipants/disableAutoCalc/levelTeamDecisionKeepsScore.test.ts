@@ -84,7 +84,6 @@ describe.each([ROUND_ROBIN, SINGLE_ELIMINATION])('%s: a decision on a level TEAM
   });
 
   // the strings alone do not restate the aggregate either: its sets were dropped, so v1 tallied the tie as 0-0 games
-  // (v2 140-140, from the lines: an OutcomePipelineDivergence under differential)
   it('keeps the aggregate when the decision carries the score strings alone', () => {
     const tie = levelTie(drawType);
     const result = tournamentEngine.setMatchUpStatus({

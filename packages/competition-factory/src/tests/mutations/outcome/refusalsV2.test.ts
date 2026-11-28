@@ -1,4 +1,3 @@
-import { OutcomePipelineDivergence, compareDecisions } from '@Mutate/matchUps/outcome/differential';
 import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { authoredScenarios } from '../../testHarness/corpus/authoredSources';
 import { buildOutcomeView, refuseOutcome } from '@Mutate/matchUps/outcome';
@@ -58,30 +57,4 @@ it('every authored scenario answers the same under v1, v2 and differential', () 
   );
   expect(answers[OUTCOME_PIPELINE_V2]).toEqual(answers[OUTCOME_PIPELINE_V1]);
   expect(answers[OUTCOME_PIPELINE_DIFFERENTIAL]).toEqual(answers[OUTCOME_PIPELINE_V1]);
-});
-
-it('a disagreement is a thrown divergence naming the matchUp and both answers; an apply-stage code is deferred', () => {
-  const refusalX = { code: 'ERR_X', error: { code: 'ERR_X', message: 'x' }, row: 9 };
-  expect(compareDecisions(undefined, undefined)).toEqual({ agree: true, v1: 'ok', v2: 'ok' });
-  expect(compareDecisions(refusalX, 'ERR_X')).toMatchObject({ agree: true });
-  expect(compareDecisions(undefined, 'ERR_MISSING_ASSIGNMENTS')).toMatchObject({
-    agree: true,
-    deferred: 'ERR_MISSING_ASSIGNMENTS',
-  });
-  // a missing assignment is deferred only for a call v2 abstains from: one it has a complete plan for, it would write
-  expect(compareDecisions(undefined, 'ERR_MISSING_ASSIGNMENTS', true)).toMatchObject({ agree: false, v2: 'ok' });
-  expect(compareDecisions(undefined, 'ERR_FORCED', true)).toMatchObject({ agree: true, deferred: 'ERR_FORCED' });
-  // the status codes are v2's own rows since S7 (rows 6 and 28): no longer deferred
-  for (const code of [
-    'ERR_UNRECOGNIZED_MATCHUP_STATUS',
-    'ERR_INVALID_MATCHUP_STATUS',
-    'ERR_UNCHANGED_CANNOT_ASSIGN_BYE',
-  ])
-    expect(compareDecisions(undefined, code)).toMatchObject({ agree: false });
-  // a schedule's refusal is v2's own since S7 (rows 16, 25, 27): no longer deferred
-  expect(compareDecisions(undefined, 'ERR_INVALID_TIME')).toMatchObject({ agree: false });
-  expect(compareDecisions(refusalX, undefined)).toMatchObject({ agree: false, v1: 'ok', v2: 'ERR_X' });
-  const divergence = new OutcomePipelineDivergence({ matchUpId: 'm1', v1: 'ok', v2: 'ERR_X' });
-  expect(divergence.message).toContain('m1');
-  expect(divergence.message).toContain('v1 ok, v2 ERR_X');
 });

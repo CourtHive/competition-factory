@@ -4,10 +4,8 @@ import { canonicalJson } from '@Tools/canonicalJson';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
 /**
- * THE INDEX ORACLE (executor plan § 3.1.1; S2). Test-only, `differential` only: the structural index of the draw as the
- * call found it, against the call's full hydration of it, on every field the outcome logic reads. A difference is a
- * field the index derives wrongly, found before
- * any reader moves onto it.
+ * THE STRUCTURAL INDEX AGAINST A HYDRATION (test-only): every field the outcome logic reads, matchUp by matchUp. A
+ * difference is a field the index derives wrongly.
  */
 const SIDE_FIELDS = ['sideNumber', 'participantId', 'bye', 'qualifier', 'drawPosition'] as const;
 export const INDEX_FIELDS = [

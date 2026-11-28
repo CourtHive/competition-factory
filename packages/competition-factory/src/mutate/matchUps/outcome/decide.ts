@@ -14,7 +14,7 @@ import { stampedIn } from './ops';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
-import { prepareTemporalShadow } from './shadow';
+import { replayableEffectScope } from './effectScope';
 import { getCapturedStamps, getCapturedClock } from '@Global/state/globalState';
 
 // constants and types
@@ -91,11 +91,11 @@ function planCall(args: BuildViewArgs, view: OutcomeView, teamLedger?: TeamLedge
       folded && 'ops' in folded && !folded.settle.length ? { ...allowed, ops: folded.ops } : { abstain: 'settle' };
   const phases =
     args.clockFree && outcome.ops ? compileTemporalPhases({ args, view, route, ops: outcome.ops }) : undefined;
-  const observe = phases && outcome.ops ? prepareTemporalShadow(args, phases, outcome.shape) : undefined;
+  const replayable = !!phases && !!outcome.ops && replayableEffectScope(args, phases);
   // v1's whole write, recorded with the instants it read (`recordedWhole`): apply writes them as data, and reads no clock
   const recorded = outcome.ops && outcome.recordedResult ? outcome : undefined;
   // An uncaptured call requires a complete phase program and a replayable effect scope, in either mode.
-  if (args.clockFree && !observe) outcome = { abstain: 'clock' };
+  if (args.clockFree && !replayable) outcome = { abstain: 'clock' };
   if (recorded) outcome = recorded;
   return { outcome, phases, route, refusedOnCopy };
 }

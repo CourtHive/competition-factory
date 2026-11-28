@@ -1,4 +1,3 @@
-import { resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { setSubscriptions } from '@Global/state/globalState';
 import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
@@ -53,7 +52,6 @@ afterEach(() => setOutcomePipeline());
 function setup() {
   setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
   setSubscriptions({});
-  resetDifferentialTally();
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawId: DRAW_ID, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
     setState: true,

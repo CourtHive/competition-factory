@@ -745,7 +745,7 @@ function placedAfter(ops: OutcomeOp[], quiet: Set<string>): Set<string> {
 
 /**
  * Which notices v1 writes with no event, and with no tournament, read off the ops alone (S7): shared by
- * `applyOwnedPlan`, which writes them, and the differential (`plannedNotices`), which holds v1's notices to them
+ * `applyOwnedPlan`, which writes them, and the tests' `plannedNotices`, which states the notices a plan implies
  */
 function noticeRules(ops: OutcomeOp[]) {
   // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event.
