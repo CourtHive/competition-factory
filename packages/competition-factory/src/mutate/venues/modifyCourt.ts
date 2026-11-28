@@ -30,10 +30,10 @@ export function modifyCourt(params: ModifyCourtArgs) {
   const tournamentRecords = resolveTournamentRecords(params);
   if (!Object.keys(tournamentRecords).length) return { error: MISSING_TOURNAMENT_RECORDS };
 
-  let courtModified;
-
+  // every record's modification planned before any is written: a court one record refuses leaves every record as it was
+  const commits: (() => void)[] = [];
   for (const tournamentRecord of Object.values(tournamentRecords)) {
-    const result = courtModification({
+    const plan = planCourtModification({
       tournamentRecord,
       disableNotice,
       venueMatchUps,
@@ -41,11 +41,12 @@ export function modifyCourt(params: ModifyCourtArgs) {
       courtId,
       force,
     });
-    if (result?.error) return result;
-    courtModified = true;
+    if (!('commit' in plan)) return plan;
+    commits.push(plan.commit);
   }
+  for (const commit of commits) commit();
 
-  return courtModified ? { ...SUCCESS } : undefined;
+  return { ...SUCCESS };
 }
 
 export function courtModification(params: ModifyCourtArgs): ResultType & { court?: HydratedCourt } {
