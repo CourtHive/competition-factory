@@ -15,7 +15,7 @@ import { isFunction } from '@Tools/objects';
 import { ErrorType, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
 import { OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { ASSIGN_BYE_METHOD } from '@Constants/positionActionConstants';
-import { Directives } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 
 /**
  * WHEN A ROLLBACK NEEDS A SNAPSHOT. `rollbackOnError` restores every loaded record on a refusal, and the snapshot that
@@ -60,7 +60,7 @@ export function cannotPartlyCommit(methodName: string, method: unknown, params?:
 }
 
 /** true when a queue is one directive that cannot partly commit */
-export function queueCannotPartlyCommit(directives: Directives, methods: { [key: string]: unknown }): boolean {
+export function queueCannotPartlyCommit(directives: Directives<string>, methods: { [key: string]: unknown }): boolean {
   if (directives.length !== 1) return false;
   const [{ method: methodName, params }] = directives;
   return cannotPartlyCommit(methodName, ownMethod(methods, methodName), params);

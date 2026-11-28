@@ -1,4 +1,4 @@
-import type { Directives, FactoryEngineMethod, ResultType, TournamentRecords } from '@Types/factoryTypes';
+import type { FactoryEngineMethod, ResultType, TournamentRecords } from '@Types/factoryTypes';
 import type { LoadedFootprint } from '@Global/state/loadedFootprint';
 import type { setClock, setCompetitionClock } from '@Tools/clock';
 import type { MethodSignatures } from './methodSignatures';
@@ -119,11 +119,48 @@ export interface EngineSetup<Engine> {
   setCompetitionClock(provider?: Parameters<typeof setCompetitionClock>[0]): Engine;
 }
 
+/** The keys of the previous directive's result that a directive copies into its own params. */
+export type DirectivePipe = { [key: string]: boolean };
+
+/** A queued method's params: its first parameter when that is a plain object, else an open object. */
+type DirectiveParams<F> = F extends (...args: infer A) => unknown
+  ? [NonNullable<A[0]>] extends [readonly unknown[]]
+    ? Record<string, unknown>
+    : [NonNullable<A[0]>] extends [object]
+      ? A[0]
+      : Record<string, unknown>
+  : Record<string, unknown>;
+
+/** A directive for a method without a typed signature: `params` is an open object. */
+type OpenDirective<Name extends string> = { method: Name; params?: Record<string, unknown>; pipe?: DirectivePipe };
+
+/** Registered methods without a typed signature: the availability helpers and the outcome pipeline selectors. */
+type OpenMethodName = Exclude<FactoryEngineMethod, keyof MethodSignatures | FacadeMethodNames | SyncEngineSetupName>;
+
+/**
+ * One `executionQueue` / `dryRun` directive. For a method with a typed signature, `params` is that method's
+ * parameter object, as a direct call takes it. A registered method without one takes an open `params` object, and so
+ * does a method the caller registered with `importMethods`, named by `Custom`.
+ */
+export type Directive<Custom extends string = never> =
+  | {
+      [M in keyof MethodSignatures]: { method: M; params?: DirectiveParams<MethodSignatures[M]>; pipe?: DirectivePipe };
+    }[keyof MethodSignatures]
+  | OpenDirective<OpenMethodName | Custom>;
+
+export type Directives<Custom extends string = never> = Directive<Custom>[];
+
+/**
+ * What a queue accepts. `Custom` is inferred from the method names the caller passes; a name with a typed signature is
+ * removed from it, so that directive's `params` is checked against the signature.
+ */
+export type QueueDirectives<Custom extends string> = Directives<Exclude<Custom, keyof MethodSignatures>>;
+
 /** The synchronous engines' setup methods, returning the typed engine. */
 export type SyncEngineSetup = EngineSetup<FactoryEngineTyped> & {
   /** Run the directives in order as one call; with `rollbackOnError`, a refusal restores the records it started from. */
-  executionQueue(
-    directives: Directives,
+  executionQueue<Custom extends string = never>(
+    directives: QueueDirectives<Custom>,
     rollbackOnError?: boolean,
   ): ResultType & { results?: unknown[]; rolledBack?: boolean };
   /** Run one registered method by name: `{ method, params }`. */
@@ -229,7 +266,7 @@ export type FactoryEngineTyped = MethodSignatures &
      *     { method: 'deleteDrawDefinition', params: { drawId } },
      *   ]);
      */
-    dryRun(directives: Directives): Forge.DryRunResult;
+    dryRun<Custom extends string = never>(directives: QueueDirectives<Custom>): Forge.DryRunResult;
 
     /**
      * Developer-JOY pre-flight readiness check — see `src/forge/explain.ts` (#12).

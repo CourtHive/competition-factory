@@ -1185,7 +1185,7 @@ function resolveTieMatchUpContext({
   });
 
   // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
-  const autoCalcDisabled = dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc;
+  const autoCalcDisabled = dualMatchUp.disableAutoCalc ?? (dualMatchUp._disableAutoCalc as boolean | undefined);
   // a dual decided by its own exit or call keeps its winner while its lines project none: that winner is the projected
   // one, so nothing downstream reads the line as taking it away (class 4)
   const { keepsDecision: keepsDualDecision, lineDecided: dualLineDecided } = dualKeepsOwnDecision({

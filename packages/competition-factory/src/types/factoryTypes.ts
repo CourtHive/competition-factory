@@ -59,16 +59,10 @@ export type TournamentRecords = {
   [key: string]: Tournament;
 };
 
-export type Directives = {
-  pipe?: { [key: string]: boolean };
-  params?: { [key: string]: any };
-  method: string;
-}[];
-
 export type CheckInOutParticipantArgs = {
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
-  matchUp?: HydratedMatchUp;
+  matchUp?: MatchUp | HydratedMatchUp;
   /** the SUBJECT — an INDIVIDUAL participant. A PAIR or TEAM is refused (CODES 7.0.0) */
   participantId: string;
   matchUpId: string;
@@ -351,10 +345,10 @@ export type PolicyDefinitions = {
   [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
 
-export type QueueMethod = {
-  params: { [key: string]: any };
-  method: string;
-};
+/** A directive `getExtensionUpdate` returns, to replay an extension on another engine through `executionQueue`. */
+export type QueueMethod =
+  | { method: 'addExtension'; params: { extension: Extension; discover: boolean } }
+  | { method: 'addEventExtension'; params: { eventId: string; extension: Extension } };
 
 export type RoundProfile = {
   [key: number]: {
@@ -933,14 +927,16 @@ export type EntriesNotPlacedWarning = ResultWarning & {
 };
 
 export type ResultType = {
-  context?: { [key: string]: any };
+  /** what the method knew when it refused or warned; read a key only after checking it holds what you expect */
+  context?: Record<string, unknown>;
   warnings?: ResultWarning[];
   stack?: string | string[];
   errors?: string[];
   error?: ErrorType;
   success?: boolean;
   valid?: boolean;
-  info?: any;
+  /** a human-readable or structured note on the result; its shape is the method's own */
+  info?: unknown;
 };
 
 export type MappedMatchUps = {

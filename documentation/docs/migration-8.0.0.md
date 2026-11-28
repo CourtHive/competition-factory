@@ -617,6 +617,32 @@ produces), whether the engine copies it (`setState(record)`, the default) or bor
   `getTournament().tournamentRecord` may be `undefined`, the chaining methods return the engine, and
   `executionQueue(...).results` is `unknown[]`. Narrow before reading. Only the availability helpers that leave the
   engine and the outcome pipeline selectors keep the open signature (#6692).
+- **Queue directives and notice payloads are typed.** A directive passed to `executionQueue` or `dryRun` on
+  `tournamentEngine`, `competitionEngine` and the asynchronous engine, or to the standalone `dryRun`, is keyed by its
+  method: `params` is checked against that method's parameter object, where it was `{ [key: string]: any }`. When the
+  check applies:
+  - an array written as a literal, or annotated `Directives`, is checked: each method name, and each method's `params`;
+  - a method you registered with `importMethods` is accepted, with open `params` (`Directives<'myMethod'>` admits it
+    in an annotated array);
+  - an array whose `method` is widened to `string` (built from a `string[]`, say) is not checked: it falls back to open
+    `params`. To keep the check, keep the method name literal (`method: 'addEvent' as const`) or annotate the array
+    `Directives`. An `as const` on the whole array makes it readonly, which the queue methods do not accept.
+
+  The `engine.on` / `once` / `waitFor` payloads carry their domain
+  types (`Participant[]`, `Entry[]`, `PositionAssignment[]`, `SeedAssignment[]`, `Organisation`, `EventData`) where
+  they were `any`: `publishEvent`'s `eventData` may be `undefined`, `modifySeedAssignments`' `seedAssignments` may be
+  absent, and `modifyMatchUp`'s `context` is `unknown`. `QueueMethod` names the two methods `getExtensionUpdate`
+  returns, `OfficiatingDirective` and `SanctioningDirective` take `params?: Record<string, unknown>`, and the
+  builders' `DrawOpts.drawType` is a `DrawTypeUnion`. Correct the params a directive passes, and narrow payload fields
+  before reading them (#6705).
+
+- **A result's `info` and `context` are `unknown`.** `ResultType.info` was `any` and `ResultType.context`
+  `{ [key: string]: any }`; they are now `unknown` and `Record<string, unknown>`, and the results that declared
+  `info?: string` (`modifyCourtAvailability`, `addVenue`, the matchUp format and playoff-group validators, among
+  others) declare `info?: unknown`. What a method puts there is its own: a message, a name, or an object. Check the
+  value before using it (`typeof result.info === 'string'`) or assert the shape you know (#6693).
+- **`HydratedMatchUp` and `HydratedSide` declare their keys.** Both lose their `[key: string]: any` index signature and declare every key hydration adds: the event, draw and structure context (`eventName`, `drawName`, `structureName`, `stage`, `roundOfPlay`, `isRoundRobin`, …), readiness and check-in (`readyToScore`, `hasContext`, `allParticipantsCheckedIn`, `checkedInParticipantIds`), `competitiveProfile`, `inferredGender`, the `nextMatchUps` targets (`winnerTo`, `loserTo`, `sidesTo`, `potentialParticipants`), and on a side `drawPosition`, `displaySideNumber`, `seedNumber`/`seedValue`, `bye`, `qualifier`, `participantFed`/`participantAdvanced`, `sourceDrawPositionRange`, `teamParticipant` and `substitutions`. Reading an undeclared key no longer type-checks, and declared keys carry their real types (`stage` is a `StageTypeUnion`, `roundOfPlay` is `number | false`, so `matchUpSort` takes a `StageTypeUnion` stage). Keys you pass through `context` still reach every matchUp but are yours, not declared: read them through a type of your own (`matchUp as HydratedMatchUp & MyContext`). An extension copied onto a matchUp or side as `_name` is typed `unknown`. (#6694)
+- **`HydratedMatchUp` and `HydratedSide` declare their keys.** Both lose their `[key: string]: any` index signature and declare every key hydration adds: the event, draw and structure context (`eventName`, `drawName`, `structureName`, `stage`, `roundOfPlay`, `isRoundRobin`, …), readiness and check-in (`readyToScore`, `hasContext`, `allParticipantsCheckedIn`, `checkedInParticipantIds`), `competitiveProfile`, `inferredGender`, the `nextMatchUps` targets (`winnerTo`, `loserTo`, `sidesTo`, `potentialParticipants`), and on a side `drawPosition`, `displaySideNumber`, `seedNumber`/`seedValue`, `bye`, `qualifier`, `participantFed`/`participantAdvanced`, `sourceDrawPositionRange`, `teamParticipant` and `substitutions`. Reading an undeclared key no longer type-checks, and declared keys carry their real types (`stage` is a `StageTypeUnion`, `roundOfPlay` is `number | false`, so `matchUpSort` takes a `StageTypeUnion` stage). Keys you pass through `context` still reach every matchUp but are yours, not declared: read them through a type of your own (`matchUp as HydratedMatchUp & MyContext`). An extension copied onto a matchUp or side as `_name` is typed `unknown`. Inputs that read only stored attributes, or resolve the matchUp themselves, also take a stored `MatchUp` (`checkInParticipant`, `checkOutParticipant`, `getMatchUpCheckInState`, `getDualIssues`, `resolveHomeParticipantId`, `participantScheduledMatchUps`); the others need the hydrated matchUp a query returns. (#6694)
 
 ### Packaging
 

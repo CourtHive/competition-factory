@@ -38,7 +38,7 @@ export function playedOrderGate(view: PlanningView, scheduleDate: string) {
       facts,
       graph,
     });
-    return refusal?.context?.blockingMatchUps;
+    return refusal?.context?.blockingMatchUps as unknown[] | undefined;
   };
 }
 
@@ -70,7 +70,7 @@ export function planPlayedOrderRefusal({ plan, view }: { plan: SchedulePlan; vie
       tournamentRecord,
       placements,
     });
-    refusals.push(...(refusal?.context?.refusals ?? []));
+    refusals.push(...((refusal?.context?.refusals as unknown[] | undefined) ?? []));
   }
   if (!refusals.length) return undefined;
   return decorateResult({

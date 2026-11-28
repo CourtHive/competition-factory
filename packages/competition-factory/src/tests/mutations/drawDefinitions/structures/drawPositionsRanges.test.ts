@@ -2,6 +2,7 @@ import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
@@ -64,12 +65,12 @@ it('can add drawPositionsRange to inContext matchUps in a SINGLE_ELIMINATION str
     if (roundNumber === undefined || roundPosition === undefined) throw new Error('Missing fixture round coordinates');
     const expectation = expectations?.[roundNumber][roundPosition];
     if (expectation) {
-      expect(expectation).toEqual(drawPositionsRange.firstRoundDrawPositionsRange);
+      expect(expectation).toEqual(defined(drawPositionsRange).firstRoundDrawPositionsRange);
     }
 
     if (drawPositions) {
       const filteredDrawPositions = drawPositions.filter(Boolean);
-      const overlap = intersection(filteredDrawPositions, drawPositionsRange.possibleDrawPositions);
+      const overlap = intersection(filteredDrawPositions, defined(drawPositionsRange).possibleDrawPositions);
       if (filteredDrawPositions.length) {
         expect(overlap.length).toBeGreaterThan(0);
       }
@@ -110,12 +111,12 @@ it('can add drawPositionsRange to inContext matchUps in a FEED_IN_CHAMPIONSHIP_T
     if (roundNumber === undefined || roundPosition === undefined) throw new Error('Missing fixture round coordinates');
     const expectation = expectations?.[roundNumber][roundPosition];
     if (expectation) {
-      expect(expectation).toEqual(drawPositionsRange.firstRoundDrawPositionsRange);
+      expect(expectation).toEqual(defined(drawPositionsRange).firstRoundDrawPositionsRange);
     }
 
     if (drawPositions) {
       const filteredDrawPositions = drawPositions.filter(Boolean);
-      const overlap = intersection(filteredDrawPositions, drawPositionsRange.possibleDrawPositions);
+      const overlap = intersection(filteredDrawPositions, defined(drawPositionsRange).possibleDrawPositions);
       if (filteredDrawPositions.length) {
         expect(overlap.length).toBeGreaterThan(0);
       }

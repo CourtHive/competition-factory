@@ -15,7 +15,8 @@ import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { UUID } from '@Tools/UUID';
 
-import type { Directives, FactoryEngine } from '@Types/factoryTypes';
+import type { FactoryEngine } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 import type { ParticipantBuildResult, PersonInput } from './types';
 
 type ParticipantShape =

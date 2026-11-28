@@ -7,7 +7,8 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
-import { Directives, ResultType } from '@Types/factoryTypes';
+import { ResultType } from '@Types/factoryTypes';
+import type { Directive } from '@Assemblies/engines/types/engineTypes';
 
 type DirectiveRefusal = ResultType & { message?: string; methodName?: string };
 
@@ -55,7 +56,7 @@ export function validateDirectives(
  * scopes around itself (see seedCall). ONE copy for every queue and for dryRun, so a preview receives
  * the same inputs as the commit it previews.
  */
-export function prepareDirective(directive: Directives[number], results: { [key: string]: unknown }[]) {
+export function prepareDirective(directive: Directive<string>, results: { [key: string]: unknown }[]) {
   const params: { [key: string]: unknown } = directive.params ? { ...directive.params } : {};
 
   const unthreadedSource = seedCall(params); // nonRandom: <seed> middleware

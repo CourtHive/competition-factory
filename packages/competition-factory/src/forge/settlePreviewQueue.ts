@@ -7,7 +7,7 @@ import { PARTIAL_COMMIT } from '@Constants/resultConstants';
 import { MUTATIONS } from '@Constants/topicConstants';
 import { copyPreviewValue } from './previewState';
 
-import type { Directives } from '@Types/factoryTypes';
+import type { Directives } from '@Assemblies/engines/types/engineTypes';
 import type { QueueOutcome } from './finishPreview';
 import type { EmittedNotice } from './dryRun';
 
@@ -19,7 +19,7 @@ import type { EmittedNotice } from './dryRun';
  */
 export function settleNestedQueue(
   outcome: QueueOutcome,
-  directives: Directives,
+  directives: Directives<string>,
   timeStamp: number,
   delivered: EmittedNotice[],
 ) {
@@ -38,7 +38,7 @@ export function settleNestedQueue(
   return outcome;
 }
 
-function deliver(directives: Directives, timeStamp: number, delivered: EmittedNotice[]) {
+function deliver(directives: Directives<string>, timeStamp: number, delivered: EmittedNotice[]) {
   const mutationStatus = getMutationStatus({ timeStamp });
   const { topics } = getTopics();
   for (const topic of [...topics].sort(topicSort)) {
