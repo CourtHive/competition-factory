@@ -79,9 +79,9 @@ const { tournamentRecord: cleaned, removed } = tools.removeNonTeamTieFormats({ t
 engine.setState(cleaned);
 ```
 
-The helper removes `tieFormat` and `tieFormatId` from every non-TEAM event, draw definition and structure, leaves TEAM
-events and their tie formats as they are, and returns a copy: the record passed in is not changed. `removed` lists where
-each tieFormat was.
+The helper removes `tieFormat` and `tieFormatId` from every non-TEAM event, draw definition and structure, and a
+non-TEAM event's `tieFormats` list. It leaves TEAM events and their tie formats as they are, does not change matchUps,
+and returns a copy: the record passed in is not changed. `removed` lists where each was.
 
 ## Governor and engine route removals
 

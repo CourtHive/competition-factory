@@ -218,6 +218,37 @@ describe('tools.removeNonTeamTieFormats', () => {
     expect(result.removed).toEqual([]);
   });
 
+  for (const mode of OUTCOME_MODES) {
+    it(`removes a non-TEAM event's leftover tieFormats list, counted once per event, and keeps a TEAM event's (${mode})`, () => {
+      withPipeline(mode, () => {
+        for (const eventType of NON_TEAM) {
+          const clean = cleanRecord(eventType);
+          const team = clean.events.find((e) => e.eventType === TEAM);
+          team.tieFormats = [tieFormat('team-tf')];
+          const record = structuredClone(clean);
+          record.events.find((e) => e.eventId === 'e1').tieFormats = [tieFormat('tf-1')];
+          const e2 = record.events.find((e) => e.eventId === 'e2');
+          e2.tieFormats = [tieFormat('tf-2')];
+          e2.tieFormat = tieFormat();
+          const before = canonicalJson(record);
+
+          const result: any = tools.removeNonTeamTieFormats({ tournamentRecord: record });
+          expect(result.removed).toEqual([{ eventId: 'e1' }, { eventId: 'e2' }]);
+          expect(canonicalJson(record)).toEqual(before);
+          expect(canonicalJson(result.tournamentRecord)).toEqual(canonicalJson(clean));
+          const cleanedTeam = result.tournamentRecord.events.find((e) => e.eventId === 'e3');
+          expect(cleanedTeam.tieFormats).toEqual(team.tieFormats);
+
+          tournamentEngine.reset();
+          tournamentEngine.setState(structuredClone(result.tournamentRecord));
+          expect(tournamentEngine.generateDrawDefinition({ eventId: 'e1', drawSize: 8, drawId: 'dx' }).success).toBe(
+            true,
+          );
+        }
+      });
+    });
+  }
+
   it('refuses a missing record', () => {
     expect((tools.removeNonTeamTieFormats as any)({}).error).toBeDefined();
   });
