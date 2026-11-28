@@ -5,7 +5,7 @@ import { getInvariantViolations } from '@Tests/testHarness/exitPropagation/invar
 import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import { v1Writes } from '@Tests/testHarness/outcome/directionCounter';
 import { soakDraw } from '@Tests/testHarness/outcome/recordSoakState';
-import { getOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import tournamentEngine from '@Engines/syncEngine';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -18,7 +18,7 @@ import {
 } from '@Tests/testHarness/exitPropagation/transitions';
 
 // constants and types
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 import type { PropertyFailure } from '@Tests/testHarness/exitPropagation/transitions';
 import type { ScenarioConfig, Step } from '@Tests/testHarness/exitPropagation/sweep';
 import type { ReplayStep } from '@Tests/testHarness/exitPropagation/replayTypes';

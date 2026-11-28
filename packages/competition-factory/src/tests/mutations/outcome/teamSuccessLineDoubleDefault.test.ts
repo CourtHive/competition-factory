@@ -1,6 +1,6 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { resolveTieFormat } from '@courthive/competition-catalogue';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';

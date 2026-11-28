@@ -1,25 +1,15 @@
-import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { deepCorrectionScenario } from '@Tests/testHarness/exitPropagation/correctionDivergence';
-import { MATRIX_CELLS, cellExitOutcome } from '@Tests/testHarness/exitPropagation/matrixCells';
-import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
-import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
-import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
-import { TEAM } from '@Constants/eventConstants';
-import {
-  FIRST_MATCH_LOSER_CONSOLATION,
-  SINGLE_ELIMINATION,
-  DOUBLE_ELIMINATION,
-} from '@Constants/drawDefinitionConstants';
-
-const { DOMINANT_DUO } = tieFormatConstants;
+import { FIRST_MATCH_LOSER_CONSOLATION, DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * EVERY WRITE THE CASCADE MAKES, IF IT FAILS, FAILS THE CALL — assessment gap G9.
@@ -96,79 +86,11 @@ afterEach(() => {
   forced.hits = 0;
 });
 
-const played = { winningSide: 1 };
 const matchUps = (drawId: string): any[] =>
   tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps ?? [];
 
-/**
- * Drive a matrix cell as the matrix does — the exit on the first playable matchUp, then play forward
- * with the exit every third step — with the forced context armed from the start. Returns the first
- * result that carries an error and the record as it stood before that call, or undefined if the play
- * ran to exhaustion without one.
- */
-function driveUntilError(drawId: string, exitOutcome: any, propagateExitStatus: boolean): any {
-  let before: any;
-  const skip = new Set<string>();
-  for (let taken = 0; taken < 200; taken++) {
-    const target = nextPlayable(drawId, skip);
-    if (!target) return undefined;
-    const outcome = taken === 0 || taken % 3 === 2 ? exitOutcome : played;
-    before = recordNow();
-    const result: any = tournamentEngine.setMatchUpStatus({
-      matchUpId: target.matchUpId,
-      propagateExitStatus,
-      outcome,
-      drawId,
-    });
-    if (result.error) return { result, before };
-    if (!result.success) skip.add(target.matchUpId);
-  }
-  return undefined;
-}
-
-const FORWARD_SITES = [
-  // the primary write of an ordinary result
-  { context: 'attemptToModifyScore', seed: 1, policy: undefined, firstWrite: true },
-  // v1 residual, handed to v2: a double exit's produced exit, written on the winner target after the result
-  { context: 'conditionallyAdvanceDrawPosition', seed: 7, policy: undefined, firstWrite: false },
-  // the re-score path for a result that changes nothing downstream
-  { context: 'scoreModification', seed: 7, policy: undefined, firstWrite: true },
-  // v1 residual, handed to v2: the exit carried onward through a BYE-held target, policy off
-  { context: 'doubleExitAdvancement', seed: 77, policy: PRODUCED_EXIT_POLICY, firstWrite: false },
-  // v1 residual, handed to v2: the settle pass at the end of a call, policy off
-  { context: 'settleHeldExits', seed: 77, policy: PRODUCED_EXIT_POLICY, firstWrite: false },
-];
-
 const recordNow = () => structuredClone(tournamentEngine.getTournament().tournamentRecord);
 const residual = (firstWrite: boolean) => (firstWrite ? 'leaves the record unchanged' : 'is returned (v1 residual)');
-
-it.each(FORWARD_SITES.map((site) => ({ ...site, kind: residual(site.firstWrite) })))(
-  'a failed write at $context fails the call and $kind (matrix seed $seed)',
-  ({ context, seed, policy, firstWrite }) => {
-    const cell = MATRIX_CELLS.find((candidate) => candidate.seed === seed);
-    expect(cell).toBeDefined();
-    setSubscriptions({});
-    const drawId = `fault-${context}`;
-    mocksEngine.generateTournamentRecord({
-      ...(policy ? { policyDefinitions: policy } : {}),
-      drawProfiles: [
-        { drawId, drawType: cell!.drawType, drawSize: cell!.drawSize, participantsCount: cell!.participantsCount },
-      ],
-      nonRandom: cell!.seed,
-      setState: true,
-    });
-
-    forced.context = context;
-    const failed = driveUntilError(drawId, cellExitOutcome(cell!.exitStatus), cell!.propagateExitStatus);
-
-    // CONTROL: the play reached the site, once — the first forced write ends the call
-    expect(forced.hits, `${context} was reached`).toEqual(1);
-    expect(failed?.result?.error?.code, "the error is the caller's result").toEqual(FORCED_ERROR.code);
-    // the call's first write: nothing was written before it, so nothing changed. A residual site is not asserted here:
-    // v1 leaves its earlier writes behind, which the rule forbids and v2 is to plan away (see the docblock)
-    if (firstWrite) expect(recordNow(), 'a failed first write changes nothing').toEqual(failed?.before);
-  },
-);
 
 const alternative = (outcome: any): any => {
   switch (outcome?.matchUpStatus) {
@@ -196,19 +118,6 @@ const alternative = (outcome: any): any => {
 
 /** The deep oracle's corrected route: a played prefix, the mistake, the correction. */
 const CORRECTION_SITES = [
-  // v1 residual, handed to v2: a correction withdrawing a double exit's advancement, after the unwind began
-  {
-    context: 'conditionallyRemoveDrawPosition',
-    firstWrite: false,
-    config: {
-      drawType: SINGLE_ELIMINATION,
-      drawSize: 8,
-      participantsCount: 7,
-      seed: 7000009,
-      propagateExitStatus: true,
-    },
-    cellExit: { matchUpStatus: DOUBLE_WALKOVER },
-  },
   // the main write of the correcting outcome itself
   {
     context: 'sms',
@@ -298,35 +207,3 @@ it.each(CORRECTION_SITES.map((site) => ({ ...site, kind: residual(site.firstWrit
     if (firstWrite) expect(recordNow(), 'a failed first write changes nothing').toEqual(before);
   },
 );
-
-/**
- * THE DUAL'S OWN WRITE. `updateTieMatchUpScore` recomputed the dual and wrote it with
- * `modifyMatchUpScore`, and discarded the result: a failed write of the dual's status left the line
- * scored and the dual stale while the caller reported success. Found by this file (2026-10-01),
- * when the site turned out to have no context to inject on.
- *
- * A KNOWN V1 RESIDUAL, handed to v2: the line's own score is written before the dual's, so v1 leaves it
- * behind when the dual's write fails. The record is not asserted, because v1 cannot yet provide it.
- */
-it("a failed write of a TEAM dual's status fails the line score that caused it (v1 residual)", () => {
-  setSubscriptions({});
-  const drawId = 'fault-dual';
-  mocksEngine.generateTournamentRecord({
-    drawProfiles: [
-      { drawId, drawType: SINGLE_ELIMINATION, drawSize: 8, eventType: TEAM, tieFormat: resolveTieFormat(DOMINANT_DUO) },
-    ],
-    nonRandom: 300001,
-    setState: true,
-  });
-  expect(tournamentEngine.generateLineUps({ drawId, useDefaultEventRanking: true, attach: true }).success).toEqual(
-    true,
-  );
-  const dual = matchUps(drawId).find((m) => !m.collectionId && m.roundNumber === 1 && m.roundPosition === 1);
-  const [line] = matchUps(drawId).filter((m) => m.matchUpTieId === dual.matchUpId);
-
-  forced.context = 'updateTieMatchUpScore';
-  const result: any = tournamentEngine.setMatchUpStatus({ matchUpId: line.matchUpId, drawId, outcome: played });
-
-  expect(forced.hits).toEqual(1);
-  expect(result?.error?.code).toEqual(FORCED_ERROR.code);
-});

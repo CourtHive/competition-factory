@@ -1,5 +1,6 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { getTournamentRecords } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -8,7 +9,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 
 // constants and types
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 import type { Tournament } from '@Types/tournamentTypes';
 
 const counter = vi.hoisted(() => ({ active: false, calls: 0 }));
@@ -66,7 +67,7 @@ it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const)(
       counter.active = false;
     }
     expect(result.success).toBe(true);
-    expect(counter.calls).toBe(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+    expect(counter.calls).toBe(0);
     expect(stored.matchUpStatus).toBe(toBePlayed.matchUpStatus);
     expect(stored.score).toBe(score);
     expect(Object.hasOwn(stored, 'matchUpStatusCodes')).toBe(false);

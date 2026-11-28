@@ -1,4 +1,4 @@
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { tieFormats } from '@courthive/competition-catalogue';
 import { afterEach, expect, it } from 'vitest';
 import mocks from '@Assemblies/engines/mock';

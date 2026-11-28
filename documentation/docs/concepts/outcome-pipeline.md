@@ -608,16 +608,12 @@ as one pure function, `chooseRoute` is § 3, `planWrite` is § 4 and `planDirect
 direction and exit propagation. v1 is the pipeline as written across `setMatchUpState` and the
 matchUpGovernor routes. v2 writes the calls it owns and hands every other call to v1 whole.
 
-**v2 is the default** (Path A step 3). v1 stays selectable as a fallback through 7.x. The selector is
-deprecated in 7.x and removed in 8.0.0 (see [migration to 8.0.0](../migration-8.0.0.md#other-800-changes)).
+**v2 is the only pipeline in 8.0.0.** In 7.x it was the default (Path A step 3), and `v1` and `differential` stayed
+selectable through `engine.outcomePipeline(mode)`; 8.0.0 removes them with the selector (see
+[migration to 8.0.0](../migration-8.0.0.md#the-outcome-pipeline-selector-is-removed)). The v1-era writers v2 hands a
+call to still run: on a copy where the call is recorded, and on the stored record only after v2 has found no refusal.
 
-The mode is process-wide, set with
-[`engine.outcomePipeline(mode)`](../engines/engine-methods.md#outcomepipeline) and read with
-[`engine.getOutcomePipeline()`](../engines/engine-methods.md#getoutcomepipeline); no argument
-restores `v2`, and an unknown mode is `INVALID_VALUES`.
-
-- **`v1`** (the fallback, deprecated): nothing is built and nothing is decided by v2.
-- **`v2`** (the default): v2 decides the refusals. A refusal it raises is the call's result and v1 is not asked.
+- **v2** decides the refusals. A refusal it raises is the call's result and v1 is not asked.
   An outcome it accepts is planned (§ 7.2); a call whose complete plan is a shape v2 owns is written
   by v2 (`outcome/apply.ts`: the plan's ops folded into the stored draw by the one reducer, then
   v1's own notices for what was written) and v1 is not asked; every other call is handed to v1
@@ -1375,23 +1371,11 @@ restores `v2`, and an unknown mode is `INVALID_VALUES`.
   `incompleteAssignmentsOnDefault`, a swap away from a carried exit (its withdrawal from the seat the new loser takes),
   and a swap whose seat holds anything but this matchUp's own carry.
 
-- **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
-  and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
-  plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
-  loser's destination (including the propagated BYE for a loser an FMLC feed keeps out), the exit
-  a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
-  settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
-  BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: `ERR_FORCED`, and `ERR_MISSING_ASSIGNMENTS`, a manual-scoring line's or a line's given a winner with no line-up assigned, deferred only where v2 abstains from the call: v1 raising it for a call v2 has a complete plan for is a divergence; the status checks a write makes are v2's own rows since S7, rows 6, 24 and 28; an assigned or occupied drawPosition inside the exit cascade is not one since S7: v1 no longer raises either after its first write, so one raised there is a divergence), is recorded as
-  deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
-  loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
-  and deferred decisions by route.
+- **`differential`** (7.x only, removed in 8.0.0): v2 planned the whole call before v1 ran, then checked v1's result
+  against it, and a disagreement threw `OutcomePipelineDivergence`. 8.0.0 has no second implementation to compare
+  with.
 
-`OUTCOME_PIPELINE=differential vitest run` is the gate. It runs in CI for pull requests into `master`
-and on `master` itself — every checkpoint — and, on a pull request into `dev`, only when the outcome
-pipeline's paths change, so a test added elsewhere since the last checkpoint may not have run under it: run `OUTCOME_PIPELINE=differential TZ=UTC npx vitest run` locally
-before opening one (a plain green suite predicts nothing about it). Since 7.9.0 the view reads a
-BYE-holder occupant's carry where it was written, a round on, so a withdrawn BYE's convergence is
+Since 7.9.0 the view reads a BYE-holder occupant's carry where it was written, a round on, so a withdrawn BYE's convergence is
 planned as v1 writes it; and the exit-beside-a-BYE invariant holds under either `doubleExitPropagateBye`
 setting. An exit arriving at a BYE in its structure's last round meets the exit held beside the BYE that fed
 it, and v2 plans the two converging, as v1's settle step converges them (census run-17 baseline, DOUBLE_ELIMINATION

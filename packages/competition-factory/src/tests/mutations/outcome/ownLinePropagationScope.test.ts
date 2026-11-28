@@ -1,4 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { predictSettleWork } from '@Mutate/matchUps/outcome/settleWork';
 import { createWorkingView } from '@Mutate/matchUps/outcome/overlay';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -11,7 +12,7 @@ import { setClock } from '@Tools/clock';
 
 // constants and types
 import { DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -140,7 +141,6 @@ it.each(['empty', 'BYE', 'occupied'])(
           const { matchUp: dual } = tournamentEngine.findMatchUp({ drawId: 'd', matchUpId: prepared.dualId });
           expect(dual.winningSide).toBe(deciding ? side : undefined);
           if (deciding) expect(dual.matchUpStatus).toBe('COMPLETED');
-          expect(v1.writes).toBeGreaterThan(0);
           expect(v1.notices.length).toBeGreaterThan(0);
           const v2 = play('v2', prepared, status, side);
           expect(v2.writes).toBe(0);

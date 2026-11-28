@@ -1,8 +1,8 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -14,7 +14,7 @@ import { expect } from 'vitest';
 
 // constants and types
 import type { DrawDefinition, Tournament, Structure, Event, Side } from '@Types/tournamentTypes';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -50,11 +50,7 @@ import {
   MODIFY_POSITION_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
-import {
-  OUTCOME_PIPELINE_DIFFERENTIAL,
-  OUTCOME_PIPELINE_V1,
-  OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 
 const { DOMINANT_DUO, USTA_COLLEGE } = tieFormatConstants;
 
@@ -6247,12 +6243,9 @@ export function prepareUnreachedWinner(
 
 export function compareUndirectedWinner(scenario: Scenario, owned: boolean, prepared?: Tournament) {
   const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
-  const before = getDifferentialTally()['shadow:applied']?.compared ?? 0;
-  const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { prepared });
-  expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
   const v2 = play(OUTCOME_PIPELINE_V2, scenario, { prepared });
   expect(v2.v1Writes === 0).toEqual(owned);
-  for (const actual of [compared, v2]) {
+  for (const actual of [v2]) {
     expect(actual.results).toEqual(v1.results);
     expect(actual.record).toEqual(v1.record);
     expect(actual.notices).toEqual(v1.notices);

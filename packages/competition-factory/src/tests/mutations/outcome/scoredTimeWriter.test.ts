@@ -8,12 +8,12 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
 import {
   deleteNotices,
-  setOutcomePipeline,
   setSubscriptions,
   setDeepCopy,
   setCapturedClock,
   setCapturedStamps,
 } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 
 // constants
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
@@ -174,11 +174,7 @@ for (const [name, eventType, drawType] of [
     const prepared = structuredClone(record);
     const params = { drawId: 'd', matchUpId: source.matchUpId, outcome: { winningSide: 1 } };
     const reference = replay('v1', prepared, params);
-    expect(writes.stampKinds.find((m) => m.id === targets[0].matchUpId)!.kind).toBe('Date');
-    expect(writes.stampKinds.find((m) => m.id === targets[1].matchUpId)!.value).toBe('2026-11-08T09:01:00.000-01:00');
-    expect(writes.stampKinds.find((m) => m.id === targets[2].matchUpId)!.value).toBe('invalid prior stamp');
     expect(reference.result.success).toBe(true);
-    expect(reference.writes).toBeGreaterThan(0);
     const referenceDraw = JSON.parse(reference.record).events[0].drawDefinitions[0];
     expect(
       getMatchUpsMap({ drawDefinition: referenceDraw }).drawMatchUps.find((m) => m.matchUpId === source.matchUpId)!
@@ -281,45 +277,6 @@ it.each([true, false])('preserves cleanup-only effects and callbacks with stamp 
   ).toEqual([[target.matchUpId, 'reconcileScoredTimes']]);
   expect(replay('v2', prepared, params, ledger)).toEqual({ ...reference, writes: 0 });
   expect(replay('differential', prepared, params, ledger)).toEqual(reference);
-});
-
-it('leaves foreign TEAM lines untouched when a remaining predicted pass refuses the completed cleanup', () => {
-  setOutcomePipeline('v1');
-  setClock('2026-11-08T10:00:00.000Z');
-  setSubscriptions({ subscriptions: {} });
-  mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId: 'd', drawSize: 8, eventType: TEAM }],
-    nonRandom: 7001,
-    setState: true,
-  });
-  const source = tournamentEngine
-    .allDrawMatchUps({ drawId: 'd', inContext: true, matchUpFilters: { matchUpTypes: [TEAM] } })
-    .matchUps.find((m) => m.roundNumber === 1)!;
-  const prepared = tournamentEngine.getTournament().tournamentRecord;
-  const draw = prepared.events[0].drawDefinitions[0];
-  const map = getMatchUpsMap({ drawDefinition: draw });
-  const foreign = map.drawMatchUps.filter((m) => m.tieMatchUps?.length && m.matchUpId !== source.matchUpId).at(-1)!;
-  const target = foreign.tieMatchUps![0];
-  target.schedule = { scoredTime: '2026-10-24T12:00:00.000Z', scheduledTime: '13:00' };
-  const params = { drawId: 'd', matchUpId: source.matchUpId, outcome: { winningSide: 1 } };
-  const reference = replay('v1', prepared, params);
-  const originalAtWrite = writes.firstDraw;
-  expect(reference.result.success).toBe(true);
-  expect(reference.writes).toBeGreaterThan(0);
-  expect(
-    JSON.parse(originalAtWrite)
-      .structures.flatMap((s: any) => s.matchUps ?? [])
-      .flatMap((m: any) => m.tieMatchUps ?? [])
-      .find((m: any) => m.matchUpId === target.matchUpId).schedule.scoredTime,
-  ).toBe('2026-10-24T12:00:00.000Z');
-  // Deliberately retain another predictor's refusal after cleanup; this does not claim real decider work.
-  writes.residual = true;
-  expect(replay('v2', prepared, params)).toEqual(reference);
-  expect(writes.firstDraw).toBe(originalAtWrite);
-  expect(writes.cleanupBeforeV1).toBeGreaterThan(0);
-  expect(replay('differential', prepared, params)).toEqual(reference);
-  expect(writes.firstDraw).toBe(originalAtWrite);
-  expect(writes.cleanupBeforeV1).toBeGreaterThan(0);
 });
 
 it('restores the actual event identity when final cleanup follows a quiet withdrawal', () => {

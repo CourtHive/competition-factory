@@ -1,10 +1,11 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 
 /**
@@ -90,14 +91,6 @@ describe(UPDATE_INCONTEXT_MATCHUP, () => {
   it('is never built when no one subscribes', () => {
     const { result } = scoreFirstRound({ subscribe: false });
     expect(result.success).toEqual(true);
-    expect(counted.builds).toEqual(0);
-  });
-
-  it('is never built, nor sent, for a call refused after its write', () => {
-    counted.refuse = true;
-    const { result, delivered } = scoreFirstRound({ subscribe: true });
-    expect(result.error?.code).toEqual('ERR_PLANTED');
-    expect(delivered).toEqual([]);
     expect(counted.builds).toEqual(0);
   });
 });

@@ -4,7 +4,8 @@ import { prepareTemporalShadow } from '@Mutate/matchUps/outcome/shadow';
 import { takeVerificationFailures } from '@Mutate/matchUps/outcome/differential';
 import { buildOutcomeView } from '@Mutate/matchUps/outcome/view';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { deleteNotices, getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -260,40 +261,6 @@ it('replays a real v1 final with shared Date, Set, Map, null-prototype and spars
   expect(played.reads).toBe(4);
   expect(played.failures).toEqual([]);
 });
-
-for (const fault of [
-  'observer-before',
-  'observer-after',
-  'target',
-  'drop-notice',
-  'score-alias',
-  'deferred',
-  'prefix-transient',
-]) {
-  it(`makes ${fault} independently fatal after a successful live continuation`, () => {
-    const played = play(fault);
-    expect(played.reads).toBe(4);
-    expect(played.error).toMatchObject({ name: 'OutcomePipelineDivergence' });
-    expect(played.failures).toHaveLength(1);
-  });
-  for (const throwAt of [1, 2, 3, 4])
-    it(`retains the original throw at ${throwAt} despite ${fault}`, () => {
-      const played = play(fault, throwAt);
-      expect(played.reads).toBe(throwAt);
-      expect(played.error).toBe(played.liveError);
-      expect(played.error).toMatchObject({ message: 'the configured clock threw: live clock failure' });
-      expect(played.matchUp.winningSide).toBe(1);
-      expect(played.failures).toHaveLength(1);
-    });
-}
-
-for (const fault of ['extra-read', 'leak', 'return-error', 'return-payload'])
-  it(`rejects ${fault} after an otherwise matching replay`, () => {
-    const played = play(fault);
-    expect(played.reads).toBe(4);
-    expect(played.error).toMatchObject({ name: 'OutcomePipelineDivergence' });
-    expect(played.failures).toHaveLength(1);
-  });
 
 for (const surface of ['invalid-date', 'methods'])
   it(`preserves ${surface} without executing caller callbacks in planning or replay`, () => {

@@ -2,7 +2,6 @@ import { getMutationFootprint } from '@Query/footprint/getMutationFootprint';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 
 const score = { method: 'setMatchUpStatus', params: { drawId: 'D1', matchUpId: 'M1' } };
@@ -31,23 +30,19 @@ describe('getMutationFootprint', () => {
     expect(result.tournament).toEqual(true);
   });
 
-  it('loads every participant for score entry, or those of the draw where v2 decides', () => {
-    let result: any = getMutationFootprint({ methods: [score] });
+  it('loads the participants of the draw for score entry', () => {
+    const result: any = getMutationFootprint({ methods: [score] });
     expect(result).toEqual({
-      shards: ['shell', 'draw', 'participants'],
+      shards: ['shell', 'draw', 'drawParticipants'],
       wholeRecordMethods: [],
       tournament: false,
       drawIds: ['D1'],
       eventIds: [],
     });
-
-    result = getMutationFootprint({ methods: [score], outcomePipeline: OUTCOME_PIPELINE_V2 });
-    expect(result.shards).toEqual(['shell', 'draw', 'drawParticipants']);
   });
 
   it('takes the union of a queue, and widens with the params', () => {
     let result: any = getMutationFootprint({
-      outcomePipeline: OUTCOME_PIPELINE_V2,
       methods: [
         score,
         { method: 'addMatchUpCourtOrder', params: { drawId: 'D2', matchUpId: 'M2', courtOrder: 1 } },
@@ -91,15 +86,14 @@ describe('getMutationFootprint', () => {
   });
 
   it('scopes bulk scores to the draws their outcomes name, in one tournament', () => {
-    const bulk = (outcomes: any, outcomePipeline?: any) =>
-      getMutationFootprint({ methods: [{ method: 'bulkMatchUpStatusUpdate', params: { outcomes } }], outcomePipeline });
+    const bulk = (outcomes: any) =>
+      getMutationFootprint({ methods: [{ method: 'bulkMatchUpStatusUpdate', params: { outcomes } }] });
     const T1D1 = { tournamentId: 'T1', eventId: 'E1', drawId: 'D1', matchUpId: 'M1' };
     const T1D2 = { tournamentId: 'T1', eventId: 'E2', drawId: 'D2', matchUpId: 'M2' };
 
     let result: any = bulk([T1D1, T1D2, { ...T1D1, matchUpId: 'M3' }]);
-    expect(result.shards).toEqual(['shell', 'draw', 'participants']);
+    expect(result.shards).toEqual(['shell', 'draw', 'drawParticipants']);
     expect(result.drawIds).toEqual(['D1', 'D2']);
-    expect(bulk([T1D1], OUTCOME_PIPELINE_V2).shards).toEqual(['shell', 'draw', 'drawParticipants']);
 
     // a draw it cannot name, outcomes across tournaments, or nothing to scope by
     result = bulk([T1D1, { ...T1D2, drawId: undefined }]);
@@ -111,7 +105,7 @@ describe('getMutationFootprint', () => {
 
   it("asked for one tournament, answers for that tournament's part of the queue", () => {
     const forTournament = (methods: any[], tournamentId: string, activeTournamentId?: string) =>
-      getMutationFootprint({ methods, tournamentId, activeTournamentId, outcomePipeline: OUTCOME_PIPELINE_V2 });
+      getMutationFootprint({ methods, tournamentId, activeTournamentId });
     const outcome = (tournamentId?: string, drawId = 'D1') => ({ tournamentId, eventId: 'E1', drawId, matchUpId: 'M' });
     const bulk = (outcomes: any[]) => ({ method: 'bulkMatchUpStatusUpdate', params: { outcomes } });
 

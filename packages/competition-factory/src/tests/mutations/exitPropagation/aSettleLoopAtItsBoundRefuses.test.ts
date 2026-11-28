@@ -1,17 +1,16 @@
-import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
-import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
-import { DOUBLE_ELIMINATION, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
+import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { DEFAULTED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 
 /**
@@ -45,57 +44,6 @@ function atLimitZero(site: Site, enter: () => any, pipeline: OutcomePipelineMode
     setOutcomePipeline(savedPipeline);
   }
 }
-
-/** play forward (an exit first and every third step, else side 1 wins) until a step refuses at `site`'s lowered limit */
-function firstRefusalPlayingForward(site: Site, cell: any) {
-  setSubscriptions({});
-  mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId: 'd', ...cell.profile }],
-    nonRandom: cell.seed,
-    setState: true,
-  });
-  for (let taken = -1; taken < 120; taken++) {
-    const next = nextPlayable('d');
-    if (!next) return undefined;
-    const outcome = taken === -1 || taken % 3 === 2 ? cell.exit : { winningSide: 1 };
-    const enter = () =>
-      tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: next.matchUpId, outcome, propagateExitStatus: true });
-    const before = structuredClone(tournamentEngine.getTournament().tournamentRecord);
-    const refused: any = atLimitZero(site, enter);
-    if (refused.error) return refused;
-    tournamentEngine.setState(before);
-    // CONTROL: at the production limit the same step is accepted
-    expect(enter().success).toEqual(true);
-  }
-  return undefined;
-}
-
-describe.each([
-  {
-    site: 'exitLevels' as Site,
-    loop: 'propagateExitFrom',
-    cell: {
-      profile: { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, participantsCount: 8 },
-      exit: { matchUpStatus: WALKOVER, winningSide: 1 },
-      seed: 1,
-    },
-  },
-  {
-    site: 'heldExits' as Site,
-    loop: 'sendHeldExitsOn',
-    cell: {
-      profile: { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, participantsCount: 7 },
-      exit: { matchUpStatus: DOUBLE_WALKOVER },
-      seed: 217,
-    },
-  },
-])('$loop', ({ site, loop, cell }) => {
-  it('refuses with SETTLE_BOUND_REACHED, naming itself, when its bound is reached with work left', () => {
-    const refused = firstRefusalPlayingForward(site, cell);
-    expect(refused?.error).toEqual(SETTLE_BOUND_REACHED);
-    expect(refused?.info).toEqual(loop);
-  });
-});
 
 /**
  * DOUBLE_ELIMINATION 16/11, seed 21138954 (`aProducedConvergenceCrossesTheLinkItReaches`): the last step's double
@@ -154,24 +102,4 @@ describe.each([
     expect(refused.error).toEqual(SETTLE_BOUND_REACHED);
     expect(refused.info).toEqual(loop);
   });
-});
-
-it('is a divergence under differential: v2 planned the success the bound refused', () => {
-  setSubscriptions({});
-  mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ drawId: 'd', drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, participantsCount: 8 }],
-    nonRandom: 1,
-    setState: true,
-  });
-  const first = nextPlayable('d');
-  const enter = () =>
-    tournamentEngine.setMatchUpStatus({
-      outcome: { matchUpStatus: WALKOVER, winningSide: 1 },
-      matchUpId: first.matchUpId,
-      propagateExitStatus: true,
-      drawId: 'd',
-    });
-  expect(() => atLimitZero('exitLevels', enter, OUTCOME_PIPELINE_DIFFERENTIAL)).toThrow(
-    /v1 ERR_SETTLE_BOUND_REACHED, v2 ok/,
-  );
 });

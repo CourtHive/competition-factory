@@ -20,12 +20,11 @@ cd packages/competition-factory
 pnpm build:notice-diagnostics
 ```
 
-The build writes two standalone Node entry points in `.diagnostics/notice-payloads/`. You can copy the matching file into your integration test project. Use the provider, selector and engine from the same imported instance throughout the audit. For ESM:
+The build writes two standalone Node entry points in `.diagnostics/notice-payloads/`. You can copy the matching file into your integration test project. Its write check is on from the moment it loads. Use the provider and engine from the same imported instance throughout the audit. For ESM:
 
 ```js
 import { globalState, syncEngine } from './.diagnostics/notice-payloads/index.mjs';
 
-globalState.setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
 // Install your provider on globalState, or register your subscriber, then exercise syncEngine.
 ```
 
@@ -33,12 +32,11 @@ For CommonJS:
 
 ```js
 const { globalState, syncEngine } = require('./.diagnostics/notice-payloads/index.cjs');
-globalState.setOutcomePipeline('differential', { checkNoticePayloadWrites: true });
 ```
 
-The audit engine hands enqueue (`addNotice`) and subscriber delivery (`callListener`) a read-only view of each payload, including nested references retained after delivery and lazily built payloads. A write through a view throws a `TypeError`. A synchronous subscriber's throw rejects the delivery promise, as any subscriber error does. Views preserve aliases within the delivery. A reference you held before the notice was raised has a different identity from its view, and native `structuredClone` cannot clone a view. The write check is offered with the differential pipeline only. Any later `setOutcomePipeline` call without the option resumes raw delivery for new payloads; views already retained still reject writes. In the published package the option is ignored and the detector is absent.
+The audit engine hands enqueue (`addNotice`) and subscriber delivery (`callListener`) a read-only view of each payload, including nested references retained after delivery and lazily built payloads. A write through a view throws a `TypeError`. A synchronous subscriber's throw rejects the delivery promise, as any subscriber error does. Views preserve aliases within the delivery. A reference you held before the notice was raised has a different identity from its view, and native `structuredClone` cannot clone a view. In the published package the detector is absent. (In 7.x the audit build turned the check on with `setOutcomePipeline('differential', { checkNoticePayloadWrites: true })`; 8.0.0 removes that selector.)
 
-In the Factory source test suite, `NOTICE_PAYLOAD_WRITE_CHECK=1` compiles the detector in and turns it on for every test in any pipeline. A write through a payload then fails its test, even when the throw is caught. For example, run `NOTICE_PAYLOAD_WRITE_CHECK=1 OUTCOME_PIPELINE=differential pnpm exec vitest run path/to/provider.test.ts` from the package directory.
+In the Factory source test suite, `NOTICE_PAYLOAD_WRITE_CHECK=1` compiles the detector in and turns it on for every test. A write through a payload then fails its test, even when the throw is caught. For example, run `NOTICE_PAYLOAD_WRITE_CHECK=1 pnpm exec vitest run path/to/provider.test.ts` from the package directory.
 
 :::info
 All engine methods may be passed the additional parameter `{ delayNotify: true }`, in which case subscription methods are **_not_** called until a subsequent engine method is invoked.

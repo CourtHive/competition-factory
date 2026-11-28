@@ -705,7 +705,7 @@
   "setMatchUpFormat": "mutation",
   "setMatchUpHomeParticipantId": "mutation",
   "setMatchUpScheduleLock": "mutation",
-  "setMatchUpState": "mutation",
+  "setMatchUpState": "engine",
   "setMatchUpStatus": "mutation",
   "setOrderOfFinish": "mutation",
   "setParticipantCheckInState": "mutation",

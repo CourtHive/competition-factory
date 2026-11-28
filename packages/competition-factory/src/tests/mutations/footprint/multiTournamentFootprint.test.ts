@@ -7,7 +7,6 @@ import { expect, it, describe } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { FOOTPRINT_NOT_LOADED } from '@Constants/errorConditionConstants';
 
 /**
@@ -64,13 +63,11 @@ function run(records: any[], methods: any[], mark?: (engine: any) => void) {
   setClock('2026-06-02T10:00:00.000Z');
   setRandomSource(7);
   tournamentEngine.reset();
-  tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V2);
   tournamentEngine.setState(records.map((record) => structuredClone(record)));
   tournamentEngine.setTournamentId(records[0].tournamentId);
   mark?.(tournamentEngine);
   const result: any = tournamentEngine.executionQueue(methods);
   const after = tournamentEngine.getState().tournamentRecords;
-  tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V1);
   setRandomSource();
   setClock();
   return { result, after };
@@ -81,11 +78,10 @@ describe('footprints across tournaments', () => {
   const two = tournament();
   const records = [one.tournamentRecord, two.tournamentRecord];
   const methods = [{ method: 'bulkMatchUpStatusUpdate', params: { outcomes: [one.outcome, two.outcome] } }];
-  const footprintOf = (tournamentId: string) =>
-    getMutationFootprint({ methods, outcomePipeline: OUTCOME_PIPELINE_V2, tournamentId });
+  const footprintOf = (tournamentId: string) => getMutationFootprint({ methods, tournamentId });
 
   it("each tournament's footprint is the draws of its own outcomes", () => {
-    expect(getMutationFootprint({ methods, outcomePipeline: OUTCOME_PIPELINE_V2 }).tournament).toEqual(true);
+    expect(getMutationFootprint({ methods }).tournament).toEqual(true);
     for (const { tournamentRecord, outcome } of [one, two]) {
       const footprint = footprintOf(tournamentRecord.tournamentId);
       expect(footprint.tournament).toEqual(false);

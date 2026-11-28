@@ -1,3 +1,4 @@
+import { addEvent } from '@Mutate/events/addEvent';
 import { describe, expect, test } from 'vitest';
 
 import { setSubscriptions } from '@Global/state/globalState';
@@ -42,11 +43,12 @@ describe('building writes do not depend on notices', () => {
         for (const matchUp of structure.matchUps) delete matchUp.updatedAt;
       }
       tournamentEngine.reset();
-      tournamentEngine.setState(tournamentRecord);
+      tournamentEngine.setState(tournamentRecord, false);
       setSubscriptions({ subscriptions: subscribed ? { [ADD_MATCHUPS]: () => undefined } : {} });
       setClock('2026-10-30T09:00:00.000Z');
-      // an event that arrives with its draw (internalUse): its matchUps are announced, and stamped
-      const result: any = tournamentEngine.addEvent({ event, internalUse: true });
+      // an event that arrives with its draw, as the factory's own generators add one (`internalUse`, not a public
+      // param): its matchUps are announced, and stamped
+      const result: any = addEvent({ tournamentRecord, event, internalUse: true });
       setClock();
       setSubscriptions({ subscriptions: {} });
       expect(result.success).toEqual(true);

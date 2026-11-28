@@ -262,7 +262,6 @@ instead. Methods that stay are not listed.
 | `matchUpGovernor.getMatchUpType`                 | `tools.matchUps.getMatchUpType`               | The same params object.                                                           |
 | `matchUpGovernor.participantScheduledMatchUps`   | `tools.matchUps.participantScheduledMatchUps` | The same params object.                                                           |
 | `matchUpGovernor.predictMatchUpCompetitiveBands` | None                                          | See [its reference](/docs/implementation/records/predictMatchUpCompetitiveBands). |
-| `matchUpGovernor.setMatchUpState`                | `matchUpGovernor.setMatchUpStatus`            | The same params object. Renamed.                                                  |
 | `matchUpGovernor.validMatchUp`                   | `tools.matchUps.validMatchUp`                 | Positional arguments: call it directly, not through an engine.                    |
 | `matchUpGovernor.validMatchUps`                  | `tools.matchUps.validMatchUps`                | Positional arguments: call it directly, not through an engine.                    |
 
@@ -457,7 +456,7 @@ and earlier carry no tags at all.
 - **127 governor routes leave the production governors, and 122 of them leave the engines too.** The other five keep their engine method because another governor still holds the name (`isValidMatchUpFormat`, `cleanExpiredMutationLocks` and the three mocks-governor simulation aliases). See the [engine API transition](/docs/implementation/engine-api-transition-8) for the list, the replacement where one exists, and the standalone-export decision for each.
 - **`matchUpFormatCode` and `matchUpFormatGovernor` are retired.** `tools.formats` is the single format surface, including the format validators.
 - **`addFinishingRounds`** leaves its governor, and **`applyDerivedRankings`** is available only as `tools.rankings.deriveRankingList`.
-- **`setMatchUpState`** is removed from the engine surface. Use `setMatchUpStatus`.
+- **`setMatchUpState`** is removed from `matchUpGovernor` and the engine surface: a call through an engine returns `METHOD_REMOVED`. It could refuse a result after writing part of it. Use `setMatchUpStatus`.
 - **`tournamentGovernor.query.cleanExpiredMutationLocks`** is removed; the function stays on `tournamentGovernor.mutate`, because it writes.
 - **The mocks-governor simulation aliases** (`generateOutcome`, `generateOutcomeFromScoreString`, `completeDrawMatchUps`) are removed from `mocksGovernor`. Use `simulationGovernor`. `mocksEngine` mounts `simulationGovernor`, so `mocksEngine.generateOutcome` and the other two keep working unchanged.
 
@@ -682,9 +681,44 @@ catalogue's `policies` to the list where it should still offer them.
 
 ### The outcome pipeline selector is removed
 
-v2 is the outcome pipeline's default in 7.x, and `v1` stays selectable as a fallback through 7.x (see
-[the outcome pipeline § 7.1](/docs/concepts/outcome-pipeline#71-two-implementations-s2)). The selector is
-deprecated in 7.x and removed in 8.0.0: `engine.outcomePipeline` and `engine.getOutcomePipeline`, `globalState`'s
-`setOutcomePipeline` and `getOutcomePipeline`, and the `outcomePipeline` option of `tools.getMutationFootprint`. Once
-the `v1` and `differential` modes are removed, still within 7.x, the selector accepts only `'v2'`. Remove the calls;
-nothing replaces them, because there is one pipeline.
+8.0.0 has one outcome pipeline. v2 has been the default since 7.44.0; `v1` and `differential` stay selectable to the
+end of 7.x and are removed in 8.0.0, with the selector itself:
+
+- `engine.outcomePipeline()` and `engine.getOutcomePipeline()`, on the sync and async engines;
+- `globalState.setOutcomePipeline()` and `globalState.getOutcomePipeline()`;
+- the `outcomePipeline` option of `tools.getMutationFootprint`.
+
+Remove the calls. Nothing replaces them. In 8.0.0 a remaining call returns an error result (`METHOD_REMOVED`, code
+`ERR_METHOD_REMOVED`) naming the removed method or option and pointing here; it does not throw. The same holds for
+`outcomePipeline` or `getOutcomePipeline` sent as a queue directive.
+
+**The footprint's default changes.** In 7.x, `tools.getMutationFootprint` without the option answered for v1 and
+asked for every participant (`participants`) for score entry. In 8.0.0 it answers for the one pipeline, which needs only
+the participants the draw references (`drawParticipants`), as a 7.x call passing `outcomePipeline: 'v2'` did. A
+storage layer that loads by footprint loads less for score entry.
+
+**A refusal never leaves writes behind.** Under v1, a refused `setMatchUpStatus` could leave earlier writes on the
+record. In 8.0.0 a refusal never does, and `rollbackOnError` is not needed for that.
+
+The notice-payload audit build (`pnpm build:notice-diagnostics`) turned its write check on with
+`setOutcomePipeline('differential', { checkNoticePayloadWrites: true })`. In 8.0.0 the check is on from the moment the
+audit build loads.
+
+### Public methods take ids, not resolved draw state
+
+A public method resolves its own context from the ids it is given. In 7.x a few accepted the resolved state, or the
+"already checked" flags, that the factory's own callers hand the functions behind them, and a caller that passed one
+skipped a check the method makes before writing. In 8.0.0 an engine call (direct, queued, `invoke`, `ask` or `dryRun`)
+naming one is refused with `INVALID_VALUES`, its `context.params` naming the keys, before anything is read or written:
+
+| Method                                                                                 | Refused params                                                                                                                      |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `assignDrawPositionBye`                                                                | `structure`, `matchUpsMap`, `inContextDrawMatchUps`, `loserMatchUp`, `byeFromPropagation`, `drawPositionsInactive`, `activityAsked` |
+| `addMatchUpScheduleItems`                                                              | `playedOrderChecked`, `recordedOrderChecked`                                                                                        |
+| `addMatchUpScheduledTime`, `addMatchUpScheduledDate`, `bulkScheduleTournamentMatchUps` | `playedOrderChecked`                                                                                                                |
+| `addMatchUpStartTime`, `addMatchUpEndTime`                                             | `recordedOrderChecked`                                                                                                              |
+| `modifyCourt`, `modifyCourtAvailability`                                               | `venueMatchUps`                                                                                                                     |
+| `addEvent`                                                                             | `internalUse`                                                                                                                       |
+
+Drop them; pass the ids. `rollbackOnError` now takes a snapshot only for a queue of more than one directive, a bulk
+method or a custom method.

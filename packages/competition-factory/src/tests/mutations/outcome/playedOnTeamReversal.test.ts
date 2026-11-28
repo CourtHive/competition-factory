@@ -1,7 +1,7 @@
 import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import engine from '@Engines/syncEngine';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { setClock } from '@Tools/clock';
 import { digest, drawId, dual, fixture, side2, summary } from './teamReversalFixture';
 

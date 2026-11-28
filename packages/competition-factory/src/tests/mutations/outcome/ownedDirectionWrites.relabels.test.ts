@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -22,7 +23,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -52,7 +53,6 @@ describe('C24N TEAM arrivals retain event identity at a standing awarded exit', 
     const { scenario, prepared } = prepareTeamAwardNotice(recipe);
     const { v1 } = compareUndirectedWinner(scenario, recipe.owned, prepared);
     expect(v1.results[0].success).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
     expect(v1.notices.length).toBeGreaterThan(0);
   });
 });

@@ -1,6 +1,7 @@
 import { expectRecordedWhole, prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { findTarget, MAIN, R1, won } from '@Tests/testHarness/outcome/directionFixtures';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -10,7 +11,7 @@ import { setClock } from '@Tools/clock';
 import { AWAITING_RESULT, COMPLETED, INCOMPLETE, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { Target } from '@Tests/testHarness/outcome/directionFixtures';
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {

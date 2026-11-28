@@ -1,3 +1,4 @@
+import { INTERNAL_PARAMS } from '@Constants/internalParamsConstants';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 /** One engine call: what a client sends to reproduce a step of a generated scenario. */
@@ -71,6 +72,8 @@ export function recorded<T extends (args: never) => unknown>(
     const { event, drawDefinition, ...rest }: Record<string, any> = { ...(args as object) };
     delete rest.tournamentRecord;
     delete rest.tournamentRecords;
+    // what the factory's own caller hands the function is not the client's to send (a public call is refused it)
+    for (const key of Object.hasOwn(INTERNAL_PARAMS, method) ? INTERNAL_PARAMS[method] : []) delete rest[key];
     const entry = recordMethod(method, {
       ...rest,
       ...(event && (payload === 'event' ? { event } : { eventId: event.eventId })),

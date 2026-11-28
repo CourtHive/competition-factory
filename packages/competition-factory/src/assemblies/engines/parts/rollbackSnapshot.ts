@@ -1,10 +1,4 @@
-import {
-  getNoticeBuffer,
-  getOutcomePipeline,
-  getProvider,
-  getTournamentId,
-  getTournamentRecords,
-} from '@Global/state/globalState';
+import { getNoticeBuffer, getProvider, getTournamentId, getTournamentRecords } from '@Global/state/globalState';
 import { captureOperation, OperationState } from '@Assemblies/engines/parts/operationState';
 import { isBuiltinMethod } from '@Forge/previewBindings';
 import { isPlainContainer } from '@Tools/cloneState';
@@ -13,8 +7,6 @@ import { isFunction } from '@Tools/objects';
 
 // constants and types
 import { ErrorType, ROLLBACK_UNAVAILABLE } from '@Constants/errorConditionConstants';
-import { OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
-import { ASSIGN_BYE_METHOD } from '@Constants/positionActionConstants';
 import { Directives } from '@Types/factoryTypes';
 
 /**
@@ -28,13 +20,12 @@ import { Directives } from '@Types/factoryTypes';
  * - any queue of more than one directive: an earlier directive's writes are undone only from a snapshot;
  * - a method that is not one of the factory's own (an imported or passed custom method): the factory cannot know
  *   whether it writes before refusing;
- * - a bulk method (`PARTIAL_COMMIT_METHODS`): each item commits on its own, so a refused call can have committed items;
- * - a method that can still refuse after writing (`WRITES_BEFORE_REFUSING`): a public BYE placement whose walk meets an
- *   exit the planner does not yet plan through, and `setMatchUpStatus` under any outcome pipeline but v2 (v1, and
- *   the differential, run v1 on the stored record, and v1 can refuse downstream after writing the result).
+ * - a bulk method (`PARTIAL_COMMIT_METHODS`): each item commits on its own, so a refused call can have committed items.
  *
- * The lists are explicit and exhaustive by method name: a new bulk writer, or a writer that cannot yet refuse before
- * writing, is added here (rollbackSnapshot.test.ts fails when a module runs `bulkItem` for a method not listed).
+ * Every other factory method refuses before its first write: a public method takes ids, never resolved draw state, so
+ * no caller can hand one past the checks it makes before writing. The list is explicit and exhaustive by method name:
+ * a new bulk writer is added here (rollbackSnapshot.test.ts fails when a module runs `bulkItem` for a method not
+ * listed).
  *
  * What the skip gives up: a programming error that throws partway through a write is no longer undone. Such a call
  * returns `rolledBack: false`, never a restore that did not happen.
@@ -45,25 +36,16 @@ export const PARTIAL_COMMIT_METHODS: ReadonlySet<string> = new Set([
   'resetAdHocMatchUps',
 ]);
 
-/** methods that can refuse after writing, each with the params that make it do so */
-export const WRITES_BEFORE_REFUSING: Readonly<Record<string, (params?: Record<string, unknown>) => boolean>> = {
-  [ASSIGN_BYE_METHOD]: () => true,
-  assignDrawPosition: (params) => !!params?.bye,
-  // v2 meets every refusal before its first write, v1's own among them (outcome/plan/recordedCall.ts)
-  setMatchUpStatus: () => getOutcomePipeline() !== OUTCOME_PIPELINE_V2,
-};
-
 /** true when one call of `method` can only succeed or refuse having written nothing */
-export function cannotPartlyCommit(methodName: string, method: unknown, params?: Record<string, unknown>): boolean {
-  if (!isBuiltinMethod(method) || PARTIAL_COMMIT_METHODS.has(methodName)) return false;
-  return !ownMethod<(params?: Record<string, unknown>) => boolean>(WRITES_BEFORE_REFUSING, methodName)?.(params);
+export function cannotPartlyCommit(methodName: string, method: unknown): boolean {
+  return isBuiltinMethod(method) && !PARTIAL_COMMIT_METHODS.has(methodName);
 }
 
 /** true when a queue is one directive that cannot partly commit */
 export function queueCannotPartlyCommit(directives: Directives, methods: { [key: string]: unknown }): boolean {
   if (directives.length !== 1) return false;
-  const [{ method: methodName, params }] = directives;
-  return cannotPartlyCommit(methodName, ownMethod(methods, methodName), params);
+  const [{ method: methodName }] = directives;
+  return cannotPartlyCommit(methodName, ownMethod(methods, methodName));
 }
 
 /**

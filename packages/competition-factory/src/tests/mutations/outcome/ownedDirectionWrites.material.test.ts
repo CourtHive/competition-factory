@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -30,7 +31,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -59,7 +60,6 @@ describe('C11 standalone bare winners compare v1 and all subscribed differential
   it.each(STANDALONE_BARE_WINNERS)('%s v1 oracle', (label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(1);
     expect(v1.notices).toHaveLength(label.includes('thirteen') ? 13 : 12);
   });
   it.each(STANDALONE_BARE_WINNERS)('%s subscribed differential', (_label, scenario) => {
@@ -75,7 +75,6 @@ describe('C10 standalone indirect v1 oracle and subscribed differential notices'
   it.each(STANDALONE_INDIRECT_CLEARS)('%s v1 oracle', (label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(1);
     expect(v1.notices).toHaveLength(label.includes('thirteen') ? 13 : 12);
   });
   it.each(STANDALONE_INDIRECT_CLEARS)('%s subscribed differential', (_label, scenario) => {
@@ -91,7 +90,6 @@ describe('C12 standalone carries compare the real nested writers and subscribed 
   it.each(STANDALONE_CARRIED_CONVERGENCES)('%s v1 oracle', (label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(2);
     expect(v1.notices).toHaveLength(label.includes('thirteen') ? 15 : 14);
   });
   it.each(STANDALONE_CARRIED_CONVERGENCES)('%s subscribed differential', (_label, scenario) => {
@@ -107,7 +105,6 @@ describe('C13 no-arrival public writers and subscribed differential notices', ()
   it.each([...FMLC_NO_ARRIVAL_WINNERS, ...FMLC_NO_ARRIVAL_REAL])('%s v1 oracle', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(1);
   });
   it.each([...FMLC_NO_ARRIVAL_WINNERS, ...FMLC_NO_ARRIVAL_REAL])('%s subscribed differential', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
@@ -129,7 +126,7 @@ describe('C13 no-arrival public writers and subscribed differential notices', ()
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+      expect(compared.v1Writes).toEqual(0);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
@@ -142,7 +139,7 @@ describe('C14 standing reservations preserve their original stored records', () 
     const actual = play(mode, scenario);
     expect(actual.results.every((result: any) => result.success)).toEqual(true);
     expect(consolationRecord(actual.record)).toEqual(consolationRecord(actual.recordBefore));
-    expect(actual.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V1 ? 1 : 0);
+    expect(actual.v1Writes).toEqual(0);
   });
   it.each(FMLC_STANDING_WINNERS)('%s subscribed differential', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
@@ -156,7 +153,7 @@ describe('C14 standing reservations preserve their original stored records', () 
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+      expect(compared.v1Writes).toEqual(0);
       expect(compared.results).toEqual(v1.results);
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
@@ -232,7 +229,7 @@ describe('C15 superseded own relay material and notice contracts', () => {
       });
       expect(at(after, 4, mirrored ? 1 : 2)).toEqual(at(before, 4, mirrored ? 1 : 2));
       expect(at(after, 2, mirrored ? 1 : 4)).toEqual(at(before, 2, mirrored ? 1 : 4));
-      expect(actual.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V1 ? 2 : 0);
+      expect(actual.v1Writes).toEqual(0);
       const notices = actual.notices.map((notice) => {
         const split = notice.indexOf(' ');
         return { topic: notice.slice(0, split), payload: JSON.parse(notice.slice(split + 1)) };
@@ -264,7 +261,7 @@ describe('C15 superseded own relay material and notice contracts', () => {
       expect(compared.record).toEqual(v1.record);
       expect(compared.notices).toEqual(v1.notices);
       // A locally owned clear still runs v1 in differential's comparison shadow.
-      expect(compared.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+      expect(compared.v1Writes).toEqual(0);
     }
   });
 });

@@ -1,5 +1,6 @@
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
@@ -11,7 +12,7 @@ import tournamentEngine from '@Engines/syncEngine';
 
 // constants
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Tests/testHarness/outcomeModes';
 import { CANNOT_CHANGE_OUTCOME, PROPAGATED_EXITS_DOWNSTREAM } from '@Constants/errorConditionConstants';
 import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 

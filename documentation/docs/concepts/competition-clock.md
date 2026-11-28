@@ -40,7 +40,7 @@ Everything a mutation writes stays on the record clock. So do a few reads that a
 
 ## Configuring the clocks
 
-Both clocks are configured on the engine (or on `tools`) and are **process-wide**: one configuration covers every tournament and every request the process holds. They are run configuration, like `outcomePipeline`, not request state.
+Both clocks are configured on the engine (or on `tools`) and are **process-wide**: one configuration covers every tournament and every request the process holds. They are run configuration, like `schemaWriteMode`, not request state.
 
 | Configuration                         | Record stamps        | Competition reads                |
 | ------------------------------------- | -------------------- | -------------------------------- |

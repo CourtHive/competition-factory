@@ -2,7 +2,6 @@ import { getOperationFootprint } from '@Query/footprint/getOperationFootprint';
 import { FOOTPRINT_NOT_LOADED } from '@Constants/errorConditionConstants';
 import { footprintCovers } from '@Query/footprint/footprintCovers';
 import { getLoadedFootprint } from '@Global/state/loadedFootprint';
-import { getOutcomePipeline } from '@Global/state/globalState';
 
 type CheckLoadedFootprintArgs = {
   tournamentRecords?: { [key: string]: any };
@@ -31,7 +30,6 @@ export function checkLoadedFootprint({
     if (!loaded) continue;
 
     const required = getOperationFootprint(methodName, params, {
-      outcomePipeline: getOutcomePipeline(),
       activeTournamentId: tournamentId,
       tournamentId: recordId,
     });

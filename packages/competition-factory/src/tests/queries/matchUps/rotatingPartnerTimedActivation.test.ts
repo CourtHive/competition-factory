@@ -164,31 +164,28 @@ writeModeMatrix(() => {
       },
     );
 
-    it.each(['setMatchUpStatus', 'setMatchUpState'] as const)(
-      'keeps live scores live and credits actual points through %s',
-      (entry) => {
-        setup(format);
-        generate();
-        const live = score(11, 8);
-        delete live.sets![0].winningSide;
-        expect(write(entry, { score: live, matchUpStatus: IN_PROGRESS }).success).toBe(true);
-        expect(match().matchUpStatus).toBe(IN_PROGRESS);
-        expect(tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' }).unresolved).toHaveLength(1);
-        expect(write(entry, { score: score(11, 8), matchUpStatus: COMPLETED, winningSide: 1 }).success).toBe(true);
-        const standings = tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' });
-        expect(standings.error).toBeUndefined();
-        expect(standings.standings!.map((row) => row.pointsScored).toSorted((a, b) => b - a)).toEqual([11, 11, 8, 8]);
-        expect(standings.contributions!.every((row) => row.extraPoints === 0)).toBe(true);
-        expect(write(entry, { score: score(8, 11), matchUpStatus: COMPLETED, winningSide: 2 }).success).toBe(true);
-        expect(
-          tournamentEngine
-            .getRotatingPartnerStandings({ drawId: 'd' })
-            .standings!.map((row) => row.pointsScored)
-            .toSorted((a, b) => b - a),
-        ).toEqual([11, 11, 8, 8]);
-        expect(tournamentEngine.getRotatingPartnerRoundPreview({ drawId: 'd', roundNumber: 2 }).success).toBe(true);
-      },
-    );
+    it.each(['setMatchUpStatus'] as const)('keeps live scores live and credits actual points through %s', (entry) => {
+      setup(format);
+      generate();
+      const live = score(11, 8);
+      delete live.sets![0].winningSide;
+      expect(write(entry, { score: live, matchUpStatus: IN_PROGRESS }).success).toBe(true);
+      expect(match().matchUpStatus).toBe(IN_PROGRESS);
+      expect(tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' }).unresolved).toHaveLength(1);
+      expect(write(entry, { score: score(11, 8), matchUpStatus: COMPLETED, winningSide: 1 }).success).toBe(true);
+      const standings = tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' });
+      expect(standings.error).toBeUndefined();
+      expect(standings.standings!.map((row) => row.pointsScored).toSorted((a, b) => b - a)).toEqual([11, 11, 8, 8]);
+      expect(standings.contributions!.every((row) => row.extraPoints === 0)).toBe(true);
+      expect(write(entry, { score: score(8, 11), matchUpStatus: COMPLETED, winningSide: 2 }).success).toBe(true);
+      expect(
+        tournamentEngine
+          .getRotatingPartnerStandings({ drawId: 'd' })
+          .standings!.map((row) => row.pointsScored)
+          .toSorted((a, b) => b - a),
+      ).toEqual([11, 11, 8, 8]);
+      expect(tournamentEngine.getRotatingPartnerRoundPreview({ drawId: 'd', roundNumber: 2 }).success).toBe(true);
+    });
   });
 });
 
@@ -218,32 +215,29 @@ function changeRules(scoringPolicy: unknown, tallyPolicy: unknown = tally) {
 
 writeModeMatrix(() => {
   describe.each(['AMERICANO', 'MEXICANO'] as const)('%s timed contract boundaries', (format) => {
-    it.each(['setMatchUpStatus', 'setMatchUpState'] as const)(
-      'retains ALLOW ties, corrections and clear through %s',
-      (entry) => {
-        setup(format);
-        generate();
-        expect(write(entry, { score: score(9, 9), matchUpStatus: COMPLETED }).success).toBe(true);
-        expect(match().winningSide).toBeUndefined();
-        const standings = tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' });
-        expect(standings.standings!.every((row) => row.pointsScored === 9 && row.matchesTied === 1)).toBe(true);
-        generate(2);
-        const snapshot = structuredClone(draw().competitionRounds![1].standingsSnapshot);
-        expect(write(entry, { score: { sets: [] }, matchUpStatus: TO_BE_PLAYED }).success).toBe(true);
-        expect(
-          tournamentEngine
-            .getRotatingPartnerStandings({ drawId: 'd' })
-            .unresolved!.some((row) => row.matchUpId === match().matchUpId),
-        ).toBe(true);
-        expect(draw().competitionRounds![1].standingsSnapshot).toEqual(snapshot);
-        if (format === 'MEXICANO')
-          expect(tournamentEngine.getRotatingPartnerRoundPreview({ drawId: 'd', roundNumber: 3 }).error).toBe(
-            INVALID_VALUES,
-          );
-      },
-    );
+    it.each(['setMatchUpStatus'] as const)('retains ALLOW ties, corrections and clear through %s', (entry) => {
+      setup(format);
+      generate();
+      expect(write(entry, { score: score(9, 9), matchUpStatus: COMPLETED }).success).toBe(true);
+      expect(match().winningSide).toBeUndefined();
+      const standings = tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' });
+      expect(standings.standings!.every((row) => row.pointsScored === 9 && row.matchesTied === 1)).toBe(true);
+      generate(2);
+      const snapshot = structuredClone(draw().competitionRounds![1].standingsSnapshot);
+      expect(write(entry, { score: { sets: [] }, matchUpStatus: TO_BE_PLAYED }).success).toBe(true);
+      expect(
+        tournamentEngine
+          .getRotatingPartnerStandings({ drawId: 'd' })
+          .unresolved!.some((row) => row.matchUpId === match().matchUpId),
+      ).toBe(true);
+      expect(draw().competitionRounds![1].standingsSnapshot).toEqual(snapshot);
+      if (format === 'MEXICANO')
+        expect(tournamentEngine.getRotatingPartnerRoundPreview({ drawId: 'd', roundNumber: 3 }).error).toBe(
+          INVALID_VALUES,
+        );
+    });
 
-    it.each(['setMatchUpStatus', 'setMatchUpState'] as const)(
+    it.each(['setMatchUpStatus'] as const)(
       'refuses invalid completions atomically without notices through %s',
       (entry) => {
         setup(format, 'DECIDING_POINT');
@@ -273,39 +267,34 @@ writeModeMatrix(() => {
       },
     );
 
-    it.each(['setMatchUpStatus', 'setMatchUpState'] as const)(
-      'credits both manual and scored deciding rallies through %s',
-      (entry) => {
-        for (const winner of [1, 2] as const) {
-          const scorer = new ScoringEngine({ matchUpFormat: 'SET1-S:T15P/TB1' });
-          for (let point = 0; point < 10; point++) {
-            scorer.addPoint({ winner: 0 });
-            scorer.addPoint({ winner: 1 });
-          }
-          scorer.endSegment();
-          expect(scorer.getState().matchUpStatus).toBe(IN_PROGRESS);
-          scorer.addPoint({ winner: winner === 1 ? 0 : 1 });
-          expect(scorer.getState().matchUpStatus).toBe(COMPLETED);
-          for (const result of [score(winner === 1 ? 11 : 10, winner === 1 ? 10 : 11), scorer.getState().score]) {
-            setup(format, 'DECIDING_POINT');
-            changeRules(enabled, { ...tally, overtimePoints: 'EXCLUDE' });
-            generate();
-            expect(write(entry, { score: result, winningSide: winner, matchUpStatus: COMPLETED }).success).toBe(true);
-            const standings = tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' });
-            expect(standings.error).toBeUndefined();
-            expect(standings.standings!.map((row) => row.pointsScored).toSorted((a, b) => b - a)).toEqual([
-              11, 11, 10, 10,
-            ]);
-            expect(standings.contributions!.every((row) => row.extraPoints === 0)).toBe(true);
-            const wire = JSON.stringify(record());
-            expect(tournamentEngine.setState(JSON.parse(wire)).success).toBe(true);
-            expect(tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' }).standings).toEqual(
-              standings.standings,
-            );
-          }
+    it.each(['setMatchUpStatus'] as const)('credits both manual and scored deciding rallies through %s', (entry) => {
+      for (const winner of [1, 2] as const) {
+        const scorer = new ScoringEngine({ matchUpFormat: 'SET1-S:T15P/TB1' });
+        for (let point = 0; point < 10; point++) {
+          scorer.addPoint({ winner: 0 });
+          scorer.addPoint({ winner: 1 });
         }
-      },
-    );
+        scorer.endSegment();
+        expect(scorer.getState().matchUpStatus).toBe(IN_PROGRESS);
+        scorer.addPoint({ winner: winner === 1 ? 0 : 1 });
+        expect(scorer.getState().matchUpStatus).toBe(COMPLETED);
+        for (const result of [score(winner === 1 ? 11 : 10, winner === 1 ? 10 : 11), scorer.getState().score]) {
+          setup(format, 'DECIDING_POINT');
+          changeRules(enabled, { ...tally, overtimePoints: 'EXCLUDE' });
+          generate();
+          expect(write(entry, { score: result, winningSide: winner, matchUpStatus: COMPLETED }).success).toBe(true);
+          const standings = tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' });
+          expect(standings.error).toBeUndefined();
+          expect(standings.standings!.map((row) => row.pointsScored).toSorted((a, b) => b - a)).toEqual([
+            11, 11, 10, 10,
+          ]);
+          expect(standings.contributions!.every((row) => row.extraPoints === 0)).toBe(true);
+          const wire = JSON.stringify(record());
+          expect(tournamentEngine.setState(JSON.parse(wire)).success).toBe(true);
+          expect(tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' }).standings).toEqual(standings.standings);
+        }
+      }
+    });
 
     it('keeps saved rules and exact retries when current policy disables timed selection', () => {
       setup(format);
@@ -430,7 +419,7 @@ it.each(['minutes', 'format', 'both'] as const)(
     const before = structuredClone(record());
     expect(tournamentEngine.getRotatingPartnerStandings({ drawId: 'd' }).error).toBe(INVALID_VALUES);
     expect(tournamentEngine.generateRotatingPartnerRound(request).error).toBe(INVALID_VALUES);
-    for (const entry of ['setMatchUpStatus', 'setMatchUpState'] as const) {
+    for (const entry of ['setMatchUpStatus'] as const) {
       expect(write(entry, { score: score(11, 8), winningSide: 1, matchUpStatus: COMPLETED }).error).toBe(
         INVALID_VALUES,
       );

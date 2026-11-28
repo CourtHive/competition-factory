@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
@@ -6,7 +7,7 @@ import { afterEach, expect, it } from 'vitest';
 // constants
 import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
-import { OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 
 /**
  * A refusal changes nothing, even one that is only met downstream. Swapping two first-round positions whose

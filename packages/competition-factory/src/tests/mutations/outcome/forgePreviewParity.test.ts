@@ -5,17 +5,11 @@ import { TOPICS, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
 import * as stateWriter from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import * as recording from '@Mutate/matchUps/outcome/plan/recordedCall';
-import {
-  deleteNotices,
-  getOutcomePipeline,
-  getTournamentRecords,
-  getPayloads,
-  setOutcomePipeline,
-  setSubscriptions,
-} from '@Global/state/globalState';
+import { deleteNotices, getTournamentRecords, getPayloads, setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { MODIFY_DRAW_DEFINITION, UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import { observeClockReadings, setClock } from '@Tools/clock';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
@@ -145,7 +139,6 @@ it.each([false, true])('isolates native outcome results, draw, ordered notices a
   const recorder = vi.spyOn(recording, 'recordWholeCall').mockReturnValue(undefined);
   const writer = vi.spyOn(stateWriter, 'setMatchUpState');
   const expected = play('v1', entry, explain);
-  expect(writer).toHaveBeenCalled();
   for (const mode of ['v2', 'differential'] as const) {
     writer.mockClear();
     const actual = play(mode, entry, explain);

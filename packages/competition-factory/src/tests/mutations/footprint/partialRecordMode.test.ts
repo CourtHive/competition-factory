@@ -7,11 +7,6 @@ import { expect, it, describe } from 'vitest';
 // constants
 import { FOOTPRINT_NOT_LOADED, INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
-import {
-  OUTCOME_PIPELINE_V1,
-  OUTCOME_PIPELINE_V2,
-  type OutcomePipelineMode,
-} from '@Constants/outcomePipelineConstants';
 
 const outcome = {
   score: {
@@ -53,16 +48,10 @@ const score = (drawId: string, matchUpId: string) => ({
   params: { drawId, matchUpId, outcome },
 });
 
-function loadPartial(
-  tournamentRecord: any,
-  methods: any[],
-  outcomePipeline: OutcomePipelineMode = OUTCOME_PIPELINE_V2,
-) {
-  const footprint = getMutationFootprint({ methods, outcomePipeline });
+function loadPartial(tournamentRecord: any, methods: any[]) {
+  const footprint = getMutationFootprint({ methods });
   tournamentEngine.setState(reduceRecordToFootprint({ tournamentRecord, footprint }));
-  let result: any = tournamentEngine.loadedFootprint(footprint);
-  expect(result.success).toEqual(true);
-  result = tournamentEngine.outcomePipeline(outcomePipeline);
+  const result: any = tournamentEngine.loadedFootprint(footprint);
   expect(result.success).toEqual(true);
   return footprint;
 }
@@ -71,10 +60,7 @@ describe('partial-record mode', () => {
   const { tournamentRecord, matchUpIds } = fixture();
 
   it('is off unless a record is marked: an unmarked partial record runs anything, as before', () => {
-    const footprint = getMutationFootprint({
-      methods: [score('D1', matchUpIds.D1)],
-      outcomePipeline: OUTCOME_PIPELINE_V2,
-    });
+    const footprint = getMutationFootprint({ methods: [score('D1', matchUpIds.D1)] });
     tournamentEngine.setState(reduceRecordToFootprint({ tournamentRecord, footprint }));
     expect(tournamentEngine.getLoadedFootprint()).toBeUndefined();
     let result: any = tournamentEngine.addEvent({ event: { eventName: 'Added' } });
@@ -89,7 +75,6 @@ describe('partial-record mode', () => {
     expect(tournamentEngine.getLoadedFootprint()).toEqual(footprint);
     const result: any = tournamentEngine.executionQueue(methods);
     expect(result.success).toEqual(true);
-    tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V1);
   });
 
   it('refuses, before writing, a method that needs more than was loaded', () => {
@@ -123,21 +108,6 @@ describe('partial-record mode', () => {
     expect(result.error).toEqual(FOOTPRINT_NOT_LOADED);
     expect(result.context.methodName).toEqual('setMatchUpStatus');
     expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
-    tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V1);
-  });
-
-  it('asks for the participants under v1, and refuses without them', () => {
-    const methods = [score('D1', matchUpIds.D1)];
-    // loaded for v2 (no participants), then run under v1
-    loadPartial(tournamentRecord, methods);
-    tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V1);
-    let result: any = tournamentEngine.setMatchUpStatus(methods[0].params);
-    expect(result.error).toEqual(FOOTPRINT_NOT_LOADED);
-    expect(result.context.missing).toEqual(['participants']);
-
-    loadPartial(tournamentRecord, methods, OUTCOME_PIPELINE_V1);
-    result = tournamentEngine.setMatchUpStatus(methods[0].params);
-    expect(result.success).toEqual(true);
   });
 
   it('accepts a whole-event load for a withdrawal', () => {
@@ -151,7 +121,6 @@ describe('partial-record mode', () => {
     loadPartial(tournamentRecord, [{ method: 'removeDrawPositionAssignment', params }]);
     const result: any = tournamentEngine.removeDrawPositionAssignment(params);
     expect(result.success).toEqual(true);
-    tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V1);
   });
 
   it('drops the mark when cleared or when a record is installed again', () => {
@@ -165,7 +134,6 @@ describe('partial-record mode', () => {
     expect(tournamentEngine.getLoadedFootprint()).toBeUndefined();
     result = tournamentEngine.addEvent({ event: { eventName: 'Added' } });
     expect(result.success).toEqual(true);
-    tournamentEngine.outcomePipeline(OUTCOME_PIPELINE_V1);
   });
 
   it('refuses a mark it cannot place', () => {

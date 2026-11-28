@@ -1,6 +1,6 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { afterEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -8,7 +8,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
@@ -17,7 +17,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 import {
   MODIFY_DRAW_DEFINITION,
   MODIFY_MATCHUP,
@@ -114,16 +114,11 @@ it('owns a line of a DOUBLE_ELIMINATION decider left a DEAD_RUBBER, preserving t
   // CONTROL: the decider was not needed, and none of its lines is played
   expect(decider.matchUpStatus).toEqual(DEAD_RUBBER);
   const line = decider.tieMatchUps[0];
-  const deferred = (reason: string) => getDifferentialTally()[`shadow:abstain:${reason}`]?.deferred ?? 0;
-  const before = { team: deferred('team'), settle: deferred('settle') };
   const reference = play(OUTCOME_PIPELINE_V1, record, line.matchUpId);
-  expect(reference.v1Writes).toBeGreaterThan(0);
   const owned = play(OUTCOME_PIPELINE_V2, record, line.matchUpId);
   expect(owned.v1Writes).toEqual(0);
   expect(owned).toEqual({ ...reference, v1Writes: 0 });
   const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, record, line.matchUpId);
   expect(compared.result.success).toEqual(true);
   expect(compared).toEqual(reference);
-  expect(deferred('team') - before.team).toEqual(0);
-  expect(deferred('settle') - before.settle).toEqual(0);
 });

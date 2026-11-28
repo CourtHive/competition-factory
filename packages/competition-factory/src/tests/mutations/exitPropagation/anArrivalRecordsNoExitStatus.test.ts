@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
@@ -7,7 +8,7 @@ import { afterEach, expect, it } from 'vitest';
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Tests/testHarness/outcomeModes';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**

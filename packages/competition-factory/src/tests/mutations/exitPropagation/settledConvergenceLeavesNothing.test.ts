@@ -1,9 +1,10 @@
-import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { expect, it } from 'vitest';
 
 // constants
-import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 
 /**
  * **A settled convergence leaves nothing behind that the census can see.**

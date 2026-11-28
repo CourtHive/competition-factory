@@ -31,6 +31,7 @@ export type AsyncEngineDirectMethod =
   | 'schemaWriteMode'
   | 'setClock'
   | 'setCompetitionClock'
+  | 'setMatchUpState'
   | 'setRandomSource'
   | 'setState'
   | 'setTournamentId'

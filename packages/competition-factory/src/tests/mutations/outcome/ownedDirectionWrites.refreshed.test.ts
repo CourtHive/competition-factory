@@ -1,6 +1,6 @@
 import { play, REFRESHED_ARRIVAL_CASES } from '@Tests/testHarness/outcome/directionFixtures';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { registerTestSeedIdentity } from '@Tests/testHarness/seedMathRandom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -11,7 +11,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -39,12 +39,9 @@ afterEach(() => {
 describe('C23 relabelled arrival origins retain exact records and notice identities', () => {
   it.each(REFRESHED_ARRIVAL_CASES)('%s', (_label, scenario, owned, status, planned) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const before = getDifferentialTally()['shadow:applied']?.compared ?? 0;
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
-    expect((getDifferentialTally()['shadow:applied']?.compared ?? 0) - before).toEqual(Number(owned));
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
     expect(v2.v1Writes === 0).toEqual(owned);
     for (const actual of [compared, v2]) {
       expect(actual.results).toEqual(v1.results);

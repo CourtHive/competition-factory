@@ -1,5 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { CARRIED, cleared, exited, play, R1, won } from '@Tests/testHarness/outcome/directionFixtures';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -19,7 +19,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * C27: A PENDING CARRY WITHDRAWN WITH THE EXIT THAT MADE IT. `Main|1|1` (`East|1|1`) is a single exit entered with
@@ -136,21 +136,14 @@ const ADMITTED_NOT_OWNED: [string, Scenario][] = [
   ],
 ];
 
-const tally = () => ({
-  applied: getDifferentialTally()['shadow:applied']?.compared ?? 0,
-  cascade: getDifferentialTally()['shadow:abstain:cascade']?.deferred ?? 0,
-});
-
 describe('C27 a cleared single exit withdraws the carry it left pending on its loser matchUp', () => {
   it.each(OWNED)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
@@ -161,11 +154,9 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
   it.each(CHANGED)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.record).toEqual(v1.record);
@@ -174,11 +165,9 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
 
   it.each(CHANGED_OUTSIDE)('%s: outside, v1 writes it', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally().applied).toEqual(before.applied + 1);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.record).toEqual(v1.record);
@@ -188,11 +177,9 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
   it.each(ADMITTED_NOT_OWNED)('%s: admitted, not owned, the refusal kept', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.record).toEqual(v1.record);
@@ -201,11 +188,9 @@ describe('C27 a cleared single exit withdraws the carry it left pending on its l
 
   it.each(REFUSED)('%s: refused, v1 writes it', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const before = tally();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-    expect(tally()).toEqual({ applied: before.applied + 1, cascade: before.cascade });
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.record).toEqual(v1.record);

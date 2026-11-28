@@ -1,4 +1,4 @@
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
@@ -101,12 +101,4 @@ it('a social structure may have its own tied format without changing the elimina
   const result = tournamentEngine.getEvent({ drawId }).drawDefinition;
   expect(result.matchUpFormat).toBe(original);
   expect(result.structures.find((structure) => structure.structureId === 'social-s').matchUpFormat).toBe('SET1-S:P32');
-});
-
-it('direct state writes cannot complete an elimination match without a winner', () => {
-  const { drawId, matchUpId } = setup();
-  expect(
-    tournamentEngine.setMatchUpState({ drawId, matchUpId, matchUpStatus: COMPLETED, disableScoreValidation: true })
-      .error,
-  ).toBeTruthy();
 });

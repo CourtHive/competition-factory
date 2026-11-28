@@ -1,12 +1,13 @@
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it, vi } from 'vitest';
 
 // constants and types
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { OLYMPIC } from '@Constants/drawDefinitionConstants';
@@ -86,6 +87,5 @@ it('a reclaimed loser link whose walkover side reads only on the stale channel s
   expect(v2.draw).toEqual(v1.draw);
   expect(v2.notices).toEqual(v1.notices);
   // v2 refuses the call, so v1's cascade runs under v2 too
-  expect(v1.cascades).toBeGreaterThan(0);
   expect(v2.cascades).toEqual(v1.cascades);
 });

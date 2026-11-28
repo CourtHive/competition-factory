@@ -1,5 +1,6 @@
 import type { AsyncEngineDirectMethod } from './asyncEngineDirectMethods';
 import type { LoadedFootprint } from '@Global/state/loadedFootprint';
+import type { MethodRemovedResult } from '@Global/state/methodRemoved';
 import type { setClock, setCompetitionClock } from '@Tools/clock';
 import type { setRandomSource } from '@Tools/prng';
 import type { Tournament } from '@Types/tournamentTypes';
@@ -9,7 +10,6 @@ import type { MethodSignatures } from './methodSignatures';
 import type {
   DeepCopyAttributes,
   DevContextType,
-  getOutcomePipeline,
   getSchemaWriteMode,
   getStampScope,
   setTournamentId,
@@ -61,8 +61,12 @@ export interface AsyncEngineSetup extends Pick<FactoryEngineTyped, 'on' | 'once'
   getDevContext(criteria?: DevContextType): DevContextType;
   schemaWriteMode(mode: ReturnType<typeof getSchemaWriteMode>): AsyncFactoryEngine;
   getSchemaWriteMode: typeof getSchemaWriteMode;
-  outcomePipeline(mode: ReturnType<typeof getOutcomePipeline>): AsyncFactoryEngine;
-  getOutcomePipeline: typeof getOutcomePipeline;
+  /** @deprecated removed in 8.0.0: returns `METHOD_REMOVED`; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed */
+  outcomePipeline(...removed: unknown[]): MethodRemovedResult;
+  /** @deprecated removed in 8.0.0: returns `METHOD_REMOVED`; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed */
+  getOutcomePipeline(...removed: unknown[]): MethodRemovedResult;
+  /** @deprecated removed in 8.0.0: returns `METHOD_REMOVED`; use `setMatchUpStatus` (https://courthive.github.io/competition-factory/docs/migration-8.0.0#engine-and-governor-routes) */
+  setMatchUpState(...removed: unknown[]): MethodRemovedResult;
   stampScope(scope?: ReturnType<typeof getStampScope>): AsyncFactoryEngine;
   getStampScope: typeof getStampScope;
   loadedFootprint(footprint?: LoadedFootprint, tournamentId?: string): AsyncFactoryEngine;

@@ -1,12 +1,6 @@
 import { noticePayloadTestMode } from '@Global/state/noticePayloadAudit';
-import {
-  addNotice,
-  deleteNotices,
-  getOutcomePipeline,
-  setOutcomePipeline,
-  setStateProvider,
-  setSubscriptions,
-} from '@Global/state/globalState';
+import { addNotice, deleteNotices, setStateProvider, setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import syncGlobalState from '@Global/state/syncGlobalState';
 import syncEngine from '@Engines/syncEngine';
 import { expect, it, vi } from 'vitest';

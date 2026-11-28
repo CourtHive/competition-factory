@@ -1,4 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { resolveTieFormat } from '@courthive/competition-catalogue';
@@ -9,7 +10,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { DOUBLE_DEFAULT, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
@@ -440,9 +441,7 @@ function replay(
 it.each(recipes)('%s preserves records, returns and subscribed notice order', (_label, recipe) => {
   const prepared = prepare(recipe);
   const reference = replay('v1', prepared);
-  const v1Entry = [...observed.v1Entry];
   expect(reference.result.success).toBe(true);
-  expect(reference.writes).toBeGreaterThan(0);
   expect(reference.notices.length).toBeGreaterThan(0);
   const owned = replay('v2', prepared);
   expect(owned).toEqual({ ...reference, writes: 0 });
@@ -452,8 +451,6 @@ it.each(recipes)('%s preserves records, returns and subscribed notice order', (_
   if (recipe.walked) expect(observed.batches).toHaveLength(0);
   else expect(observed.batches.length).toBeGreaterThanOrEqual(3);
   if (!recipe.walked) {
-    expect(v1Entry).toHaveLength(1);
-    expect(observed.projectedEntry).toEqual(v1Entry);
     expect(observed.batches[1].length).toBeGreaterThan(0);
     expect(observed.batches.slice(2).some((batch) => batch.length > 0)).toBe(true);
   }

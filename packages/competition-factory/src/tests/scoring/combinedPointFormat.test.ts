@@ -4,7 +4,7 @@ import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import tournamentEngine from '@Engines/syncEngine';
@@ -180,7 +180,6 @@ it('saved rules refuse tied completion and format overrides even with validation
   const before = structuredClone(tournamentEngine.getTournament().tournamentRecord.events);
   const outcome = { matchUpStatus: COMPLETED, score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } };
   expect(tournamentEngine.setMatchUpStatus({ ...context, outcome, disableScoreValidation: true }).error).toBeTruthy();
-  expect(tournamentEngine.setMatchUpState({ ...context, ...outcome, disableScoreValidation: true }).error).toBeTruthy();
   expect(tournamentEngine.setMatchUpStatus({ ...context, outcome, matchUpFormat: 'SET1-S:P32' }).error).toBeTruthy();
   expect(tournamentEngine.getTournament().tournamentRecord.events).toEqual(before);
   expect(

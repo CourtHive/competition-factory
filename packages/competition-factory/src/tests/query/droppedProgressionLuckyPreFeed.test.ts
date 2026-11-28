@@ -1,5 +1,5 @@
 import { DROPPED_PROGRESSION } from '@Query/drawDefinition/getDrawInconsistencies';
-import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
+import { getOutcomePipeline, setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -11,7 +11,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 /**
  * A LOSER WAITING FOR A LUCKY ROUND'S ADVANCEMENT IS NOT A DROPPED PROGRESSION.

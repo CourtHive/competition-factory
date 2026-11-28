@@ -1,6 +1,6 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { resolveTieFormat } from '@courthive/competition-catalogue';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -14,7 +14,7 @@ import {
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
   type OutcomePipelineMode,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 const MODES: OutcomePipelineMode[] = [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL];
 

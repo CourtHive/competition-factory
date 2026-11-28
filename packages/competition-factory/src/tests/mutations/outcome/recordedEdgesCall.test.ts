@@ -8,9 +8,9 @@ import {
   walkover,
   won,
 } from '@Tests/testHarness/outcome/directionFixtures';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { storedGraph, storedRecord } from '@Tests/testHarness/outcome/objectGraph';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -33,7 +33,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 // counts v1's matchUp writes on the stored record (`directionCounter.ts`: a write to a recorded call's copy is not one)
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -204,11 +204,6 @@ function prepare({ drawProfile, setup = [], policyDefinitions }: Row) {
 
 const storesEdges = () =>
   hasStoredGoesTo({ drawDefinition: storedRecord().events?.[0].drawDefinitions?.[0] as DrawDefinition });
-const tally = (key: string) => {
-  const entry = getDifferentialTally()[key];
-  return (entry?.compared ?? 0) + (entry?.deferred ?? 0);
-};
-const tallies = () => ({ abstained: tally('shadow:abstain:edges'), applied: tally('shadow:applied') });
 const noticed = (notices: string[], topic: string) => notices.filter((notice) => notice.startsWith(`${topic} `));
 
 describe('a call on a draw stored without its edges, which the planners abstain from, is recorded whole', () => {
@@ -221,23 +216,18 @@ describe('a call on a draw stored without its edges, which the planners abstain 
     const v1 = play(OUTCOME_PIPELINE_V1, scenario, { prepared });
     const graph = storedGraph();
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toBeGreaterThan(0);
     // v1 stores the edges, and announces the draw for them
     expect(storesEdges()).toEqual(true);
     expect(noticed(v1.notices, MODIFY_DRAW_DEFINITION).length).toBeGreaterThan(0);
     // ...and no matchUp whose only change is an edge: fewer matchUps are announced than were given one
     expect(noticed(v1.notices, MODIFY_MATCHUP).length).toBeLessThan(edged);
 
-    // CONTROL: the planners' own answer for the call
-    const before = tallies();
     recorder.refuse = true;
     play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { prepared });
-    expect(tallies()).toEqual({ abstained: before.abstained + 1, applied: before.applied });
     expect(play(OUTCOME_PIPELINE_V2, scenario, { prepared }).v1Writes).toBeGreaterThan(0);
     recorder.refuse = false;
 
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { prepared });
-    expect(tallies()).toEqual({ abstained: before.abstained + 1, applied: before.applied + 1 });
     expect(storedGraph()).toEqual(graph);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario, { prepared });
     expect(storedGraph()).toEqual(graph);

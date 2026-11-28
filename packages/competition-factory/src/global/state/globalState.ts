@@ -4,11 +4,6 @@ import syncGlobalState from './syncGlobalState';
 import type { NoticeState } from './noticeIdentity';
 
 // constants and types
-import {
-  OUTCOME_PIPELINE_DEFAULT,
-  OutcomePipelineMode,
-  outcomePipelineModes,
-} from '@Constants/outcomePipelineConstants';
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
 import { STAMP_SCOPE_TOURNAMENT, StampScope, stampScopes } from '@Constants/stampScopeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
@@ -32,7 +27,8 @@ export {
   UNNAMED_TOURNAMENT,
   noticeModifies,
 } from './noticeIdentity';
-import { noticeValue, selectNoticeAudit } from './noticePayloadAudit';
+import { methodRemoved, type MethodRemovedResult } from './methodRemoved';
+import { noticeValue } from './noticePayloadAudit';
 
 export type Notice = {
   topic: string;
@@ -75,7 +71,6 @@ type GlobalStateTypes = {
   deepCopyAttributes: DeepCopyType;
   devContext?: DevContextType; // devContext is used to control logging
   schemaWriteMode: SchemaWriteMode; // controls extension vs first-class write behavior
-  outcomePipeline: OutcomePipelineMode; // which outcome pipeline decides: v1, v2, or both (differential)
   stampScope: StampScope; // where a mutation's factory stamp goes: the tournament, or what was modified
   saveDrawDeletions: boolean; // opt-in: persist drawDeletions audit on the record
   auditAuthorityServer: boolean; // true on server engines — suppresses local audit writes
@@ -110,7 +105,6 @@ const globalState: GlobalStateTypes = {
   },
   globalMethods: [],
   schemaWriteMode: NATIVE,
-  outcomePipeline: OUTCOME_PIPELINE_DEFAULT,
   stampScope: STAMP_SCOPE_TOURNAMENT,
   saveDrawDeletions: false,
   auditAuthorityServer: false,
@@ -400,23 +394,20 @@ export function getSchemaWriteMode(): SchemaWriteMode {
   return globalState.schemaWriteMode;
 }
 
-/** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
-export function setOutcomePipeline(mode?: OutcomePipelineMode): { success?: boolean; error?: ErrorType } {
-  // the audit build's second argument, `{ checkNoticePayloadWrites }` (noticePayloadAudit.ts)
-  /* v8 ignore next -- @preserve: compiled out of every published bundle */
-  if (__NOTICE_PAYLOAD_DIAGNOSTICS__ && !selectNoticeAudit(mode, arguments[1])) return { error: INVALID_VALUES };
-  if (mode === undefined) {
-    globalState.outcomePipeline = OUTCOME_PIPELINE_DEFAULT;
-    return { ...SUCCESS };
-  }
-  if (!outcomePipelineModes.includes(mode)) return { error: INVALID_VALUES };
-  globalState.outcomePipeline = mode;
-  return { ...SUCCESS };
+/**
+ * REMOVED in 8.0.0: there is one outcome pipeline. Returns `METHOD_REMOVED` naming the method; selects nothing.
+ * @deprecated removed in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed
+ */
+export function setOutcomePipeline(): MethodRemovedResult {
+  return methodRemoved('setOutcomePipeline');
 }
 
-/** @deprecated the outcome pipeline selector is removed in 8.0.0: v2 is the only pipeline */
-export function getOutcomePipeline(): OutcomePipelineMode {
-  return globalState.outcomePipeline;
+/**
+ * REMOVED in 8.0.0: there is one outcome pipeline. Returns `METHOD_REMOVED` naming the method.
+ * @deprecated removed in 8.0.0; see https://courthive.github.io/competition-factory/docs/migration-8.0.0#the-outcome-pipeline-selector-is-removed
+ */
+export function getOutcomePipeline(): MethodRemovedResult {
+  return methodRemoved('getOutcomePipeline');
 }
 
 export function setStampScope(scope?: StampScope): { success?: boolean; error?: ErrorType } {

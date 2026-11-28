@@ -2,7 +2,8 @@ import { assignDrawPositionBye as placeDrawPositionBye } from '@Mutate/matchUps/
 import { planDrawPositionBye } from '@Mutate/matchUps/drawPositions/planDrawPositionBye';
 import { assignDrawPositionBye } from '@Mutate/drawDefinitions/assignDrawPositionBye';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
-import { setOutcomePipeline, setStateProvider } from '@Global/state/globalState';
+import { setStateProvider } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { captureNotices } from '../../notifications/noticeConformance/harness';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
@@ -18,6 +19,7 @@ import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefin
 import {
   DRAW_POSITION_ASSIGNED,
   INVALID_MATCHUP,
+  INVALID_VALUES,
   MATCHUP_HAS_SCHEDULING,
   MISSING_DRAW_DEFINITION,
 } from '@Constants/errorConditionConstants';
@@ -224,11 +226,12 @@ describe('the edges of the planned domain', () => {
     expect(planned.result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
-  it('keeps the writer for a call that hands in its own draw state', () => {
+  it('refuses a call that hands in its own draw state, before anything is written', () => {
     const { tournamentRecord, drawDefinition } = unpositioned();
     const event = tournamentRecord.events[0];
     const structureId = drawDefinition.structures[0].structureId;
     const matchUpsMap = getMatchUpsMap({ drawDefinition });
+    const before = JSON.stringify(tournamentRecord);
     const result: any = assignDrawPositionBye({
       tournamentRecord,
       drawDefinition,
@@ -236,9 +239,10 @@ describe('the edges of the planned domain', () => {
       drawPosition: 1,
       event,
       matchUpsMap,
-    });
-    expect(result.success).toBe(true);
-    expect(drawDefinition.structures[0].positionAssignments.find((a: any) => a.drawPosition === 1).bye).toBe(true);
+    } as any);
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(result.context).toEqual({ params: ['matchUpsMap'] });
+    expect(JSON.stringify(tournamentRecord)).toBe(before);
   });
 
   it('leaves a round robin position with no assignment to the writer', () => {

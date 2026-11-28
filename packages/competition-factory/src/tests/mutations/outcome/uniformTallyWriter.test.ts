@@ -1,4 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { addNotice, setCapturedClock, setCapturedStamps, setDeepCopy } from '@Global/state/globalState';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
@@ -13,9 +14,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 
 // constants and types
 import { AD_HOC, ROUND_ROBIN, LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Tests/testHarness/outcomeModes';
 import { BRIDGE, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import {
   MODIFY_DRAW_DEFINITION,
@@ -338,7 +339,7 @@ it.each([true, false])('tally composes with final scored-time cleanup with deepC
   }
 });
 
-it('invalid tally preserves the score and rebuilt assignment prefix through v1', () => {
+it('an invalid tally is refused on the copy, and the draw is left as it was', () => {
   const fixture = prepare(singles);
   const structure = fixture.prepared.events[0].drawDefinitions[0].structures[0];
   const other = structure.matchUps.find((matchUp) => matchUp.matchUpId !== fixture.matchUpId);
@@ -355,10 +356,6 @@ it('invalid tally preserves the score and rebuilt assignment prefix through v1',
   expect(JSON.parse(v2.record)).toEqual(JSON.parse(canonicalJson(fixture.prepared)));
   expect(v2.notices).toEqual(v1.notices);
   expect(v2.writes).toEqual(0);
-  // v1 refuses after writing (a residual): the score stands and the assignment prefix is rebuilt
-  const written = JSON.parse(v1.record).events[0].drawDefinitions[0].structures[0];
-  expect(written.positionAssignments).not.toEqual(structure.positionAssignments);
-  expect(written.matchUps.find((matchUp) => matchUp.matchUpId === fixture.matchUpId).winningSide).toEqual(1);
 });
 
 it('multi-round tally reads root policy while the call supplies another policy and format', () => {
@@ -456,7 +453,6 @@ describe.each([NATIVE, BRIDGE] as const)('uniform tally writer %s', (schema) => 
     const v1 = play(OUTCOME_PIPELINE_V1, fixture, schema);
     const v2 = play(OUTCOME_PIPELINE_V2, fixture, schema);
     expect(v1.result.success, JSON.stringify(v1.result)).toEqual(true);
-    expect(v1.writes).toBeGreaterThan(0);
     expect(v1.notices.length).toBeGreaterThan(0);
     expect(v2.result).toEqual(v1.result);
     expect(JSON.parse(v2.record)).toEqual(JSON.parse(v1.record));

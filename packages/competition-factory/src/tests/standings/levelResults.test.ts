@@ -1,13 +1,13 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants and types
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { AD_HOC, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { MatchUp } from '@Types/tournamentTypes';

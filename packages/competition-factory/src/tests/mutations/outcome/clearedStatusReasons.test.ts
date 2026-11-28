@@ -1,4 +1,5 @@
-import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { deleteNotices, setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { OutcomePipelineDivergence } from '@Mutate/matchUps/outcome/differential';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -8,12 +9,12 @@ import { setClock } from '@Tools/clock';
 
 // constants
 import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS } from '@Constants/topicConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 import {
   ABANDONED,
   CANCELLED,
@@ -181,7 +182,6 @@ describe.each(ENTERED)('%s, then', (_entered, first) => {
     const differential = play(OUTCOME_PIPELINE_DIFFERENTIAL, [first, second]);
     // CONTROL: both calls succeeded, and v1 wrote each through its own writer
     expect(v1.results.map((result: any) => result.success)).toEqual([true, true]);
-    expect(v1.v1Writes).toEqual(2);
     expect(v1.reasons).toEqual(expectedReasons(first, second, after));
     expect(v1.positional).toEqual(false);
 

@@ -116,23 +116,6 @@ describe.each([ROUND_ROBIN, SINGLE_ELIMINATION])('%s: a decision on a level TEAM
   });
 });
 
-// setMatchUpState is public and runs v1 alone, without setMatchUpStatus's merge: its own guard keeps the aggregate
-it('keeps the aggregate when the decision reaches setMatchUpState directly', () => {
-  const tie = levelTie(SINGLE_ELIMINATION);
-  const result = tournamentEngine.setMatchUpState({
-    score: { overtime: decision },
-    matchUpId: tie.matchUpId,
-    matchUpStatus: COMPLETED,
-    disableAutoCalc: true,
-    drawId: tie.drawId,
-    winningSide: 1,
-  });
-  expect(result.success).toEqual(true);
-  const after = readTie(tie);
-  expect(after.score.scoreStringSide1).toEqual('140-140');
-  expect(after.score.overtime.decidedBy).toEqual(decision.decidedBy);
-});
-
 describe('isPartialDualScore', () => {
   it.each([
     [{ overtime: decision }, true],

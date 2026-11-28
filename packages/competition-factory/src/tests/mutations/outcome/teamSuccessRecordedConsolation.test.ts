@@ -1,6 +1,7 @@
 import { COMPLETED, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { getTournamentRecords } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { resolveTieFormat } from '@courthive/competition-catalogue';
 import type { Tournament } from '@Types/tournamentTypes';
 import { afterEach, describe, expect, it } from 'vitest';

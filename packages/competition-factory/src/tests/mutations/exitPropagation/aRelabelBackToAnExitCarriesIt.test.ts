@@ -1,4 +1,5 @@
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,7 +8,7 @@ import { afterEach, expect, it } from 'vitest';
 // constants
 import { DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MODIFIED_FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Tests/testHarness/outcomeModes';
 
 /**
  * The round trip F2 left open. Census w2 9100377 (MFIC 16/11): the

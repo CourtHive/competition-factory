@@ -2,7 +2,8 @@ import { checkHeldByeClaims } from '@Tests/testHarness/outcome/heldByeClaimContr
 import { compareHeldClaims } from '@Tests/testHarness/outcome/compareHeldClaims';
 import { prepareCall } from '@Tests/testHarness/outcome/recordedCallHarness';
 import { replayStalls } from '@Tests/testHarness/exitPropagation/stallCount';
-import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { setSubscriptions } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { afterEach, expect, it, vi } from 'vitest';
 import engine from '@Engines/syncEngine';

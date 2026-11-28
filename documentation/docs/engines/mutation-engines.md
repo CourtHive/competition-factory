@@ -259,11 +259,12 @@ A snapshot is still taken for:
 
 - a queue of two or more directives;
 - a bulk method (`bulkMatchUpStatusUpdate`, `deleteCourts`, `resetAdHocMatchUps`), which commits item by item;
-- a BYE placement (`assignDrawPositionBye`, and `assignDrawPosition` with `bye: true`);
 - a custom method, whether imported with `importMethods` or passed to `execute`: the factory cannot know whether it
   writes before refusing.
-- `setMatchUpStatus` under the v1 outcome pipeline or `differential` (`engine.outcomePipeline`), where v1 can refuse a
-  result after writing it. Under v2, the default, it refuses before any write and takes no snapshot.
+
+Every other factory method refuses before its first write. A public method takes ids, not resolved draw state: a call
+that hands one the state or the checks the factory's own callers pass it (a BYE placement's `matchUpsMap`, a schedule
+write's `playedOrderChecked`) is refused with `INVALID_VALUES` before anything is read or written.
 
 Without a snapshot, nothing undoes a method that **throws** partway through a write, which is a defect rather than a
 refusal. Its writes stay, and the result carries `rolledBack: false`, never a restore that did not happen.

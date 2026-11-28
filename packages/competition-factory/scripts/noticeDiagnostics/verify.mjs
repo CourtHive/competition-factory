@@ -1,5 +1,5 @@
 // `pnpm verify:notice-diagnostics` (from factory #6614): the published dist delivers payloads as they are, and the
-// standalone audit build (build.mjs) rejects a write through one once its write check is selected. Run after
+// standalone audit build (build.mjs), whose write check is on from the moment it loads, rejects a write through one. Run after
 // `pnpm build` and `pnpm build:notice-diagnostics`; an explicit dist path compares an already-built package.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -20,7 +20,6 @@ const engines = [
 for (const [label, { globalState: state }, diagnostic] of engines) {
   await test(label, async () => {
     const original = state.getProvider();
-    const previousMode = state.getOutcomePipeline();
     const item = { n: 1 };
     const payload = { item, alias: item };
     const notice = { topic: 'audit', payload };
@@ -37,17 +36,13 @@ for (const [label, { globalState: state }, diagnostic] of engines) {
           payloads[0].item.n = 1;
         },
       });
-      const passive = () => {
-        assert.equal(state.setOutcomePipeline('differential').success, true);
+      if (!diagnostic) {
         state.addNotice(notice);
         assert.equal(seen, notice);
         assert.equal(seen.payload.item, item);
         const copy = structuredClone(seen.payload);
         assert.equal(copy.item, copy.alias);
-      };
-      passive();
-      if (diagnostic) {
-        assert.equal(state.setOutcomePipeline('differential', { checkNoticePayloadWrites: true }).success, true);
+      } else {
         state.addNotice(notice);
         const held = seen.payload;
         assert.notEqual(held.item, item);
@@ -56,12 +51,10 @@ for (const [label, { globalState: state }, diagnostic] of engines) {
           held.item.n = 1;
         }, /read-only notice payload/);
         await assert.rejects(state.callListener({ topic: 'audit', payloads: [payload] }), /read-only notice payload/);
-        passive();
         assert.throws(() => Reflect.deleteProperty(held.alias, 'missing'), /read-only notice payload/);
       }
     } finally {
       state.setStateProvider(original);
-      state.setOutcomePipeline(previousMode);
     }
   });
 }

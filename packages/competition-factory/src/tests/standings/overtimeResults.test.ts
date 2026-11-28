@@ -2,16 +2,16 @@ import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getPartic
 import { overtimeResultString } from '@Helpers/matchUpFormatCode/overtimeContext';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { validateScore } from '@Scoring/analysis/validateScore';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants and types
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Tests/testHarness/outcomeModes';
 import { INVALID_SCORE, UNDECIDED_LEVEL_RESULT } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 /*

@@ -1,6 +1,7 @@
 import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
-import { getTournamentRecords, setOutcomePipeline } from '@Global/state/globalState';
+import { getTournamentRecords } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import mocks from '@Assemblies/engines/mock';
 import engine from '@Engines/syncEngine';
 import { expect } from 'vitest';

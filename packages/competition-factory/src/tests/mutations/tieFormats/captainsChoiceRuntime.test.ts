@@ -146,7 +146,7 @@ it('omitting type is not a reset, and repeated selection/reset are no-ops', () =
   expect(notices).toEqual([]);
 });
 
-it.each(['assign', 'replace', 'lineups', 'drawLineup', 'score', 'state', 'start', 'mixedSchedule'])(
+it.each(['assign', 'replace', 'lineups', 'drawLineup', 'score', 'start', 'mixedSchedule'])(
   'refuses unresolved %s without writes/notices',
   (method) => {
     const f = fixture();
@@ -193,12 +193,6 @@ it.each(['assign', 'replace', 'lineups', 'drawLineup', 'score', 'state', 'start'
             ],
           },
         },
-      });
-    if (method === 'state')
-      result = tournamentEngine.setMatchUpState({
-        drawId: f.drawId,
-        matchUpId: f.children[0].matchUpId,
-        matchUpStatus: IN_PROGRESS,
       });
     if (method === 'start')
       result = tournamentEngine.addMatchUpStartTime({

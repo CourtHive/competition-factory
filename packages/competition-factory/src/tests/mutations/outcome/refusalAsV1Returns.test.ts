@@ -1,7 +1,7 @@
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { objectGraph } from '@Tests/testHarness/outcome/objectGraph';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline } from '@Tests/testHarness/outcomeModes';
 import { afterEach, describe, expect, it } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -10,7 +10,7 @@ import { setClock } from '@Tools/clock';
 
 // constants and types
 import { CANNOT_CHANGE_WINNING_SIDE, INVALID_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import type { OutcomePipelineMode } from '@Tests/testHarness/outcomeModes';
 import { TEAM } from '@Constants/eventConstants';
 import {
   DEFAULTED,
@@ -24,7 +24,7 @@ import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
+} from '@Tests/testHarness/outcomeModes';
 
 const { DOMINANT_DUO } = tieFormatConstants;
 
