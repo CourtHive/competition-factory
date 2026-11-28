@@ -226,11 +226,11 @@ describe('tools.removeNonTeamTieFormats', () => {
       withPipeline(mode, () => {
         for (const eventType of NON_TEAM) {
           const clean = cleanRecord(eventType);
-          const team = clean.events.find((e) => e.eventType === TEAM);
+          const team = defined(defined(clean.events, 'events').find((e) => e.eventType === TEAM), 'TEAM event');
           team.tieFormats = [tieFormat('team-tf')];
           const record = structuredClone(clean);
-          record.events.find((e) => e.eventId === 'e1').tieFormats = [tieFormat('tf-1')];
-          const e2 = record.events.find((e) => e.eventId === 'e2');
+          defined(defined(record.events, 'events').find((e) => e.eventId === 'e1'), 'e1').tieFormats = [tieFormat('tf-1')];
+          const e2 = defined(defined(record.events, 'events').find((e) => e.eventId === 'e2'), 'e2');
           e2.tieFormats = [tieFormat('tf-2')];
           e2.tieFormat = tieFormat();
           const before = canonicalJson(record);
