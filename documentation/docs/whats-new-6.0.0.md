@@ -6,7 +6,7 @@ Version 6.0.0 of the Competition Factory ships **two breaking changes** to ratin
 
 For upgrade mechanics — the two breaking changes and the field-rename table — see the [5.x to 6.0.0 migration guide](./migration-6.0.0).
 
-For the full per-commit changelog see [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
+For the full per-commit changelog see [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/packages/competition-factory/CHANGELOG.md).
 
 ## The headline changes
 

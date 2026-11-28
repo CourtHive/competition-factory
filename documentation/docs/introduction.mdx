@@ -6,6 +6,14 @@ slug: /
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import DrawType from './components/DrawType';
 
+:::info[7.51.0 is the final release of `tods-competition-factory`]
+
+The factory continues as [`competition-factory`](https://www.npmjs.com/package/competition-factory) from 8.0.0.
+There are no further 7.x releases, and every published 7.x version stays installable. These pages document 7.51.0;
+[Migration to 8.0.0](./migration-8.0.0.md) lists what to change before switching to the new package.
+
+:::
+
 The **Competition Factory** represents a fundamental shift in how tournament management systems are architected. By separating tournament operations from infrastructure concerns, it enables unprecedented flexibility in deployment architectures while ensuring data integrity and long-term accessibility.
 
 ### Configurable Tournament Operations
@@ -25,7 +33,7 @@ Rather than hardcoding tournament structures or embedding business rules in data
 
 ### Cross-Sport Applicability
 
-While the **Competition Factory** was originally inspired by the **[Tennis Open Data Standards (TODS)](https://itftennis.atlassian.net/wiki/spaces/TODS/overview)**, the data structures and configurable operations apply to tournaments across many sports. The factory has already been successfully deployed across **five racquet sports**, demonstrating the universality of its approach. This cross-sport reality is now reflected in **[CODES](/docs/data-standards#codes)** (Competition Open Data Exchange Standards), the factory's expanded data model.
+The data structures and configurable operations of the **Competition Factory** apply to tournaments across many sports. The factory has already been successfully deployed across **five racquet sports**, demonstrating the universality of its approach. Its data model is **[CODES](/docs/data-standards#codes)** (Competition Open Data Exchange Standards); [Data Standards](./data-standards.md) describes where the model came from.
 
 `discipline` is an **open vocabulary** — any string is accepted — with a curated known set covering tennis, beach tennis, wheelchair tennis, padel, pickleball, squash and badminton, plus first-class non-racquet entries for volleyball and beach volleyball. Cross-sport support is concrete rather than aspirational: the [matchUpFormat grammar](./codes/matchup-format.mdx) parses and round-trips each sport's scoring, and **14 rating systems** ship as fixtures spanning tennis, squash, table tennis, badminton and pickleball, each declaring which end of its scale is the top so a lower-is-better system is never silently inverted.
 

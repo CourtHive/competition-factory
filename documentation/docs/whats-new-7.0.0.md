@@ -16,7 +16,7 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 
 - **Upgrading?** Start at [what you must act on](#what-you-must-act-on) — it is a short list.
 - **Upgrade mechanics** in detail: the [6.x to 7.0.0 migration guide](./migration-7.0.0.md).
-- **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
+- **Every commit**: [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/packages/competition-factory/CHANGELOG.md).
 - **Measured gains**: [performance across 7.x](#performance-across-7x).
 - **Outcome v2 is the default**: [adoption notes](#adoption-notes-outcome-v2-default). Act on them if you select the outcome pipeline or compute mutation footprints.
 - **New in 7.23.0**: [adoption notes](#adoption-notes-7230). Act on them if you schedule across venues or time under-age events.
@@ -24,6 +24,7 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 - **New in 7.17.0**: [the published schema declares every stored field](#adoption-notes-7170). Act on it if you validate stored records against your own schema.
 - **New in 7.16.0**: [adoption notes](#adoption-notes-7160).
 - **Where it led**: [7.0.0 began a journey](#700-began-a-journey) that the 7.x releases continued.
+- **The last 7.x release**: 7.51.0 is the final release of `tods-competition-factory`. The factory continues as [`competition-factory`](https://www.npmjs.com/package/competition-factory) from 8.0.0; see [Migration to 8.0.0](./migration-8.0.0.md).
 
 ## 7.0.0 began a journey
 
@@ -31,7 +32,7 @@ self-reported results, `RANK` or `RATING` ordering, and eighteen new engine meth
 correction leaves the draw where the corrected entry would have left it. The release also shipped
 the means of testing those promises: probes, confluence sweeps and an exit-propagation harness. Once
 they were running, the harness kept finding cases the promises did not yet cover. The 7.x releases
-have been about closing them.
+were about closing them, through 7.51.0, the final 7.x release.
 
 | Release         | What it settled                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

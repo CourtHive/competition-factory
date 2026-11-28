@@ -6,7 +6,7 @@ Version 5.0.0 of the Competition Factory ships **two breaking changes** and a de
 
 For upgrade mechanics (typed-engine opt-out, mode-agnostic readers, the promoted-attribute tables) see the [4.x to 5.0.0 migration guide](./migration-5.0.0).
 
-For the full per-commit changelog see [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/CHANGELOG.md).
+For the full per-commit changelog see [CHANGELOG.md](https://github.com/CourtHive/competition-factory/blob/master/packages/competition-factory/CHANGELOG.md).
 
 ## The headline changes
 
