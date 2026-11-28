@@ -7,7 +7,7 @@ import { getMatchUpId } from '@Functions/global/extractors';
 // constants and types
 import { ARRAY, INVALID, OF_TYPE, ONE_OF, TOURNAMENT_RECORDS } from '@Constants/attributeConstants';
 import { INVALID_VALUES, MISSING_VALUE } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
+import { PARTIAL_COMMIT, SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
 type BulkScheduleMatchUpsArgs = {
@@ -109,14 +109,16 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     if (result.error) return result;
   }
 
+  // each tournament's batch commits matchUp by matchUp (a bulk method): a refusal in a later tournament keeps what the
+  // batches before it wrote, and says so
   for (const batch of tournamentBatches) {
     const result = bulkScheduleTournamentMatchUps({ ...batchArgs(batch), playedOrderChecked: true });
     if (result.warnings?.length) warnings.push(...result.warnings);
     if (result.lockedMatchUpIds?.length) lockedMatchUpIds.push(...result.lockedMatchUpIds);
     if (result.skippedMatchUpIds?.length) skippedMatchUpIds.push(...result.skippedMatchUpIds);
     if (result.notFoundMatchUpIds?.length) notFoundMatchUpIds.push(...result.notFoundMatchUpIds);
+    if (result.error) return scheduled || result[PARTIAL_COMMIT] ? { ...result, [PARTIAL_COMMIT]: true } : result;
     if (result.scheduled) scheduled += result.scheduled;
-    if (result.error) return result;
   }
 
   return {

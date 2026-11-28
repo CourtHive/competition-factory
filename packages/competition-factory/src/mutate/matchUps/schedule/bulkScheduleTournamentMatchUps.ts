@@ -4,11 +4,12 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
+import { bulkItem } from '@Mutate/bulkItem';
 
 // constants and types
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
-import { SUCCESS } from '@Constants/resultConstants';
+import { PARTIAL_COMMIT, SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   MISSING_SCHEDULE,
@@ -41,7 +42,12 @@ type BulkScheduleMachUpsArgs = {
   plannedOrder?: boolean;
 };
 
+/** one requested matchUp of the batch: scheduled (written), or the refusal that ended the batch at it */
+export type BulkScheduleItem = { index: number; matchUpId: string; success?: true; error?: ErrorType };
+
 type BulkScheduleResult = {
+  results?: BulkScheduleItem[];
+  committed?: boolean;
   notFoundMatchUpIds?: string[];
   lockedMatchUpIds?: string[];
   skippedMatchUpIds?: string[];
@@ -50,10 +56,16 @@ type BulkScheduleResult = {
   warnings?: any[];
 };
 
+/**
+ * A BULK METHOD (`PARTIAL_COMMIT_METHODS`): each matchUp is its own schedule plan, committed on its own (per-item
+ * atomicity). A refused matchUp ends the batch with nothing of its own written, and the matchUps planned before it stay
+ * written. `results` lists each matchUp scheduled, and the one refused; `committed: true` on a refusal says that some
+ * were written, so the engine announces them.
+ */
 export function bulkScheduleTournamentMatchUps(params: BulkScheduleMachUpsArgs): BulkScheduleResult {
   const { result, commits } = planBulkScheduleTournamentMatchUps(params);
-  for (const commit of commits) commit();
-  return result;
+  for (const commit of commits) bulkItem(commit);
+  return result.error && commits.length ? { ...result, [PARTIAL_COMMIT]: true } : result;
 }
 
 /**
@@ -80,6 +92,7 @@ export function planBulkScheduleTournamentMatchUps({
   schedule,
 }: BulkScheduleMachUpsArgs): { result: BulkScheduleResult; commits: (() => void)[] } {
   const commits: (() => void)[] = [];
+  const results: BulkScheduleItem[] = [];
   const refuse = (result: BulkScheduleResult) => ({ result, commits });
   if (!tournamentRecord) return refuse({ error: MISSING_TOURNAMENT_RECORD });
   if (!matchUpDetails && (!matchUpIds || !Array.isArray(matchUpIds))) return refuse({ error: MISSING_MATCHUP_IDS });
@@ -182,6 +195,7 @@ export function planBulkScheduleTournamentMatchUps({
       scheduleOf,
       warnings,
       commits,
+      results,
     });
     if (refusal) return refuse(refusal);
   }
@@ -195,6 +209,7 @@ export function planBulkScheduleTournamentMatchUps({
     ...(lockedMatchUpIds.length ? { lockedMatchUpIds } : {}),
     ...(skippedMatchUpIds.length ? { skippedMatchUpIds } : {}),
     ...(notFoundMatchUpIds.length ? { notFoundMatchUpIds } : {}),
+    ...(results.length ? { results } : {}),
     scheduled,
   };
   return { result, commits };
@@ -255,6 +270,7 @@ type DrawSchedulesArgs = Omit<BulkScheduleMachUpsArgs, 'matchUpIds' | 'matchUpDe
   drawMatchUps?: HydratedMatchUp[];
   lockedMatchUpIds: string[];
   commits: (() => void)[];
+  results: BulkScheduleItem[];
   drawMatchUpIds: string[];
   onScheduled: () => void;
   warnings: unknown[];
@@ -268,6 +284,7 @@ function planDrawSchedules({
   scheduleOf,
   warnings,
   commits,
+  results,
   ...params
 }: DrawSchedulesArgs): BulkScheduleResult | undefined {
   for (const matchUpId of drawMatchUpIds) {
@@ -280,7 +297,10 @@ function planDrawSchedules({
     const result = 'commit' in plan ? plan.result : plan;
     if ('commit' in plan) commits.push(plan.commit);
     if (result?.warnings?.length) warnings.push(...result.warnings);
-    if (result?.success) onScheduled();
+    if (result?.success) {
+      onScheduled();
+      results.push({ index: results.length, matchUpId, success: true });
+    }
     // A locked matchUp is SKIPPED, never fatal: one pinned marquee match must
     // not abort a Clear or a bulk re-schedule of the other 200. Reported back
     // so the caller can say what it preserved.
@@ -288,7 +308,10 @@ function planDrawSchedules({
       lockedMatchUpIds.push(matchUpId);
       continue;
     }
-    if (result.error) return result;
+    if (result.error) {
+      results.push({ index: results.length, matchUpId, error: result.error });
+      return { ...result, results };
+    }
   }
   return undefined;
 }

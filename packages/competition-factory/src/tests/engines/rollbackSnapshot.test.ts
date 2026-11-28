@@ -157,9 +157,12 @@ describe('which calls take a snapshot', () => {
       'mutate/events/bulkMatchUpStatusUpdate.ts': 'bulkMatchUpStatusUpdate',
       'mutate/structures/resetAdHocMatchUps.ts': 'resetAdHocMatchUps',
       'mutate/venues/deleteCourt.ts': 'deleteCourts',
+      'mutate/matchUps/schedule/bulkScheduleTournamentMatchUps.ts': 'bulkScheduleTournamentMatchUps',
     };
+    // a bulk method whose items are another listed bulk method's (one tournament's batch after another)
+    const composed = ['bulkScheduleMatchUps'];
     expect(importers.sort()).toEqual(Object.keys(writers).sort());
-    expect([...PARTIAL_COMMIT_METHODS].sort()).toEqual(Object.values(writers).sort());
+    expect([...PARTIAL_COMMIT_METHODS].sort()).toEqual([...Object.values(writers), ...composed].sort());
 
     // and no governor exposes one of them, or a BYE placement, under a name the lists do not hold
     const watched = new Map<unknown, string>();
