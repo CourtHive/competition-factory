@@ -248,7 +248,7 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
 
     const result = tournamentEngine.copyTournamentRecord({
       tournamentName: `Tournament-${i + 2}`,
-      startDate: addDays(startDate, 7),
+      startDate: addDays(defined(startDate), 7),
       copyParticipants: true,
     });
     expect(result.success).toBe(true);

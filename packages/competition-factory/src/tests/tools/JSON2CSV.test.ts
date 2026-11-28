@@ -15,7 +15,7 @@ it('can create CSV from shallow JSON objects', () => {
   expect(csv).not.toBeUndefined;
 
   const result = JSON2CSV();
-  expect(result.error).toEqual(INVALID_VALUES);
+  expect(result).toEqual({ error: INVALID_VALUES });
 });
 
 it('can transform arrays of JSON objects to CSV', () => {
@@ -132,11 +132,11 @@ it('can transform arrays of JSON objects to CSV and transform multiple target at
 
 it('can recognized bad data', () => {
   let result = JSON2CSV([{ a: 1 }], { columnTransform: 'bad' });
-  expect(result.error).toEqual(INVALID_VALUES);
+  expect(result).toEqual({ error: INVALID_VALUES });
   result = JSON2CSV([{ a: 1 }], { columnMap: 'bad' });
-  expect(result.error).toEqual(INVALID_VALUES);
+  expect(result).toEqual({ error: INVALID_VALUES });
   result = JSON2CSV([{ a: 1 }], 'string');
-  expect(result.error).toEqual(INVALID_VALUES);
+  expect(result).toEqual({ error: INVALID_VALUES });
 });
 
 it('can sort csv columns', () => {

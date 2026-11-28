@@ -16,7 +16,7 @@ export function getSeededDrawPositions({ drawDefinition }) {
   const seededDrawPositions = seedAssignments.map(({ participantId, seedNumber }) => {
     const drawPosition = positionAssignments.find((pa) => pa.participantId === participantId).drawPosition;
     const hasBye = pairedDrawPositions
-      .find((pair) => pair.includes(drawPosition))
+      .find((pair) => pair.includes(drawPosition))!
       .some((drawPosition) => byeAssignments.includes(drawPosition));
     return { seedNumber, drawPosition, hasBye };
   });

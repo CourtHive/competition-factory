@@ -1,12 +1,12 @@
 import { POLICY_TYPE_DRAWS } from '@Constants/policyConstants';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 
-type getDrawTypeCoercionArgs = {
+type CoercionArgs = {
   policyDefinitions?: PolicyDefinitions;
   appliedPolicies?: PolicyDefinitions;
   drawType?: string;
 };
-export function getDrawTypeCoercion({ policyDefinitions, appliedPolicies, drawType }: getDrawTypeCoercionArgs) {
+export function getDrawTypeCoercion({ policyDefinitions, appliedPolicies, drawType }: CoercionArgs): boolean {
   const policyDefined = policyDefinitions?.[POLICY_TYPE_DRAWS]?.drawTypeCoercion;
   const policyApplied = appliedPolicies?.[POLICY_TYPE_DRAWS]?.drawTypeCoercion;
 

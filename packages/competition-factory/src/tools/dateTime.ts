@@ -80,7 +80,7 @@ export {
   isDate,
 };
 
-export function getIsoDateString(schedule): string | undefined {
+export function getIsoDateString(schedule: { scheduledDate?: string; scheduledTime?: string }): string | undefined {
   let { scheduledDate } = schedule;
   if (!scheduledDate && schedule.scheduledTime) scheduledDate = extractDate(schedule.scheduledTime);
   if (!scheduledDate) return;
@@ -91,35 +91,35 @@ export function getIsoDateString(schedule): string | undefined {
   return isoDateString;
 }
 
-export function DateHHMM(date): string {
+export function DateHHMM(date: string | number | Date): string {
   const dt = new Date(date);
   const secs = dt.getSeconds() + 60 * dt.getMinutes() + 60 * 60 * dt.getHours();
   return HHMMSS(secs, { displaySeconds: false });
 }
 
 /** Get the UTC calendar date. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
-export const getUTCdateString = (date?): string => {
-  const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : now();
+export const getUTCdateString = (date?: unknown): string => {
+  const dateDate = isDate(date) || isISODateString(date) ? new Date(date as string) : now();
   const monthNumber = dateDate.getUTCMonth() + 1;
   const utcMonth = monthNumber < 10 ? `0${monthNumber}` : `${monthNumber}`;
   return `${dateDate.getUTCFullYear()}-${zeroPad(utcMonth)}-${zeroPad(dateDate.getUTCDate())}`;
 };
 
 /** Return UTC midnight for the local calendar date. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
-export function timeUTC(date?) {
-  const dateDate = isDate(date) || isISODateString(date) ? new Date(date) : now();
+export function timeUTC(date?: unknown): number {
+  const dateDate = isDate(date) || isISODateString(date) ? new Date(date as string) : now();
   return Date.UTC(dateDate.getFullYear(), dateDate.getMonth(), dateDate.getDate());
 }
 
 /** Offset the supplied date to local time. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
-export function offsetDate(date): Date {
+export function offsetDate(date?: string | number | Date | null): Date {
   const targetTime = date ? new Date(date) : now();
   const tzDifference = targetTime.getTimezoneOffset();
   return new Date(targetTime.getTime() - tzDifference * 60 * 1000);
 }
 
 /** Return the offset local timestamp. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
-export function offsetTime(date?) {
+export function offsetTime(date?: string | number | Date | null): number {
   return offsetDate(date).getTime();
 }
 
@@ -131,6 +131,8 @@ export function isValidEmbargoDate(value: unknown): boolean {
 }
 
 /** Combine the time of day with the supplied date. The implicit current date is a 7.x default. Supply the date for 8.0.0. */
+export function timeToDate(timeString?: string | null, date?: string): Date;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function timeToDate(timeString, date: string | undefined = undefined): Date {
   const [hours, minutes] = (timeString || '00:00').split(':').map(zeroPad);
   const milliseconds = offsetDate(date).setHours(hours, minutes, 0, 0);
@@ -154,7 +156,7 @@ export function addMinutes(startDate, minutes): Date {
  * no zone, so a daylight-saving change on the day the code runs cannot move it. A
  * fraction of a minute is dropped, as the time is whole minutes; a value that is not a time gives '00:00'.
  */
-export function addMinutesToTimeString(timeString?, minutes?): string {
+export function addMinutesToTimeString(timeString?: unknown, minutes?: unknown): string {
   const validTimeString = extractTime(timeString);
   if (!validTimeString) return '00:00';
   const minutesToAdd = typeof minutes === 'number' && Number.isFinite(minutes) ? minutes : 0;

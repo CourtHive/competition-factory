@@ -38,11 +38,11 @@ export function getPositionsPlayedOff({ drawDefinition, structureIds, matchUpsMa
     .flat();
 
   const positionsPlayedOff = allFinishingPositionRanges
-    .filter((positionRange) => positionRange?.length === 1)
+    .filter((positionRange): positionRange is number[] => positionRange?.length === 1)
     .sort(numericSort)
     .flat();
 
-  const allRangeValues = unique(allFinishingPositionRanges.flat());
+  const allRangeValues = unique(allFinishingPositionRanges.flat()) as number[];
   const positionsNotPlayedOff = allRangeValues.filter((position) => !positionsPlayedOff.includes(position));
 
   return {

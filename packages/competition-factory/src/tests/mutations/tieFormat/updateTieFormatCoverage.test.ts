@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { resolveTieFormat, tieFormatConstants } from '@courthive/competition-catalogue';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
@@ -301,9 +302,10 @@ describe('updateTieFormat coverage', () => {
     }).matchUps;
 
     const teamMatchUp = matchUps[0];
-    const modifiedTieFormat = copyTieFormat(event.tieFormat);
+    const modifiedTieFormat = copyTieFormat(defined(event.tieFormat));
     // Increase matchUpCount to add new matchUps
-    modifiedTieFormat.collectionDefinitions[0].matchUpCount += 2;
+    modifiedTieFormat.collectionDefinitions[0].matchUpCount =
+      defined(modifiedTieFormat.collectionDefinitions[0].matchUpCount) + 2;
 
     const result: any = updateTieFormat({
       tieFormat: modifiedTieFormat,

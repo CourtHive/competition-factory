@@ -42,7 +42,7 @@ export function findParticipant({
             (personId && candidate.person && candidate.person.personId === personId),
         );
 
-  const participant = makeDeepCopy(foundParticipant, false, internalUse);
+  const participant = makeDeepCopy(foundParticipant, false, internalUse) as HydratedParticipant | undefined;
 
   if (participant) {
     const participantAttributes = policyDefinitions?.[POLICY_TYPE_PARTICIPANT];

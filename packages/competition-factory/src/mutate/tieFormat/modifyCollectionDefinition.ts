@@ -14,7 +14,7 @@ import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { TieScoreSourceEnum } from '@Types/tournamentTypes';
+import { CollectionDefinition, TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { tieFormatTelemetry } from './tieFormatTelemetry';
 import { isConvertableInteger } from '@Tools/math';
 import { intersection } from '@Tools/arrays';
@@ -145,14 +145,14 @@ function modifyDefinition({
   }
 
   const { matchUp, structure, tieFormat: existingTieFormat } = result;
-  const tieFormat = copyTieFormat(existingTieFormat);
+  const tieFormat = copyTieFormat(existingTieFormat)!;
 
   const sourceCollectionDefinition = existingTieFormat?.collectionDefinitions.find(
     (collectionDefinition) => collectionDefinition.collectionId === collectionId,
   );
   const targetCollectionDefinition = tieFormat?.collectionDefinitions.find(
     (collectionDefinition) => collectionDefinition.collectionId === collectionId,
-  );
+  ) as CollectionDefinition;
 
   if (!sourceCollectionDefinition)
     return decorateResult({
@@ -240,7 +240,7 @@ function modifyDefinition({
         return collectionDefinition;
       }
     });
-    tieFormat.collectionGroups = tieFormat.collectionGroups.filter(
+    tieFormat.collectionGroups = tieFormat.collectionGroups!.filter(
       ({ groupNumber }) => groupNumber !== targetCollectionGroupNumber,
     );
     modifications.push({

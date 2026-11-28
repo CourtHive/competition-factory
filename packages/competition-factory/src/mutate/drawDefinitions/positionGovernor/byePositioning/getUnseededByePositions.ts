@@ -37,7 +37,7 @@ export function getUnseededByePositions({
 
   // firstRoundMatchUps don't work for CONTAINER / ROUND_ROBIN structures
   const relevantMatchUps = structure.structureType === CONTAINER ? matchUps : firstRoundMatchUps;
-  const relevantDrawPositions = unique(relevantMatchUps.flatMap((matchUp) => matchUp.drawPositions));
+  const relevantDrawPositions = unique(relevantMatchUps.flatMap((matchUp) => matchUp.drawPositions)) as number[];
   const drawPositionOffset = Math.min(...relevantDrawPositions) - 1;
 
   const filledRelevantDrawPositions = filledDrawPositions?.filter((drawPosition) =>

@@ -279,7 +279,7 @@ export interface ConflictEvaluator {
 
 export interface EngineContext {
   config: EngineConfig;
-  tournamentRecord: any; // TODS tournamentRecord
+  tournamentRecord: unknown; // the TODS tournamentRecord the engine was given
 
   // Internal indices
   blocksById: Map<BlockId, Block>;

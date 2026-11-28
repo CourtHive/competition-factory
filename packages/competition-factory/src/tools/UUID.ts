@@ -47,7 +47,7 @@ export function takeUUID({ uuids, prefix }: TakeUUIDArgs): { uuid?: string; erro
  *
  * @param {number} count - number of UUIDs to generate
  */
-export function UUIDS(count = 1, pre?, random?: () => number) {
+export function UUIDS(count = 1, pre?: unknown, random?: () => number): string[] {
   return generateRange(0, count).map(() => UUID(pre, random));
 }
 
@@ -79,7 +79,7 @@ function refuseRepeatedId(rng: RandomFunction, uuid: string) {
   if (recent.size > REPEAT_WINDOW) recent.delete(recent.values().next().value as string);
 }
 
-export function UUID(pre?, random?: () => number) {
+export function UUID(pre?: unknown, random?: () => number): string {
   const rng = random ?? randomSource();
   const lut: string[] = [];
 

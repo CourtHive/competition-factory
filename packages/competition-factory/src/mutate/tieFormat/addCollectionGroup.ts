@@ -45,7 +45,7 @@ function addGroup({
   matchUp = matchUp || result?.matchUp;
   const existingTieFormat = result?.tieFormat;
   const originalValueGoal = existingTieFormat?.winCriteria.valueGoal;
-  const tieFormat = copyTieFormat(existingTieFormat);
+  const tieFormat = copyTieFormat(existingTieFormat)!;
 
   result = validateTieFormat({ tieFormat });
   if (result.error) return decorateResult({ result, stack });

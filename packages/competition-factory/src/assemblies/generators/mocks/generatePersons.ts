@@ -147,8 +147,8 @@ export function generatePersons(params?) {
 
   const persons = shuffledPersons.slice(0, count).map((person, i) => {
     const [start, end] = yearRange ?? [];
-    const birthYear = yearRange && randomPop(generateRange(start, end), random);
-    const birthDay = randomPop(generateRange(0, 365), random);
+    const birthYear = yearRange && randomPop(generateRange(start as number, end as number), random);
+    const birthDay = randomPop(generateRange(0, 365), random)!;
     const birthDate = birthYear && withinWindow(dateFromDay(birthYear, birthDay), yearRange, ageMinDate, ageMaxDate);
 
     return Object.assign(

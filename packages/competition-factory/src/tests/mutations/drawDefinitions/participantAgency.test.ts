@@ -1,3 +1,4 @@
+import { defined } from '@Tests/helpers/defined';
 import { resolveDrawPositions } from '@Helpers/positioning/drawPositionsResolver';
 import { getDrawPosition, getParticipantId } from '@Functions/global/extractors';
 import { generateRange, randomPop, unique } from '@Tools/arrays';
@@ -17,7 +18,7 @@ it.each([
   { participantsCount: 63, seedsCount: 16, automated: { seedsOnly: true } },
   { participantsCount: 50, seedsCount: 16, automated: { seedsOnly: true } },
 ])('mocksEngine can generate seedsCount seeded participants', ({ participantsCount, seedsCount, automated }) => {
-  const drawSize = nextPowerOf2(participantsCount);
+  const drawSize = Number(nextPowerOf2(participantsCount));
   const expectedByes = drawSize - participantsCount;
   const drawProfiles = [
     {
@@ -74,7 +75,7 @@ it.each([
       ...participantIdsWithAgency.map((participantId) => {
         const range = generateRange(0, unassignedDrawPositions.length - 1);
         const preferences = [1, 2, 3].map(() => {
-          const index = randomPop(range);
+          const index = defined(randomPop(range));
           return unassignedDrawPositions[index];
         });
         return { [participantId]: { preferences } };

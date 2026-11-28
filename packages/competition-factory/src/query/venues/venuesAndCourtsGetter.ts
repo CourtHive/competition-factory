@@ -158,7 +158,7 @@ export function getTournamentVenuesAndCourts({
       });
 
     return additionalCourts.length ? courts.concat(additionalCourts) : courts;
-  }, []);
+  }, [] as HydratedCourt[]);
 
   return { venues, courts };
 }

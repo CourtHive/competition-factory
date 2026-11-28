@@ -14,7 +14,7 @@ test('can generate UTR CSV export', () => {
     setState: true,
   });
   const csv = downloadUTRmatches();
-  const lines = csv.split('\r\n');
+  const lines = typeof csv === 'string' ? csv.split('\r\n') : [];
   const genderCount = lines.map((line) => line.includes('"M"')).filter(Boolean).length;
 
   // there is a line for every matchUp; number of matchUps is one less than drawSize

@@ -111,7 +111,7 @@ function computeDrawPositionsRanges(roundProfile: RoundProfile) {
       const possibleDrawPositions = generateRange(0, matchUpsCount)
         .map((index) => {
           return currentRoundDrawPositionChunks
-            .map((chunk) => chunk[index])
+            .map((chunk) => chunk![index])
             .flat()
             .filter(Boolean)
             .sort(numericSort);

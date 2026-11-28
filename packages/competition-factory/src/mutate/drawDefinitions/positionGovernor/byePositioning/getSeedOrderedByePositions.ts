@@ -35,7 +35,9 @@ export function getSeedOrderByePositions({
       structure,
     }) ?? [];
 
-  const relevantDrawPositions = unique([].concat(...relevantMatchUps.map((matchUp) => matchUp.drawPositions)));
+  const relevantDrawPositions = unique<number[]>(
+    [].concat(...relevantMatchUps.map((matchUp) => matchUp.drawPositions)),
+  );
   const relevantPositionedSeeds = positionedSeeds.filter((positionedSeed) => {
     return relevantDrawPositions.includes(positionedSeed.drawPosition);
   });

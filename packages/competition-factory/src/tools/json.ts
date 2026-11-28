@@ -4,6 +4,32 @@ import { isNumeric } from './math';
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
+/** A column's value function; it receives the column's (mapped) value. Method syntax, so a narrower parameter fits. */
+type ColumnFunction = { bivariance(value: unknown): unknown }['bivariance'];
+
+type JSON2CSVConfig = {
+  includeTransformAccessors?: boolean;
+  returnTransformedJSON?: boolean;
+  removeEmptyColumns?: boolean;
+  includeHeaderRow?: boolean;
+  onlyHeaderRow?: boolean;
+  columnAccessors?: string[];
+  columnTransform?: { [columnName: string]: string | string[] };
+  functionMap?: { [columnName: string]: ColumnFunction };
+  columnMap?: { [columnName: string]: string };
+  valuesMap?: { [columnName: string]: { [value: string]: unknown } };
+  context?: { [columnName: string]: unknown };
+  sortOrder?: string[];
+  delimiter?: string;
+  columnJoiner?: string;
+  rowJoiner?: string;
+  keyJoiner?: string;
+};
+/** Neither flag that changes the result's shape: the result is the CSV text. */
+type CSVTextFlags = { onlyHeaderRow?: false; returnTransformedJSON?: false };
+type CSVRow = { [column: string]: string };
+type CSVError = { error: typeof INVALID_VALUES };
+
 /**
  *
  * @param {object[]} arrayOfJSON - JSON objects array
@@ -27,6 +53,17 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
  * NOTE: `columnTransform` mapped array elements are sensitive to order and will resolve to the first matching value
  * NOTE: `columnMap` should not contain new columnName(s) that are `columnTransform` keys
  */
+export function JSON2CSV(arrayOfJSON: unknown, config: JSON2CSVConfig & { onlyHeaderRow: true }): string[][] | CSVError;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function JSON2CSV(
+  arrayOfJSON: unknown,
+  config: JSON2CSVConfig & { returnTransformedJSON: true },
+): CSVRow[] | CSVError;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function JSON2CSV(arrayOfJSON?: unknown, config?: JSON2CSVConfig & CSVTextFlags): string | CSVError;
+// eslint-disable-next-line no-redeclare -- TypeScript overload, not a second implementation
+export function JSON2CSV(arrayOfJSON?: unknown, config?: unknown): string | string[][] | CSVRow[] | CSVError;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function JSON2CSV(arrayOfJSON?, config?): any {
   if (config && typeof config !== 'object') return { error: INVALID_VALUES };
 

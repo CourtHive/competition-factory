@@ -2,17 +2,22 @@ import { printGlobalLog, purgeGlobalLog, pushGlobalLog } from '@Functions/global
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { extractTime } from '@Tools/dateTime';
 
-export function visualizeScheduledMatchUps({ scheduledMatchUps, showGlobalLog }) {
+import type { HydratedMatchUp } from '@Types/hydrated';
+
+type VisualizeScheduledMatchUpsArgs = { scheduledMatchUps: HydratedMatchUp[]; showGlobalLog?: boolean };
+
+/** Writes the scheduled matchUps, by structure and round, to the global log; prints it when `showGlobalLog`. */
+export function visualizeScheduledMatchUps({ scheduledMatchUps, showGlobalLog }: VisualizeScheduledMatchUpsArgs) {
   purgeGlobalLog();
   const structureIds = scheduledMatchUps?.reduce(
     (structureIds, { structureId }) =>
       structureIds.includes(structureId) ? structureIds : structureIds.concat(structureId),
-    [],
+    [] as string[],
   );
 
   const structureNames = Array.isArray(structureIds) && {
     ...structureIds.map((structureId) => {
-      const { structureName, matchUpType } = scheduledMatchUps.find((matchUp) => matchUp.structureId === structureId);
+      const { structureName, matchUpType } = scheduledMatchUps.find((matchUp) => matchUp.structureId === structureId)!;
       return {
         [structureId]: `${structureName} ${matchUpType}`,
       };

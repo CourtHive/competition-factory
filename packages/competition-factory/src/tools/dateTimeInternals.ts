@@ -13,6 +13,8 @@ export function zeroPad(number): string {
 }
 
 /** True only for a value that is (or parses to) a valid `Date`; `new Date('xxx')` is false. */
+export function isDate(dateArg: unknown): boolean;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function isDate(dateArg) {
   if (typeof dateArg == 'boolean') return false;
   // ignore warnings here as Number.isNaN causes the function to behave differently

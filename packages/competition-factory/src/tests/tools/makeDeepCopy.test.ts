@@ -47,8 +47,8 @@ it('can convert extensions during deepCopy', () => {
   expect(result.success).toEqual(true);
 
   const participantCopy = makeDeepCopy(participant, true);
-  expect(participantCopy._anotherExtension).toEqual('anotherExtensionValue');
-  expect(participantCopy.person._someExtension).toEqual('extensionValue');
+  expect(participantCopy).toHaveProperty('_anotherExtension', 'anotherExtensionValue');
+  expect(participantCopy.person).toHaveProperty('_someExtension', 'extensionValue');
 
   ({ tournamentRecord } = tournamentEngine.getTournament({
     convertExtensions: true,

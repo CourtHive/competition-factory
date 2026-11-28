@@ -96,7 +96,7 @@ export function resolveDrawPositions({
           .map((dp) => ensureInt(dp))
           .filter((drawPosition) => remainingDrawPositions.includes(ensureInt(drawPosition)));
         if (drawPositions.length) {
-          const drawPosition = randomPop(drawPositions, random);
+          const drawPosition = randomPop(drawPositions, random)!;
           remainingDrawPositions = remainingDrawPositions.filter((dp) => dp !== drawPosition);
           unresolvedParticipantIds = unresolvedParticipantIds.filter((id) => id !== participantId);
           drawPositionResolutions[drawPosition] = participantId;
@@ -158,7 +158,7 @@ function resolvePreferences({ participantPreferences, drawPositionResolutions = 
   // award selected drawPositions to one of the contenders at random
   minimumContentionPositions.forEach((position) => {
     const candidates = drawPositionsMap[position];
-    const selectedParticipantId = randomPop(candidates, random);
+    const selectedParticipantId = randomPop(candidates, random)!;
     drawPositionResolutions[position] = selectedParticipantId;
     // remove resolved participantIds from preferences
     delete participantPreferences[selectedParticipantId];

@@ -22,7 +22,7 @@ import {
 
 type GenerateAdHocMatchUpsArgs = {
   participantIdPairings?: {
-    participantIds: [string | undefined, string | undefined];
+    participantIds: (string | undefined)[];
   }[];
   ignoreLastRoundNumber?: boolean;
   restrictMatchUpsCount?: boolean; // defaults to true

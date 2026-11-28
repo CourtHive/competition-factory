@@ -49,20 +49,20 @@ const UNKNOWN: SourceKind = 'unknown';
 
 export interface ClassifiedSource {
   kind: SourceKind;
-  value: any;
+  value: unknown;
 }
 
 export interface EventDataDoc {
-  tournamentInfo?: any;
-  eventInfo?: any;
-  drawsData: any[];
-  participants: any[];
+  tournamentInfo?: unknown;
+  eventInfo?: unknown;
+  drawsData: unknown[];
+  participants: unknown[];
 }
 
 export interface BuildTournamentRecordArgs {
-  eventDataDocs?: any[];
-  matchUpDocs?: any[];
-  participantDocs?: any[];
+  eventDataDocs?: unknown[];
+  matchUpDocs?: unknown[];
+  participantDocs?: unknown[];
   /**
    * Optional collector for matchUps that could not be placed. Passed in rather than returned so this
    * function's shape stays exactly what it was — callers assembling a record by hand are not broken
@@ -157,7 +157,7 @@ function unwrapKeys(obj, keys) {
 }
 
 // --------------------------------------------------------------- extractors
-export function extractEventData(raw) {
+export function extractEventData(raw: unknown): EventDataDoc {
   const root = unwrapKeys(peelDataEnvelope(raw), ['tournamentPublicEventData']);
   const eventDataNode = root?.eventData ?? root;
   return {
@@ -168,13 +168,13 @@ export function extractEventData(raw) {
   };
 }
 
-export function extractMatchUps(raw) {
+export function extractMatchUps(raw: unknown): unknown[] {
   const root = unwrapKeys(peelDataEnvelope(raw), ['tournamentMatchUps']);
   if (Array.isArray(root)) return root;
   return root?.dateMatchUps ?? root?.matchUps ?? [];
 }
 
-export function extractParticipants(raw) {
+export function extractParticipants(raw: unknown): unknown[] {
   const root = unwrapKeys(peelDataEnvelope(raw), ['tournamentParticipants']);
   if (Array.isArray(root)) return root;
   return root?.participants ?? [];
@@ -184,7 +184,7 @@ export function extractParticipants(raw) {
 // Sniff a raw object and return what kind of CFS response it looks like.
 // Used by `buildFromSources` so callers can pass a heterogeneous array of
 // pasted responses without explicit labeling.
-export function classifySource(raw: any): ClassifiedSource {
+export function classifySource(raw: unknown): ClassifiedSource {
   const obj = peelDataEnvelope(raw);
   if (obj === null || typeof obj !== 'object') return { kind: UNKNOWN, value: obj };
 
@@ -861,7 +861,7 @@ function buildEvents({
   unbuilt,
   derivedLinks,
 }: {
-  eventDataDocs: EventDataDoc[];
+  eventDataDocs: unknown[];
   matchUps: any[];
   unplaced?: UnplacedMatchUp[];
   unbuilt?: UnbuiltStructure[];
@@ -1148,7 +1148,7 @@ export function buildTournamentRecord({
   unplaced,
   unbuilt,
   derivedLinks,
-}: BuildTournamentRecordArgs = {}) {
+}: BuildTournamentRecordArgs = {}): Record<string, any> {
   const record: Record<string, any> = buildTournamentMetadata(eventDataDocs, matchUpDocs);
   const participants = mergeParticipants({ participantDocs, eventDataDocs, matchUps: matchUpDocs });
   const venues = buildVenues(eventDataDocs);
@@ -1176,7 +1176,7 @@ export function buildTournamentRecord({
 //
 // Returns { record, classification, unknownCount } so callers can surface
 // "I skipped N sources I couldn't classify".
-export function buildFromSources(sources?: any[]): BuildFromSourcesResult {
+export function buildFromSources(sources?: unknown[]): BuildFromSourcesResult {
   const eventDataDocs: EventDataDoc[] = [];
   const matchUpDocs: any[] = [];
   const participantDocs: any[] = [];

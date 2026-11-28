@@ -12,6 +12,17 @@ import type { ParsedFormat } from './parse';
  * only when the totals are level (the INTENNSE format). So its final-set format governs
  * set N + 1, never set N. Every other format keeps its own reading of which set is the final one.
  */
+/** What these read of a format: a parsed matchUpFormat, a format structure or a score-entry configuration. */
+type DeciderFormat = {
+  overtimeFormat?: { count?: number | string } | null;
+  finalSetFormat?: unknown;
+  aggregate?: boolean;
+  exactly?: number;
+  bestOf?: number;
+};
+
+export function aggregateDeciderSetNumber(parsed?: DeciderFormat | null): number | undefined;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function aggregateDeciderSetNumber(parsed: any): number | undefined {
   if (parsed?.overtimeFormat) {
     const count = parsed.overtimeFormat.count;
@@ -27,6 +38,12 @@ export function aggregateDeciderSetNumber(parsed: any): number | undefined {
  * Whether the final-set format (`-F:`) governs `setNumber`, given how the caller reads it for every
  * other format: an aggregate format's decider is set N + 1 (above), and otherwise `otherwise` stands.
  */
+export function finalSetGoverns(
+  parsed: DeciderFormat | null | undefined,
+  setNumber: number | undefined,
+  otherwise: boolean,
+): boolean;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function finalSetGoverns(parsed: any, setNumber: number | undefined, otherwise: boolean): boolean {
   const deciderSetNumber = aggregateDeciderSetNumber(parsed);
   if (deciderSetNumber) return setNumber === deciderSetNumber;

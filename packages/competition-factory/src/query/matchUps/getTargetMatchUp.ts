@@ -140,12 +140,12 @@ export function getTargetMatchUp({
   // usually-right: within a matchUp the fed position IS the numerically smaller of the two (fed ->
   // sideNumber 1, and published rule 3 — side 1 is the lower drawPosition when both are present).
   // The one case where the minimum named no reserved slot is the one case where none exists.
-  if (matchUp?.hasFedDrawPosition) {
+  if ((matchUp as HydratedMatchUp | undefined)?.hasFedDrawPosition) {
     // for fedDrawPositions in linked elimination structures...
     // ...when roundNumber > 1 matchUpDrawPositionIndex should always be 0
     // ...because fed drawPositions are always numerically smaller than advanced drawPositions
     matchUpDrawPositionIndex = 0;
-    targetDrawPosition = Math.min(...(matchUp.drawPositions ?? []).filter(Boolean));
+    targetDrawPosition = Math.min(...((matchUp as HydratedMatchUp).drawPositions ?? []).filter(Boolean));
   } else {
     // the side's position, read structurally: a lone position's side is not its index
     targetDrawPosition = getSideDrawPosition({

@@ -2,17 +2,17 @@ import { callRuntime, copySnapshot, type DeepCopySnapshot } from './runtime';
 import { isDateObject } from './dateTime';
 import { isFunction } from './objects';
 
-export function makeDeepCopy(
+export function makeDeepCopy<T>(
   // arbitrary JSON-like value. Functions are returned unchanged (not stripped); null attribute values become
   // undefined; Date objects become ISO strings; beyond `threshold` depth the original (aliased) references are returned.
-  sourceObject,
-  convertExtensions?, // optional - all extension objects converted to attributes ._key
-  internalUse?, // disregard deepCopy being disabled within the engine - necessary for query results
-  removeExtensions?, // optional - strip all extension attributes
+  sourceObject: T,
+  convertExtensions?: boolean, // optional - all extension objects converted to attributes ._key
+  internalUse?: boolean, // disregard deepCopy being disabled within the engine - necessary for query results
+  removeExtensions?: boolean, // optional - strip all extension attributes
   iteration = 0, // escape hatch - check against iteration threshold
-) {
+): T {
   if (callRuntime.makeDeepCopy)
-    return callRuntime.makeDeepCopy(sourceObject, convertExtensions, internalUse, removeExtensions);
+    return callRuntime.makeDeepCopy(sourceObject, convertExtensions, internalUse, removeExtensions) as T;
 
   if (!copySnapshot.enabled && !internalUse) return sourceObject;
 

@@ -43,5 +43,5 @@ export function mockLeagueTieFormat({ eventId, isMock }: { eventId?: string; isM
     collectionId: isMock ? `${eventId}-COL-${index + 1}` : UUID(),
     ...collectionDefinition,
   }));
-  return tieFormat;
+  return tieFormat as TieFormat;
 }

@@ -123,7 +123,7 @@ export function generateCandidate({
   });
 
   proposedCandidates.sort((a, b) => a.maxDiff - b.maxDiff);
-  const candidate = randomPop(proposedCandidates, random);
+  const candidate = randomPop(proposedCandidates, random)!;
 
   return {
     candidatesCount,

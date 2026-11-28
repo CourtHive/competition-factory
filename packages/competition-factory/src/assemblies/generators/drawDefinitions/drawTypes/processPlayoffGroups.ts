@@ -161,7 +161,7 @@ export function processPlayoffGroups({
 
     const participantsInDraw = bestOf ?? groupCount * finishingPositions.length;
     totalClaimed += participantsInDraw;
-    const drawSize = nextPowerOf2(participantsInDraw);
+    const drawSize = nextPowerOf2(participantsInDraw) as number;
 
     const playoffDrawType = (drawSize === 2 && SINGLE_ELIMINATION) || playoffGroup.drawType || SINGLE_ELIMINATION;
 
@@ -337,7 +337,7 @@ function processRemainderGroup({
 }) {
   const totalParticipants = groupCount * groupSize;
   const remainderCount = totalParticipants - totalClaimed;
-  const drawSize = nextPowerOf2(remainderCount);
+  const drawSize = nextPowerOf2(remainderCount) as number;
   const allPositions = Array.from({ length: groupSize }, (_, i) => i + 1);
   const structureName = playoffGroup.structureName || 'Remainder Playoff';
 

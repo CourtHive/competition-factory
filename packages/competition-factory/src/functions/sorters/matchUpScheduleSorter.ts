@@ -2,6 +2,11 @@ import { dateTime } from '@Tools/dateTime';
 
 const { extractDate, extractTime, timeStringMinutes } = dateTime;
 
+/** The fields the sort reads: a matchUp's scheduled date and time. */
+type ScheduleSortKeys = { schedule?: { scheduledDate?: string; scheduledTime?: string } | null };
+
+export function matchUpScheduleSort(a: ScheduleSortKeys, b: ScheduleSortKeys): number;
+// eslint-disable-next-line no-redeclare -- overload implementation
 export function matchUpScheduleSort(a: any, b: any): number {
   const scheduleA = a.schedule ?? {};
   const scheduleB = b.schedule ?? {};

@@ -209,12 +209,9 @@ test('miscellaneous math tests', () => {
   result = isPowerOf2();
   expect(result).toEqual(false);
 
-  result = nextPowerOf2();
-  expect(result).toEqual(false);
-  result = nextPowerOf2(3);
-  expect(result).toEqual(4);
-  result = nextPowerOf2(2);
-  expect(result).toEqual(2);
+  expect(nextPowerOf2()).toEqual(false);
+  expect(nextPowerOf2(3)).toEqual(4);
+  expect(nextPowerOf2(2)).toEqual(2);
 
   result = isOdd(0);
   expect(result).toEqual(false);

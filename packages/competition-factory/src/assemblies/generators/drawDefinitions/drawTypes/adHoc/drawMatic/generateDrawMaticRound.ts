@@ -74,7 +74,7 @@ type GenerateDrawMaticRoundArgs = {
 
 export type DrawMaticRoundResult = {
   modifiedScaleValues?: { [key: string]: number };
-  participantIdPairings?: string[][];
+  participantIdPairings?: { participantIds: string[]; value: number }[];
   sourceRatingType?: string;
   candidatesCount?: number;
   outputScaleName?: string;
@@ -145,7 +145,7 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
       modifiedScaleValues[pid] = pState.dynamicFormRating;
     }
   } else if (dynamicRatings) {
-    const roundNumbers: number[] = unique(matchUpsOf(structure)?.map(({ roundNumber }) => roundNumber) ?? []);
+    const roundNumbers = unique(matchUpsOf(structure)?.map(({ roundNumber }) => roundNumber) ?? []) as number[];
     const lastRoundNumber = Math.max(...roundNumbers, 0);
     if (lastRoundNumber) {
       // generate dynamic ratings from results of prior round matchUps
