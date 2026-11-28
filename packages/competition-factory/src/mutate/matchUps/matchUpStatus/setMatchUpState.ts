@@ -1126,6 +1126,9 @@ function handleTeamAutoCalc({
 function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, params }) {
   const qualifyingMatch = inContextMatchUp?.stage === QUALIFYING && inContextMatchUp.finishingRound === 1;
   const qualifierAdvancing = qualifyingMatch && winningSide;
+  // A score on the call does not keep the qualifier's win: a status that keeps a score (IN_PROGRESS, SUSPENDED, ...)
+  // never reaches `removeQualifier`, and any other status clears the score with the winner, and the qualifier's seat in
+  // MAIN with it. So the call's score is not asked.
   const removingQualifier =
     qualifyingMatch && // oop
     matchUp.winningSide &&
@@ -1134,8 +1137,7 @@ function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, para
       (params.matchUpStatus &&
         isNonDirectingMatchUpStatus({
           matchUpStatus: params.matchUpStatus,
-        }))) &&
-    (!params.outcome || !checkScoreHasValue({ outcome: params.outcome }));
+        })));
   const qualifierChanging =
     qualifierAdvancing && // oop
     winningSide !== matchUp.winningSide &&
