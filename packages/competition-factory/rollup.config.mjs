@@ -118,6 +118,23 @@ const cjsExports = [
   { input: scoreEntryStateIndex, cjs: true, folder: 'score-entry-state', packageName: 'score-entry-state' },
 ].map(createExport);
 
+// preserveModules names a module from outside `src` by its path from the deepest directory shared by every module in
+// the graph. tslib resolves through the pnpm store, often a symlinked node_modules in another checkout, so that shared
+// directory, and with it the output path of `package.json` and of tslib, depended on where the repository was checked
+// out (`esm/.worktrees/<checkout>/packages/competition-factory/package.json.mjs`). Name those modules from the package
+// root and from their package name instead, so `dist` is the same from any checkout.
+const srcRoot = path.join(basePath, 'src') + path.sep;
+const NODE_MODULES = `${path.sep}node_modules${path.sep}`;
+function esmFileName({ facadeModuleId }) {
+  const id = facadeModuleId && !facadeModuleId.startsWith('\0') ? fs.realpathSync(facadeModuleId) : undefined;
+  if (!id || id.startsWith(srcRoot)) return '[name].mjs';
+  const extension = /\.[cm]?[jt]s$/;
+  const inModules = id.lastIndexOf(NODE_MODULES);
+  const relativeName =
+    inModules >= 0 ? path.join('node_modules', id.slice(inModules + NODE_MODULES.length)) : path.relative(basePath, id);
+  return `${relativeName.split(path.sep).join('/').replace(extension, '')}.mjs`;
+}
+
 // Tree-shakeable ESM build: preserveModules keeps one output file per source
 // module (mirroring src/ under dist/esm/) instead of a single flattened
 // bundle, so downstream bundlers can eliminate everything a consumer does not
@@ -143,7 +160,7 @@ const esmExport = [
       format: 'es',
       preserveModules: true,
       preserveModulesRoot: 'src',
-      entryFileNames: '[name].mjs',
+      entryFileNames: esmFileName,
       exports: 'named',
       sourcemap: false,
     },
