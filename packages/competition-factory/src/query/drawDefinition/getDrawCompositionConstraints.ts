@@ -52,7 +52,7 @@ export function getSanctionEventConstraints(tournamentRecord?: Tournament): Sanc
   if (own) return Array.isArray(own.events) ? own.events : [];
 
   const { extension } = findExtension({ element: tournamentRecord, name: SANCTIONING_CONSTRAINTS });
-  const legacy: { events?: LegacySanctionedEventConstraints[] } | undefined = extension?.value;
+  const legacy = extension?.value as { events?: LegacySanctionedEventConstraints[] } | undefined;
   return Array.isArray(legacy?.events) ? legacy.events.map(fromLegacyEventConstraints) : [];
 }
 

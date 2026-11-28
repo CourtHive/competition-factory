@@ -98,7 +98,7 @@ export function createTeamsFromParticipantAttributes({
         name: GROUPING_ATTRIBUTE,
         element: participant,
       });
-      const groupingAttribute = extension?.value;
+      const groupingAttribute = extension?.value as string;
 
       if (groupingAttributes.includes(groupingAttribute)) {
         return participant.participantId;

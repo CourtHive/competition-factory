@@ -21,6 +21,7 @@ import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteM
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { TALLY } from '@Constants/extensionConstants';
 import { SINGLES } from '@Constants/eventConstants';
+import type { TallyResult } from '@Types/tournamentTypes';
 
 function buildCompletedRRTournament(mode: SchemaWriteMode) {
   setSchemaWriteMode(mode);
@@ -69,7 +70,7 @@ describe('NATIVE mode — tally', () => {
     for (const assignment of tallied) {
       expect(assignment.tally).toEqual(expect.any(Object));
       expect(typeof assignment.tally.matchUpsWon).toEqual('number');
-      const { extension } = findExtension({ element: assignment, name: TALLY });
+      const { extension } = findExtension<TallyResult>({ element: assignment, name: TALLY });
       expect(extension).toBeUndefined();
     }
   });
@@ -84,7 +85,7 @@ describe('LEGACY mode — tally', () => {
     expect(withExtension.length).toBeGreaterThan(0);
 
     for (const assignment of withExtension) {
-      const { extension } = findExtension({ element: assignment, name: TALLY });
+      const { extension } = findExtension<TallyResult>({ element: assignment, name: TALLY });
       expect(extension?.value).toEqual(expect.any(Object));
       expect(typeof extension?.value.matchUpsWon).toEqual('number');
       expect(assignment.tally).toBeUndefined();
@@ -101,7 +102,7 @@ describe('BRIDGE mode — tally', () => {
     expect(dualWrites.length).toBeGreaterThan(0);
 
     for (const assignment of dualWrites) {
-      const { extension } = findExtension({ element: assignment, name: TALLY });
+      const { extension } = findExtension<TallyResult>({ element: assignment, name: TALLY });
       expect(assignment.tally).toEqual(extension?.value);
     }
   });

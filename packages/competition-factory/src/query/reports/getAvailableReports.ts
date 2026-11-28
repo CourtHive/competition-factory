@@ -2,7 +2,7 @@ import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structu
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ReportAvailability } from '@Types/reportTypes';
-import { Tournament } from '@Types/tournamentTypes';
+import { HydratedMatchUpSchedule, Tournament } from '@Types/tournamentTypes';
 
 // constants
 import {
@@ -155,7 +155,10 @@ export function getAvailableReports({
   const hasScheduledMatchUps = (tournamentRecord.events ?? []).some((e) =>
     (e.drawDefinitions ?? []).some((d) =>
       (d.structures ?? []).some((s) =>
-        (matchUpsOf(s) ?? []).some((m) => m.schedule?.scheduledTime || m.schedule?.startTime || m.schedule?.calledAt),
+        (matchUpsOf(s) ?? []).some(
+          (m) =>
+            m.schedule?.scheduledTime || (m.schedule as HydratedMatchUpSchedule)?.startTime || m.schedule?.calledAt,
+        ),
       ),
     ),
   );

@@ -13,6 +13,7 @@ import {
   MISSING_TOURNAMENT_RECORD,
   MISSING_TOURNAMENT_RECORDS,
 } from '@Constants/errorConditionConstants';
+import type { TournamentPublishState } from '@Types/viewTypes';
 
 export function publishParticipants(params) {
   const tournamentRecords = resolveTournamentRecords(params);
@@ -32,7 +33,7 @@ function publish({ removePriorValues, tournamentRecord, status = PUBLIC, embargo
 
   const itemType = `${PUBLISH}.${STATUS}`;
   const { timeItem } = getTimeItem({ element: tournamentRecord, itemType });
-  const itemValue = timeItem?.itemValue || { [status]: {} };
+  const itemValue = (timeItem?.itemValue as Record<string, TournamentPublishState>) || { [status]: {} };
   const participants: any = { published: true };
   if (embargo && !isValidEmbargoDate(embargo)) return { error: INVALID_EMBARGO };
   if (embargo) participants.embargo = embargo;

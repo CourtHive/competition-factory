@@ -60,7 +60,7 @@ describe('linkedTournamentIds — schemaWriteMode shadow writes', () => {
     const recordA: any = getRecord(tournamentIdA);
     expect(recordA.linkedTournamentIds).toBeUndefined();
 
-    const { extension } = findExtension({ element: recordA, name: LINKED_TOURNAMENTS });
+    const { extension } = findExtension<{ tournamentIds: string[] }>({ element: recordA, name: LINKED_TOURNAMENTS });
     expect(extension?.value?.tournamentIds).toBeDefined();
     expect(extension?.value?.tournamentIds.length).toEqual(2);
   });
@@ -75,7 +75,7 @@ describe('linkedTournamentIds — schemaWriteMode shadow writes', () => {
     expect(Array.isArray(recordA.linkedTournamentIds)).toEqual(true);
     expect(recordA.linkedTournamentIds.length).toEqual(2);
 
-    const { extension } = findExtension({ element: recordA, name: LINKED_TOURNAMENTS });
+    const { extension } = findExtension<{ tournamentIds: string[] }>({ element: recordA, name: LINKED_TOURNAMENTS });
     expect(extension?.value?.tournamentIds.length).toEqual(2);
   });
 
@@ -108,7 +108,7 @@ describe('linkedTournamentIds — schemaWriteMode shadow writes', () => {
     expect(recordA.linkedTournamentIds).toContain(tournamentIdB);
 
     // Legacy surface also reflects the removal.
-    const extA = findExtension({ element: recordA, name: LINKED_TOURNAMENTS }).extension;
+    const extA = findExtension<{ tournamentIds: string[] }>({ element: recordA, name: LINKED_TOURNAMENTS }).extension;
     expect(extA?.value?.tournamentIds).not.toContain(tournamentIdC);
   });
 

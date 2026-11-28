@@ -85,6 +85,6 @@ function getScaleValue({ scaleType = RATING, scaleAccessor, participant, scaleNa
       participant,
     });
 
-  const scaleValue = result?.scaleItem?.scaleValue;
+  const scaleValue = result?.scaleItem?.scaleValue as Record<string, any>;
   return scaleAccessor && isObject(scaleValue) ? scaleValue[scaleAccessor] : scaleValue;
 }

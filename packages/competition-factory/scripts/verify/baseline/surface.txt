@@ -25,6 +25,7 @@ AddressProps
 AddressTypeEnum
 AddressTypeUnion
 AggregationRules
+AllocatedCourt
 Amendment
 AmendmentRules
 AmendmentSeverity
@@ -206,6 +207,7 @@ DayId
 DayPlan
 DayState
 DeepCopyAttributes
+DelegatedOutcome
 DeleteNoticeArgs
 DerivedFilter
 DerivedRanking
@@ -221,6 +223,9 @@ DistributionGap
 DocumentLink
 DocumentReference
 DoublesAttribution
+DraftState
+DraftStatusUnion
+DraftTier
 DrawData
 DrawDataResult
 DrawDefinition
@@ -375,6 +380,7 @@ HydratedCourt
 HydratedFlight
 HydratedFlightProfile
 HydratedMatchUp
+HydratedMatchUpSchedule
 HydratedParticipant
 HydratedSide
 HydratedVenue
@@ -577,6 +583,7 @@ MatchUpPublishState
 MatchUpRowContext
 MatchUpRowSet
 MatchUpSchedule
+MatchUpScheduleItems
 MatchUpState
 MatchUpStatusCodeElement
 MatchUpStatusCodeRecord

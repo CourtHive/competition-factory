@@ -38,7 +38,7 @@ type Recorded = {
 type RecordedOverride = { startTime?: string; endTime?: string; endDate?: string };
 
 const lastValue = (matchUp: MatchUp, itemType: string): string | undefined =>
-  matchUp.timeItems?.findLast((timeItem) => timeItem?.itemType === itemType)?.itemValue;
+  matchUp.timeItems?.findLast((timeItem) => timeItem?.itemType === itemType)?.itemValue as string | undefined;
 
 /** an `HH:MM` wall-clock value on a date, as an instant; a full date-time value carries its own date */
 function instant(value: string | undefined, date: string): number | undefined {

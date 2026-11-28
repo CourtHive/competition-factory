@@ -72,7 +72,7 @@ function checkElementLocks({
   now: string;
   label: string;
 }): { error: typeof MUTATION_LOCKED; info?: string } | undefined {
-  const { extension } = findExtension({ element, name: MUTATION_LOCKS });
+  const { extension } = findExtension<MutationLocksValue>({ element, name: MUTATION_LOCKS });
   if (!extension?.value?.locks?.length) return undefined;
 
   const locksValue: MutationLocksValue = extension.value;

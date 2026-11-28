@@ -168,12 +168,13 @@ describe('sanction limits', () => {
   });
   it('reads legacy constraints and leaves unmatched events unconstrained', () => {
     const args = fixture(40);
-    args.tournamentRecord.extensions = [
-      { name: 'sanctioningConstraints', value: { events: [{ eventType: args.event.eventType, drawSize: 32 }] } },
+    const events: { eventType?: string; drawSize: number; eventName?: string }[] = [
+      { eventType: args.event.eventType, drawSize: 32 },
     ];
+    args.tournamentRecord.extensions = [{ name: 'sanctioningConstraints', value: { events } }];
     let result: any = getDrawFitProposals({ ...args, drawSize: 32 });
     expect(proposals(result).some((proposal) => proposal.kind === 'Grow')).toBe(false);
-    args.tournamentRecord.extensions[0].value.events[0].eventName = 'Another event';
+    events[0].eventName = 'Another event';
     result = getDrawFitProposals({ ...args, drawSize: 32 });
     expect(proposals(result).some((proposal) => proposal.kind === 'Grow')).toBe(true);
   });
