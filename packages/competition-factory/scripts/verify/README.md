@@ -191,7 +191,9 @@ member of `FactoryEngineTyped`, every function of `tools` and `availability` (on
 exported interface and type alias of `src/types`. Each loose member gets a count per category: the
 `(...args: any[]) => any` `fallback`; `param:any`, `param:keys` and `param:index` for the first parameter (depth 1);
 `ret:any`, `ret:keys` and `ret:index` for the result (depth 2, through arrays and unions); `type:any` and `type:index`
-for a model type (depth 1). It fails when a count rises above `baseline/public-types.json`, or a member absent from it
+for a model type (depth 1). The shared result envelope's `context` (`ResultType.context`) is one declaration, so it is
+counted once, on `types.ResultType`, and not again on every method that returns `ResultType & { … }`; an index or
+`any` on a method's own success shape still counts on that method. It fails when a count rises above `baseline/public-types.json`, or a member absent from it
 is loose at all. A fall passes; lower the baseline with `node scripts/verify/publicTypes.mjs --update-baseline`, which
 refuses a rise unless `--accept-rise` is also given. `--self-test` plants a program with one looseness per category.
 
