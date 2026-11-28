@@ -494,8 +494,9 @@ and earlier carry no tags at all.
 ### Behaviour changes
 
 - _Proposed:_ **the default `stampScope` becomes `'modified'`.** The factory `{ version, timeStamp }` stamp goes on each drawDefinition a call modified, and on the tournament only when something outside its draws changed. A consumer that reads `tournament.factory` as "last write anywhere" must read the draw stamps. Opt in during 7.x with `engine.stampScope('modified')`. A custom state provider uses the optional `cycleModifiedTopics` hook.
-- **A tieFormat for an event that is not TEAM is refused** with `INVALID_TIE_FORMAT`. See
-  [Pass `tieFormat` for TEAM draws only](#pass-tieformat-for-team-draws-only).
+- **A tieFormat for an event that is not TEAM is refused** with `INVALID_TIE_FORMAT`, and so is generating over one a
+  7.x record stored there; `tools.removeNonTeamTieFormats` cleans such a record. See
+  [Pass `tieFormat` for TEAM draws only](#pass-tieformat-for-team-draws-only) (#6672).
 - **`addFlight` refuses a participant already in another flight** with `EXISTING_FLIGHT` (and `context.participantIds`) unless `force: true`. In 7.x it returns a `PARTICIPANT_IN_OTHER_FLIGHT` warning and still adds.
 - **`addPoint` no longer mutates the matchUp it is given.** Use its return value.
 - **Generators no longer attach.** `generateLineUps` (`attach`), `generateFlightProfile` (`attachFlightProfile`), `drawMatic` (`updateParticipantRatings`), `generateDrawTypeAndModifyDrawDefinition` (`modifyOriginal`), `generateEventsFromTieFormat` (attaching unless `addEvents: false`) and `generateTournamentRecord` through an engine return what they generate. Call the matching attach mutation to store it.
